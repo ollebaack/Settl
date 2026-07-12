@@ -5,6 +5,7 @@
     "dev:web": "pnpm --filter web dev",
     "dev:api": "dotnet run --project apps/api/Settl.Api",
     "verify": "pnpm verify:api && pnpm verify:web",
+    "e2e": "pnpm --filter web e2e",
     "verify:api": "dotnet build && dotnet test --no-build",
     "verify:web": "pnpm --filter web lint && pnpm --filter web build"
   },

@@ -13,3 +13,7 @@
 - Surface errors to the user; no silent catch, no infinite spinners.
 - Mobile-first; root layout is `max-w-md` on purpose.
 - Copy tone: shared household notebook — never nagging, never fintech.
+- Testing is e2e, not unit: every user flow gets a Playwright spec in `e2e/`
+  (add/edit entry, settle, recurring pause/resume, switch household, …).
+  `pnpm e2e` from root runs against the real API (isolated `e2e.db`). Run it
+  before UI work is done. Specs assert user-visible behavior, not markup details.

@@ -23,3 +23,10 @@ apps/web/src/routeTree.gen.ts
 # OS / editor
 .DS_Store
 Thumbs.db
+
+# Claude workflow worktrees
+.claude/worktrees/
+
+# Playwright
+test-results/
+playwright-report/

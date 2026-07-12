@@ -1,0 +1,59 @@
+using Settl.Api.Domain;
+
+namespace Settl.Api.Dtos;
+
+/// <summary>Maps domain enums to/from the wire strings named in the API contract.</summary>
+public static class Contract
+{
+    public static string EntryType(EntryType t) => t switch
+    {
+        Domain.EntryType.Expense => "expense",
+        Domain.EntryType.Iou => "iou",
+        Domain.EntryType.RecurringPost => "recurringPost",
+        _ => throw new ArgumentOutOfRangeException(nameof(t))
+    };
+
+    public static string SplitMode(SplitMode m) => m switch
+    {
+        Domain.SplitMode.Equal => "equal",
+        Domain.SplitMode.Percent => "percent",
+        Domain.SplitMode.Amount => "amount",
+        Domain.SplitMode.None => "none",
+        _ => throw new ArgumentOutOfRangeException(nameof(m))
+    };
+
+    public static SplitMode ParseSplitMode(string? mode) => mode?.Trim().ToLowerInvariant() switch
+    {
+        "equal" => Domain.SplitMode.Equal,
+        "percent" => Domain.SplitMode.Percent,
+        "amount" => Domain.SplitMode.Amount,
+        "none" => Domain.SplitMode.None,
+        _ => throw new SplitValidationException("Ogiltigt delningsläge")
+    };
+
+    public static string Cadence(Cadence c) => c switch
+    {
+        Domain.Cadence.Monthly => "monthly",
+        Domain.Cadence.Biweekly => "biweekly",
+        Domain.Cadence.Weekly => "weekly",
+        _ => throw new ArgumentOutOfRangeException(nameof(c))
+    };
+
+    public static Cadence ParseCadence(string? cadence) => cadence?.Trim().ToLowerInvariant() switch
+    {
+        "monthly" => Domain.Cadence.Monthly,
+        "biweekly" or "2weeks" => Domain.Cadence.Biweekly,
+        "weekly" => Domain.Cadence.Weekly,
+        _ => throw new SplitValidationException("Ogiltig kadens")
+    };
+
+    public static string ViewerStatusKind(ViewerStatusKind k) => k switch
+    {
+        Domain.ViewerStatusKind.Settled => "settled",
+        Domain.ViewerStatusKind.YouOwe => "youOwe",
+        Domain.ViewerStatusKind.YouAreOwed => "youAreOwed",
+        Domain.ViewerStatusKind.PartiallySettled => "partiallySettled",
+        Domain.ViewerStatusKind.NotYourShare => "notYourShare",
+        _ => throw new ArgumentOutOfRangeException(nameof(k))
+    };
+}
