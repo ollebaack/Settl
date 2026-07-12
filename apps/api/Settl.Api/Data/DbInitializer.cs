@@ -11,23 +11,22 @@ namespace Settl.Api.Data;
 /// </summary>
 public static class DbInitializer
 {
-    // Stable member ids.
-    private static readonly Guid Du = new("11111111-1111-1111-1111-111111111111");
-    private static readonly Guid Sam = new("22222222-2222-2222-2222-222222222222");
-    private static readonly Guid Priya = new("33333333-3333-3333-3333-333333333333");
-    private static readonly Guid Mamma = new("44444444-4444-4444-4444-444444444444");
-    private static readonly Guid Pappa = new("55555555-5555-5555-5555-555555555555");
+    // Stable ids live in SeedIds so tests can reach seeded rows. Aliased here to keep the
+    // seed body terse; values and behaviour are unchanged.
+    private static readonly Guid Du = SeedIds.Du;
+    private static readonly Guid Sam = SeedIds.Sam;
+    private static readonly Guid Priya = SeedIds.Priya;
+    private static readonly Guid Mamma = SeedIds.Mamma;
+    private static readonly Guid Pappa = SeedIds.Pappa;
 
-    // Stable household ids.
-    private static readonly Guid Lonnvagen = new("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-    private static readonly Guid Familjen = new("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+    private static readonly Guid Lonnvagen = SeedIds.Lonnvagen;
+    private static readonly Guid Familjen = SeedIds.Familjen;
 
-    // Stable recurring template ids.
-    private static readonly Guid Rent = new("c0000000-0000-0000-0000-000000000001");   // r1 Hyra
-    private static readonly Guid Cleaning = new("c0000000-0000-0000-0000-000000000004"); // r4 Städhjälp
-    private static readonly Guid Spotify = new("c0000000-0000-0000-0000-000000000003"); // r3
-    private static readonly Guid Internet = new("c0000000-0000-0000-0000-000000000002"); // r2
-    private static readonly Guid Netflix = new("c0000000-0000-0000-0000-000000000005"); // r5
+    private static readonly Guid Rent = SeedIds.Rent;
+    private static readonly Guid Cleaning = SeedIds.Cleaning;
+    private static readonly Guid Spotify = SeedIds.Spotify;
+    private static readonly Guid Internet = SeedIds.Internet;
+    private static readonly Guid Netflix = SeedIds.Netflix;
 
     public static async Task SeedAsync(SettlDbContext db, CancellationToken ct = default)
     {
