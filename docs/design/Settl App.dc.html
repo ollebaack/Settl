@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Bricolage Grotesque',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit}a:hover{color:inherit}
+button{cursor:pointer;font:inherit;color:inherit;background:none;border:none;padding:0;margin:0;text-align:left}
+input,select{font:inherit;color:inherit}
+input:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px;border-radius:6px}
+input::placeholder{color:var(--sub);opacity:.55}
+[data-theme="mint"]{--bg:#f4f6f2;--card:#ffffff;--ink:#1c2620;--sub:#64715f;--line:#e2e7dd;--accent:#2e7d5b;--soft:#e2f0e6;--pos:#2e7d5b;--neg:#bb5433;--chip:#eaeee6}
+[data-theme="paper"]{--bg:#f8f3ea;--card:#fffdf6;--ink:#2c221a;--sub:#83725e;--line:#eadfca;--accent:#bd5d38;--soft:#f6e4d7;--pos:#527d4c;--neg:#bd5d38;--chip:#f0e9da}
+[data-theme="citrus"]{--bg:#f3f3f0;--card:#ffffff;--ink:#1a1b17;--sub:#6d6f65;--line:#e3e3db;--accent:#5c7000;--soft:#eef2d3;--pos:#5c7000;--neg:#b04a2f;--chip:#eaeae2}
+[data-theme="mint-dark"]{--bg:#141a16;--card:#1c241e;--ink:#e6ece5;--sub:#8fa091;--line:#29332b;--accent:#3f9d72;--soft:#213229;--pos:#5fbf94;--neg:#e08663;--chip:#232c25}
+[data-theme="paper-dark"]{--bg:#1d1813;--card:#261f19;--ink:#efe7da;--sub:#a4917b;--line:#352c22;--accent:#cf7448;--soft:#372a1f;--pos:#8fbf85;--neg:#e08a5f;--chip:#2d261e}
+[data-theme="citrus-dark"]{--bg:#171814;--card:#20211c;--ink:#eaebe3;--sub:#989b8d;--line:#2c2d26;--accent:#8aa626;--soft:#272b18;--pos:#aec84a;--neg:#e07a54;--chip:#262720}
+@keyframes sheetUp{from{transform:translateY(48px);opacity:.4}to{transform:translateY(0);opacity:1}}
+@keyframes scrimIn{from{opacity:0}to{opacity:1}}
+@keyframes toastIn{from{transform:translate(-50%,10px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+@keyframes rise{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+</style>
+</helmet>
+<div data-theme="{{ theme }}" style="{{ rootStyle }}">
+  <div style="{{ scrollWrapStyle }}">
+  <div style="{{ shellStyle }}">
+
+    <sc-if value="{{ wide }}" hint-placeholder-val="{{ true }}">
+    <div data-screen-label="Sidomeny" style="position:sticky;top:28px;display:flex;flex-direction:column;gap:16px;align-self:start">
+      <div>
+        <div style="font-size:24px;font-weight:700;letter-spacing:-.02em">Settl</div>
+        <div style="font-size:12px;color:var(--sub)">Hush&aring;llets delade anteckningsbok</div>
+      </div>
+      <button onClick="{{ openHH }}" style="display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:9px 12px 9px 9px;width:100%">
+        <span style="width:28px;height:28px;flex:none;border-radius:9px;background:var(--soft);color:var(--accent);display:grid;place-items:center;font-size:12px;font-weight:700">{{ hhInitial }}</span>
+        <span style="flex:1;font-size:14px;font-weight:600">{{ hhName }}</span>
+        <span style="color:var(--sub);font-size:10px">&#9662;</span>
+      </button>
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <sc-for list="{{ navItems }}" as="t" hint-placeholder-count="4">
+          <button onClick="{{ t.onPick }}" style="{{ t.style }}"><span style="width:6px;height:6px;border-radius:50%;background:{{ t.dot }}"></span>{{ t.label }}</button>
+        </sc-for>
+      </div>
+      <button onClick="{{ openAdd }}" style="background:var(--accent);color:#fff;border-radius:14px;padding:12px 0;text-align:center;font-size:14px;font-weight:700;box-shadow:0 8px 18px -8px var(--accent)">+ Ny post</button>
+      <div style="font-size:11px;color:var(--sub);line-height:1.55;border-top:1px solid var(--line);padding-top:14px">Interaktiv prototyp &mdash; l&auml;gg till en post, g&ouml;r upp, pausa en &aring;terkommande kostnad eller byt hush&aring;ll.</div>
+    </div>
+    </sc-if>
+
+    <div style="min-width:0">
+      <sc-if value="{{ narrow }}" hint-placeholder-val="{{ false }}">
+      <div style="position:sticky;top:0;z-index:15;background:var(--bg);display:flex;align-items:center;justify-content:space-between;padding:16px 18px 10px">
+        <button onClick="{{ openHH }}" style="display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px 6px 7px">
+          <span style="width:26px;height:26px;border-radius:9px;background:var(--soft);color:var(--accent);display:grid;place-items:center;font-size:12px;font-weight:700">{{ hhInitial }}</span>
+          <span style="font-size:14px;font-weight:600">{{ hhName }}</span>
+          <span style="color:var(--sub);font-size:10px">&#9662;</span>
+        </button>
+        <div style="display:flex">
+          <sc-for list="{{ hhAvatars }}" as="a" hint-placeholder-count="3"><span style="{{ a.style }}">{{ a.init }}</span></sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <div style="{{ mainStyle }}">
+
+        <sc-if value="{{ tHome }}" hint-placeholder-val="{{ true }}">
+        <div data-screen-label="Hem" style="display:flex;flex-direction:column;gap:20px;animation:rise .3s ease">
+          <div style="background:var(--card);border:1px solid var(--line);border-radius:22px;padding:24px 20px;text-align:center">
+            <div style="font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--sub)">{{ netLabel }}</div>
+            <div style="font-family:'Spline Sans Mono',monospace;font-size:38px;font-weight:600;letter-spacing:-.03em;margin-top:6px;color:{{ netColor }}">{{ netAmt }}</div>
+            <div style="font-size:12.5px;color:var(--sub);margin-top:5px">{{ netSub }}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ people }}" as="p" hint-placeholder-count="2">
+              <button onClick="{{ p.onOpen }}" style="display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;width:100%">
+                <span style="{{ p.avStyle }}">{{ p.init }}</span>
+                <span style="flex:1"><span style="display:block;font-size:14.5px;font-weight:600">{{ p.name }}</span><span style="display:block;font-size:12px;color:var(--sub)">{{ p.rel }}</span></span>
+                <span style="font-family:'Spline Sans Mono',monospace;font-size:15px;font-weight:600;color:{{ p.amtColor }}">{{ p.amt }}</span>
+              </button>
+            </sc-for>
+          </div>
+          <sc-if value="{{ showUpcomingHome }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div style="font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--sub)">P&aring; g&aring;ng</div>
+            <div style="display:flex;gap:10px;overflow-x:auto;padding:10px 2px 4px">
+              <sc-for list="{{ upcoming }}" as="u" hint-placeholder-count="3">
+                <button onClick="{{ u.onGo }}" style="flex:none;min-width:150px;border:1.5px dashed var(--line);border-radius:16px;padding:12px 14px;background:transparent">
+                  <span style="display:block;font-size:13px;font-weight:600">{{ u.title }}</span>
+                  <span style="display:block;font-size:11.5px;color:var(--accent);font-weight:600;margin-top:2px">{{ u.when }}</span>
+                  <span style="display:block;font-family:'Spline Sans Mono',monospace;font-size:13px;margin-top:8px">{{ u.share }}</span>
+                  <span style="display:block;font-size:10.5px;color:var(--sub)">din del</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+          <div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between">
+              <div style="font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--sub)">Senaste</div>
+              <button onClick="{{ goLedger }}" style="font-size:12px;font-weight:600;color:var(--accent)">Visa alla</button>
+            </div>
+            <div style="display:flex;flex-direction:column;margin-top:4px">
+              <sc-for list="{{ recent }}" as="r" hint-placeholder-count="4">
+                <button onClick="{{ r.onOpen }}" style="display:flex;align-items:center;gap:12px;padding:11px 2px;width:100%;border-bottom:1px solid var(--line);opacity:{{ r.op }}">
+                  <span style="width:36px;height:36px;flex:none;border-radius:12px;background:{{ r.iconBg }};color:{{ r.iconColor }};display:grid;place-items:center;font-size:14px;font-weight:700">{{ r.glyph }}</span>
+                  <span style="flex:1;min-width:0"><span style="display:block;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.title }}</span><span style="display:block;font-size:11.5px;color:var(--sub)">{{ r.meta }}</span></span>
+                  <span style="text-align:right"><span style="display:block;font-family:'Spline Sans Mono',monospace;font-size:13.5px;font-weight:600">{{ r.amt }}</span><span style="display:block;font-size:11px;font-weight:600;color:{{ r.subColor }}">{{ r.sub }}</span></span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ tLedger }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Loggbok" style="display:flex;flex-direction:column;gap:16px;animation:rise .3s ease">
+          <div style="font-size:19px;font-weight:700;letter-spacing:-.01em">Loggboken</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4"><button onClick="{{ f.onPick }}" style="{{ f.style }}">{{ f.label }}</button></sc-for>
+          </div>
+          <sc-if value="{{ showUpcomingLedger }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ upcoming }}" as="u" hint-placeholder-count="2">
+              <button onClick="{{ u.onGo }}" style="display:flex;align-items:center;gap:12px;border:1.5px dashed var(--line);border-radius:14px;padding:10px 14px;width:100%">
+                <span style="width:32px;height:32px;flex:none;border-radius:10px;background:var(--soft);color:var(--accent);display:grid;place-items:center;font-size:14px;font-weight:700">&#8635;</span>
+                <span style="flex:1"><span style="display:block;font-size:13.5px;font-weight:600">{{ u.title }}</span><span style="display:block;font-size:11.5px;color:var(--accent);font-weight:600">{{ u.when }}</span></span>
+                <span style="font-family:'Spline Sans Mono',monospace;font-size:12.5px;color:var(--sub)">{{ u.amt }}</span>
+              </button>
+            </sc-for>
+          </div>
+          </sc-if>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
+              <div>
+                <div style="font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--sub);padding-bottom:2px">{{ g.label }}</div>
+                <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="3">
+                  <button onClick="{{ r.onOpen }}" style="display:flex;align-items:center;gap:12px;padding:11px 2px;width:100%;border-bottom:1px solid var(--line);opacity:{{ r.op }}">
+                    <span style="width:36px;height:36px;flex:none;border-radius:12px;background:{{ r.iconBg }};color:{{ r.iconColor }};display:grid;place-items:center;font-size:14px;font-weight:700">{{ r.glyph }}</span>
+                    <span style="flex:1;min-width:0"><span style="display:block;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.title }}</span><span style="display:block;font-size:11.5px;color:var(--sub)">{{ r.meta }}</span></span>
+                    <span style="text-align:right"><span style="display:block;font-family:'Spline Sans Mono',monospace;font-size:13.5px;font-weight:600">{{ r.amt }}</span><span style="display:block;font-size:11px;font-weight:600;color:{{ r.subColor }}">{{ r.sub }}</span></span>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ tRec }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="P&aring; repeat" style="display:flex;flex-direction:column;gap:16px;animation:rise .3s ease">
+          <div>
+            <div style="font-size:19px;font-weight:700;letter-spacing:-.01em">P&aring; repeat</div>
+            <div style="font-size:12.5px;color:var(--sub);margin-top:2px">&Aring;terkommande kostnader bokf&ouml;r sig sj&auml;lva &mdash; ingen m&aring;natlig inmatning.</div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <div style="flex:1;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px">
+              <div style="font-family:'Spline Sans Mono',monospace;font-size:15px;font-weight:600">{{ recTotal }}</div>
+              <div style="font-size:11px;color:var(--sub);margin-top:2px">delat / m&aring;nad</div>
+            </div>
+            <div style="flex:1;background:var(--soft);border:1px solid var(--line);border-radius:16px;padding:12px 14px">
+              <div style="font-family:'Spline Sans Mono',monospace;font-size:15px;font-weight:600;color:var(--accent)">{{ recShare }}</div>
+              <div style="font-size:11px;color:var(--sub);margin-top:2px">din del / m&aring;nad</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ recCards }}" as="c" hint-placeholder-count="3">
+              <div style="background:var(--card);border:1px solid var(--line);border-radius:20px;padding:15px 16px;opacity:{{ c.op }}">
+                <div style="display:flex;align-items:flex-start;gap:12px">
+                  <span style="width:38px;height:38px;flex:none;border-radius:13px;background:var(--soft);color:var(--accent);display:grid;place-items:center;font-size:16px;font-weight:700">&#8635;</span>
+                  <span style="flex:1"><span style="display:block;font-size:15px;font-weight:650">{{ c.title }}</span><span style="display:block;font-size:11.5px;color:var(--sub)">{{ c.cadLabel }}</span></span>
+                  <span style="text-align:right"><span style="display:block;font-family:'Spline Sans Mono',monospace;font-size:14px;font-weight:600">{{ c.amt }}</span><span style="display:block;font-size:10.5px;color:var(--sub)">{{ c.per }}</span></span>
+                </div>
+                <div style="height:5px;border-radius:3px;background:var(--chip);margin:13px 0 8px;overflow:hidden"><div style="height:100%;border-radius:3px;background:var(--accent);width:{{ c.pct }}"></div></div>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                  <span style="font-size:12px;font-weight:600;color:var(--accent)">{{ c.nextLabel }}</span>
+                  <span style="display:flex;align-items:center;gap:6px"><span style="display:flex"><sc-for list="{{ c.avatars }}" as="a" hint-placeholder-count="3"><span style="{{ a.style }}">{{ a.init }}</span></sc-for></span><span style="font-size:11px;color:var(--sub)">{{ c.splitLabel }}</span></span>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:12px;padding-top:11px;border-top:1px solid var(--line)">
+                  <button onClick="{{ c.onOpen }}" style="flex:1;text-align:center;background:var(--chip);border-radius:999px;padding:8px 0;font-size:12.5px;font-weight:600">Detaljer</button>
+                  <button onClick="{{ c.onToggle }}" style="flex:1;text-align:center;background:transparent;border:1px solid var(--line);border-radius:999px;padding:8px 0;font-size:12.5px;font-weight:600;color:var(--sub)">{{ c.toggleLabel }}</button>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-size:11.5px;color:var(--sub);text-align:center;padding:2px 20px 8px;line-height:1.5">Varje period bokf&ouml;r Settl posten i loggboken och delar om den &mdash; &auml;ndra delningen n&auml;r som helst, det g&auml;ller framtida perioder.</div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ tAct }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Aktivitet" style="display:flex;flex-direction:column;gap:16px;animation:rise .3s ease">
+          <div>
+            <div style="font-size:19px;font-weight:700;letter-spacing:-.01em">Knuffar</div>
+            <div style="font-size:12.5px;color:var(--sub);margin-top:2px">Settl s&auml;ger bara till n&auml;r n&aring;got h&auml;nder.</div>
+          </div>
+          <sc-if value="{{ hasReminders }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ reminders }}" as="n" hint-placeholder-count="3">
+              <div style="background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 15px">
+                <div style="display:flex;gap:10px;align-items:flex-start">
+                  <span style="width:8px;height:8px;flex:none;border-radius:50%;background:var(--accent);margin-top:6px"></span>
+                  <div style="flex:1">
+                    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px"><span style="font-size:14px;font-weight:650">{{ n.title }}</span><span style="font-size:10.5px;color:var(--sub);flex:none">{{ n.when }}</span></div>
+                    <div style="font-size:12.5px;color:var(--sub);margin-top:3px;line-height:1.45">{{ n.body }}</div>
+                    <div style="display:flex;gap:8px;margin-top:10px">
+                      <sc-for list="{{ n.actions }}" as="a" hint-placeholder-count="1"><button onClick="{{ a.onGo }}" style="background:var(--chip);border-radius:999px;padding:7px 14px;font-size:12px;font-weight:600">{{ a.label }}</button></sc-for>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          </sc-if>
+          <sc-if value="{{ noReminders }}" hint-placeholder-val="{{ false }}">
+          <div style="text-align:center;padding:40px 30px;color:var(--sub);font-size:13.5px;line-height:1.5">Lugnt just nu. Settl knuffar n&auml;r en stor utgift l&auml;ggs till, ett saldo v&auml;xer eller hyran n&auml;rmar sig.</div>
+          </sc-if>
+          <div style="font-size:11.5px;color:var(--sub);text-align:center;padding:2px 20px;line-height:1.5">Inget dagligt tjat &mdash; knuffar skickas vid h&auml;ndelser: en stor utgift, ett saldo som passerar en gr&auml;ns eller en &aring;terkommande kostnad som snart bokf&ouml;rs.</div>
+        </div>
+        </sc-if>
+      </div>
+    </div>
+
+    <sc-if value="{{ wide }}" hint-placeholder-val="{{ true }}">
+    <div data-screen-label="H&ouml;gerspalt" style="position:sticky;top:28px;display:flex;flex-direction:column;gap:22px;align-self:start">
+      <div>
+        <div style="font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--sub);margin-bottom:10px">P&aring; g&aring;ng</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ upcoming }}" as="u" hint-placeholder-count="3">
+            <button onClick="{{ u.onGo }}" style="display:flex;align-items:center;gap:12px;border:1.5px dashed var(--line);border-radius:14px;padding:11px 14px;width:100%">
+              <span style="width:32px;height:32px;flex:none;border-radius:10px;background:var(--soft);color:var(--accent);display:grid;place-items:center;font-size:14px;font-weight:700">&#8635;</span>
+              <span style="flex:1;min-width:0"><span style="display:block;font-size:13px;font-weight:600">{{ u.title }}</span><span style="display:block;font-size:11px;color:var(--accent);font-weight:600">{{ u.when }}</span></span>
+              <span style="text-align:right"><span style="display:block;font-family:'Spline Sans Mono',monospace;font-size:12px;font-weight:600">{{ u.share }}</span><span style="display:block;font-size:10px;color:var(--sub)">din del</span></span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--sub);margin-bottom:10px">Knuffar</div>
+        <sc-if value="{{ hasReminders }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ reminders }}" as="n" hint-placeholder-count="3">
+            <div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px">
+              <div style="display:flex;gap:9px;align-items:flex-start">
+                <span style="width:7px;height:7px;flex:none;border-radius:50%;background:var(--accent);margin-top:6px"></span>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;font-weight:650">{{ n.title }}</div>
+                  <div style="font-size:11.5px;color:var(--sub);margin-top:2px;line-height:1.45">{{ n.body }}</div>
+                  <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+                    <sc-for list="{{ n.actions }}" as="a" hint-placeholder-count="1"><button onClick="{{ a.onGo }}" style="background:var(--chip);border-radius:999px;padding:6px 12px;font-size:11.5px;font-weight:600">{{ a.label }}</button></sc-for>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        </sc-if>
+        <sc-if value="{{ noReminders }}" hint-placeholder-val="{{ false }}">
+        <div style="border:1.5px dashed var(--line);border-radius:14px;padding:16px;color:var(--sub);font-size:12px;line-height:1.5">Lugnt just nu. Knuffar skickas vid h&auml;ndelser &mdash; en stor utgift, ett v&auml;xande saldo eller hyra p&aring; g&aring;ng.</div>
+        </sc-if>
+      </div>
+    </div>
+    </sc-if>
+  </div>
+  </div>
+
+  <sc-if value="{{ narrow }}" hint-placeholder-val="{{ false }}">
+  <div style="{{ tabBarStyle }}">
+    <div style="max-width:480px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 66px 1fr 1fr;align-items:center;padding:8px 8px 14px">
+      <sc-for list="{{ tabsL }}" as="t" hint-placeholder-count="2">
+        <button onClick="{{ t.onPick }}" style="text-align:center;padding:6px 0"><span style="display:block;width:5px;height:5px;border-radius:50%;background:{{ t.dot }};margin:0 auto 4px"></span><span style="font-size:11.5px;font-weight:650;color:{{ t.color }}">{{ t.label }}</span></button>
+      </sc-for>
+      <div style="display:grid;place-items:center"><button onClick="{{ openAdd }}" style="width:52px;height:52px;border-radius:18px;background:var(--accent);color:#fff;font-size:26px;font-weight:400;display:grid;place-items:center;box-shadow:0 8px 18px -6px var(--accent);transform:translateY(-12px)">+</button></div>
+      <sc-for list="{{ tabsR }}" as="t" hint-placeholder-count="2">
+        <button onClick="{{ t.onPick }}" style="text-align:center;padding:6px 0"><span style="display:block;width:5px;height:5px;border-radius:50%;background:{{ t.dot }};margin:0 auto 4px"></span><span style="font-size:11.5px;font-weight:650;color:{{ t.color }}">{{ t.label }}</span></button>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ hasSheet }}" hint-placeholder-val="{{ false }}">
+  <div style="{{ sheetWrapStyle }}">
+    <button onClick="{{ closeSheet }}" style="position:absolute;inset:0;background:rgba(18,24,19,.38);animation:scrimIn .2s ease;cursor:default"></button>
+    <div style="{{ sheetBoxStyle }}">
+      <div style="width:36px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 16px"></div>
+
+      <sc-if value="{{ shHH }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Byt hush&aring;ll">
+        <div style="font-size:17px;font-weight:700">Dina hush&aring;ll</div>
+        <div style="font-size:12.5px;color:var(--sub);margin-top:2px">En bok per hush&aring;ll &mdash; du kan vara med i flera.</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px">
+          <sc-for list="{{ hhRows }}" as="h" hint-placeholder-count="2">
+            <button onClick="{{ h.onPick }}" style="{{ h.style }}">
+              <span style="width:36px;height:36px;flex:none;border-radius:12px;background:var(--soft);color:var(--accent);display:grid;place-items:center;font-size:14px;font-weight:700">{{ h.init }}</span>
+              <span style="flex:1"><span style="display:block;font-size:14.5px;font-weight:600">{{ h.name }}</span><span style="display:block;font-size:11.5px;color:var(--sub)">{{ h.membersLabel }}</span></span>
+              <span style="text-align:right"><span style="display:block;font-family:'Spline Sans Mono',monospace;font-size:12.5px;font-weight:600;color:{{ h.netColor }}">{{ h.net }}</span><span style="display:block;font-size:10.5px;color:var(--sub)">{{ h.netSub }}</span></span>
+            </button>
+          </sc-for>
+          <button onClick="{{ toastSoon }}" style="border:1.5px dashed var(--line);border-radius:16px;padding:13px;text-align:center;font-size:13px;font-weight:600;color:var(--sub)">+ Nytt hush&aring;ll</button>
+        </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ shAdd }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Ny post">
+        <div style="font-size:17px;font-weight:700">Ny post</div>
+        <div style="display:flex;gap:6px;margin-top:12px">
+          <sc-for list="{{ afTypes }}" as="c" hint-placeholder-count="3"><button onClick="{{ c.onPick }}" style="{{ c.style }}">{{ c.label }}</button></sc-for>
+        </div>
+        <div style="display:flex;align-items:baseline;justify-content:center;gap:6px;margin:20px 0 4px">
+          <input value="{{ afAmount }}" onInput="{{ onAfAmount }}" placeholder="0,00" inputMode="decimal" style="font-family:'Spline Sans Mono',monospace;font-size:38px;font-weight:600;background:none;border:none;width:170px;text-align:right;color:var(--ink)">
+          <span style="font-family:'Spline Sans Mono',monospace;font-size:20px;color:var(--sub)">kr</span>
+        </div>
+        <input value="{{ afTitle }}" onInput="{{ onAfTitle }}" placeholder="{{ afTitlePh }}" style="width:100%;box-sizing:border-box;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:14px;margin-top:8px">
+
+        <sc-if value="{{ afIsIou }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--sub);margin:18px 0 8px">&Aring;t vilket h&aring;ll</div>
+          <div style="display:flex;gap:6px">
+            <sc-for list="{{ afIouDirs }}" as="c" hint-placeholder-count="2"><button onClick="{{ c.onPick }}" style="{{ c.style }}">{{ c.label }}</button></sc-for>
+          </div>
+          <div style="font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--sub);margin:16px 0 8px">Med</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <sc-for list="{{ afIouPeople }}" as="c" hint-placeholder-count="2"><button onClick="{{ c.onPick }}" style="{{ c.style }}">{{ c.label }}</button></sc-for>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ afIsSplit }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--sub);margin:18px 0 8px">Vem betalade</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <sc-for list="{{ afPayers }}" as="c" hint-placeholder-count="3"><button onClick="{{ c.onPick }}" style="{{ c.style }}">{{ c.label }}</button></sc-for>
+          </div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin:18px 0 8px">
+            <span style="font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--sub)">Delning</span>
+            <span style="display:flex;gap:5px"><sc-for list="{{ afModes }}" as="c" hint-placeholder-count="3"><button onClick="{{ c.onPick }}" style="{{ c.style }}">{{ c.label }}</button></sc-for></span>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:4px 14px">
+            <sc-for list="{{ afRows }}" as="r" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)">
+                <span style="{{ r.avStyle }}">{{ r.init }}</span>
+                <span style="flex:1;font-size:13.5px;font-weight:600">{{ r.name }}</span>
+                <sc-if value="{{ r.showInput }}" hint-placeholder-val="{{ false }}"><span style="display:flex;align-items:center;gap:5px"><input value="{{ r.val }}" onInput="{{ r.onVal }}" inputMode="decimal" placeholder="0" style="width:60px;text-align:right;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:7px 9px;font-family:'Spline Sans Mono',monospace;font-size:13px"><span style="font-size:12px;color:var(--sub);width:16px">{{ r.unit }}</span></span></sc-if>
+                <sc-if value="{{ r.showText }}" hint-placeholder-val="{{ true }}"><span style="font-family:'Spline Sans Mono',monospace;font-size:13px;color:var(--sub)">{{ r.share }}</span></sc-if>
+              </div>
+            </sc-for>
+            <div style="padding:9px 0;font-size:12px;font-weight:600;text-align:right;color:{{ afHintColor }}">{{ afHint }}</div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ afIsRec }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--sub);margin:18px 0 8px">Upprepas</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <sc-for list="{{ afCadences }}" as="c" hint-placeholder-count="3"><button onClick="{{ c.onPick }}" style="{{ c.style }}">{{ c.label }}</button></sc-for>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px">
+            <span style="font-size:13px;font-weight:600">Bokf&ouml;rs f&ouml;rst</span>
+            <input type="date" value="{{ afDate }}" onInput="{{ onAfDate }}" style="background:none;border:none;font-family:'Spline Sans Mono',monospace;font-size:13px">
+          </div>
+          <div style="font-size:11.5px;color:var(--sub);margin-top:10px;line-height:1.5">Settl bokf&ouml;r den i loggboken varje period och delar om automatiskt. St&auml;ll in en g&aring;ng, gl&ouml;m den sen.</div>
+        </div>
+        </sc-if>
+
+        <button onClick="{{ onSave }}" style="{{ saveStyle }}">{{ saveLabel }}</button>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ shEntry }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Postdetalj">
+        <div style="display:flex;align-items:center;gap:8px"><span style="background:var(--soft);color:var(--accent);border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">{{ ed.typeLabel }}</span><span style="font-size:11.5px;color:var(--sub)">{{ ed.date }}</span></div>
+        <div style="font-size:19px;font-weight:700;margin-top:10px">{{ ed.title }}</div>
+        <div style="font-family:'Spline Sans Mono',monospace;font-size:28px;font-weight:600;margin-top:4px">{{ ed.amt }}</div>
+        <div style="font-size:12.5px;color:var(--sub);margin-top:2px">{{ ed.meta }}</div>
+        <sc-if value="{{ ed.hasNote }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:var(--accent);font-weight:600;margin-top:8px">{{ ed.note }}</div></sc-if>
+        <div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:4px 14px;margin-top:16px">
+          <sc-for list="{{ ed.rows }}" as="r" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)">
+              <span style="{{ r.avStyle }}">{{ r.init }}</span>
+              <span style="flex:1;font-size:13.5px;font-weight:600">{{ r.name }} <span style="font-size:11px;color:var(--accent);font-weight:700">{{ r.tag }}</span></span>
+              <span style="font-family:'Spline Sans Mono',monospace;font-size:13px">{{ r.share }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <button onClick="{{ ed.onToggle }}" style="{{ ed.toggleStyle }}">{{ ed.toggleLabel }}</button>
+        <div style="font-size:11.5px;color:var(--sub);text-align:center;margin-top:10px">Betala varandra hur ni vill &mdash; markera sen som reglerad h&auml;r.</div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ shSettle }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="G&ouml;r upp">
+        <div style="font-size:17px;font-weight:700">G&ouml;r upp med {{ ss.name }}</div>
+        <div style="text-align:center;margin:18px 0 6px">
+          <div style="font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--sub)">{{ ss.netLabel }}</div>
+          <div style="font-family:'Spline Sans Mono',monospace;font-size:32px;font-weight:600;margin-top:4px;color:{{ ss.netColor }}">{{ ss.amt }}</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:4px 14px;margin-top:12px">
+          <sc-for list="{{ ss.items }}" as="i" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)">
+              <span style="flex:1;min-width:0"><span style="display:block;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ i.title }}</span><span style="display:block;font-size:11px;color:var(--sub)">{{ i.date }}</span></span>
+              <span style="font-family:'Spline Sans Mono',monospace;font-size:12.5px;font-weight:600;color:{{ i.color }}">{{ i.amt }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="font-size:12px;color:var(--sub);margin-top:12px;line-height:1.5;text-align:center">Betala som ni brukar &mdash; Swish, kontanter, bank&ouml;verf&ouml;ring. Settl h&aring;ller bara boken i ordning.</div>
+        <button onClick="{{ ss.onSettle }}" style="width:100%;margin-top:14px;background:var(--accent);color:#fff;border-radius:16px;padding:14px 0;text-align:center;font-size:14.5px;font-weight:700">Markera allt som reglerat</button>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ shRec }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="&Aring;terkommande detalj">
+        <div style="display:flex;align-items:center;gap:8px"><span style="background:var(--soft);color:var(--accent);border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">P&aring; repeat</span><span style="font-size:11.5px;color:var(--sub)">{{ rd.cadLabel }}</span></div>
+        <div style="font-size:19px;font-weight:700;margin-top:10px">{{ rd.title }}</div>
+        <div style="font-family:'Spline Sans Mono',monospace;font-size:28px;font-weight:600;margin-top:4px">{{ rd.amt }}</div>
+        <div style="border:1.5px dashed var(--line);border-radius:16px;padding:12px 14px;margin-top:16px;display:flex;align-items:center;gap:12px">
+          <span style="width:34px;height:34px;flex:none;border-radius:11px;background:var(--soft);color:var(--accent);display:grid;place-items:center;font-size:15px;font-weight:700">&#8635;</span>
+          <span style="flex:1"><span style="display:block;font-size:13.5px;font-weight:600">{{ rd.nextTitle }}</span><span style="display:block;font-size:11.5px;color:var(--accent);font-weight:600">{{ rd.nextWhen }}</span></span>
+          <span style="text-align:right"><span style="display:block;font-family:'Spline Sans Mono',monospace;font-size:12.5px;font-weight:600">{{ rd.share }}</span><span style="display:block;font-size:10.5px;color:var(--sub)">din del</span></span>
+        </div>
+        <div style="font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--sub);margin:16px 0 8px">Hur den delas</div>
+        <div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:4px 14px">
+          <sc-for list="{{ rd.rows }}" as="r" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)">
+              <span style="{{ r.avStyle }}">{{ r.init }}</span>
+              <span style="flex:1;font-size:13.5px;font-weight:600">{{ r.name }} <span style="font-size:11px;color:var(--accent);font-weight:700">{{ r.tag }}</span></span>
+              <span style="font-family:'Spline Sans Mono',monospace;font-size:13px">{{ r.share }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="font-size:11.5px;color:var(--sub);margin-top:8px">&Auml;ndrad delning g&auml;ller framtida perioder.</div>
+        <sc-if value="{{ rd.hasPosts }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--sub);margin:16px 0 6px">Tidigare perioder</div>
+          <sc-for list="{{ rd.posts }}" as="p" hint-placeholder-count="2">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 2px;border-bottom:1px solid var(--line)">
+              <span style="font-size:13px;font-weight:600">{{ p.title }}</span>
+              <span style="display:flex;align-items:center;gap:10px"><span style="font-size:11px;color:var(--sub)">{{ p.status }}</span><span style="font-family:'Spline Sans Mono',monospace;font-size:12.5px">{{ p.amt }}</span></span>
+            </div>
+          </sc-for>
+        </div>
+        </sc-if>
+        <button onClick="{{ rd.onToggle }}" style="width:100%;margin-top:16px;background:transparent;border:1px solid var(--line);color:var(--sub);border-radius:16px;padding:13px 0;text-align:center;font-size:13.5px;font-weight:600">{{ rd.toggleLabel }}</button>
+      </div>
+      </sc-if>
+
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+  <div style="{{ toastStyle }}">{{ toast }}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:900},&quot;layout&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;auto&quot;,&quot;desktop&quot;,&quot;mobile&quot;],&quot;default&quot;:&quot;auto&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Layout&quot;},&quot;direction&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;mint&quot;,&quot;paper&quot;,&quot;citrus&quot;],&quot;default&quot;:&quot;mint&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Utseende&quot;},&quot;darkMode&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Utseende&quot;},&quot;upcomingPreview&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Beteende&quot;},&quot;reminderTone&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;gentle&quot;,&quot;direct&quot;],&quot;default&quot;:&quot;direct&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Beteende&quot;}}">
+class Component extends DCLogic {
+  TODAY = new Date(2026, 6, 12, 12, 0, 0);
+  state = {
+    tab: 'home', hhId: 'h1', filter: 'all',
+    sheet: null, toast: '',
+    wide: typeof window !== 'undefined' ? window.innerWidth >= 980 : true,
+    af: { type: 'expense', title: '', amount: '', paidBy: 'u1', iouDir: 'iowe', iouWith: null, mode: 'equal', vals: {}, cadence: 'monthly', date: '2026-08-01' }
+  };
+  nextId = 100;
+  db = {
+    households: [
+      { id: 'h1', name: 'Lönnvägen 3', members: ['u1', 'u2', 'u3'] },
+      { id: 'h2', name: 'Familjen', members: ['u1', 'u4', 'u5'] }
+    ],
+    members: {
+      u1: { name: 'Du', init: 'D', bg: '#dfe6cf' },
+      u2: { name: 'Sam', init: 'S', bg: '#f0dcc3' },
+      u3: { name: 'Priya', init: 'P', bg: '#d9e0ee' },
+      u4: { name: 'Mamma', init: 'M', bg: '#eed9d9' },
+      u5: { name: 'Pappa', init: 'P', bg: '#d9eee4' }
+    },
+    entries: [
+      { id: 'e8', hh: 'h1', type: 'expense', title: 'Begagnad soffa', amount: 2400, paidBy: 'u2', split: { mode: 'percent', vals: { u1: 40, u2: 40, u3: 20 } }, date: '2026-07-11', settled: false },
+      { id: 'e1', hh: 'h1', type: 'expense', title: 'Matinköp — storhandling', amount: 864, paidBy: 'u2', split: { mode: 'equal' }, date: '2026-07-10', settled: false },
+      { id: 'e2', hh: 'h1', type: 'iou', title: 'Konsertbiljett', amount: 200, from: 'u1', to: 'u3', date: '2026-07-09', settled: false },
+      { id: 'e5', hh: 'h1', type: 'expense', title: 'Thai takeaway', amount: 540, paidBy: 'u3', split: { mode: 'equal' }, date: '2026-07-06', settled: false },
+      { id: 'e6', hh: 'h1', type: 'expense', title: 'Städmaterial', amount: 249, paidBy: 'u1', split: { mode: 'equal' }, date: '2026-07-02', settled: true },
+      { id: 'e4', hh: 'h1', type: 'recurring', title: 'Internet — juli', amount: 449, paidBy: 'u1', split: { mode: 'equal' }, date: '2026-07-01', settled: false, recId: 'r2' },
+      { id: 'e10', hh: 'h1', type: 'iou', title: 'Taxi hem', amount: 120, from: 'u2', to: 'u1', date: '2026-06-30', settled: false },
+      { id: 'e9', hh: 'h1', type: 'recurring', title: 'Spotify Family — juni', amount: 169, paidBy: 'u2', split: { mode: 'equal' }, date: '2026-06-28', settled: false, recId: 'r3' },
+      { id: 'e3', hh: 'h1', type: 'recurring', title: 'Hyra — juli', amount: 24000, paidBy: 'u1', split: { mode: 'amount', vals: { u1: 9000, u2: 8000, u3: 7000 } }, date: '2026-06-15', settled: true, recId: 'r1' },
+      { id: 'e20', hh: 'h2', type: 'expense', title: 'Blommor på årsdagen', amount: 450, paidBy: 'u5', split: { mode: 'equal' }, date: '2026-07-08', settled: false },
+      { id: 'e21', hh: 'h2', type: 'recurring', title: 'Netflix — juli', amount: 229, paidBy: 'u1', split: { mode: 'equal' }, date: '2026-07-03', settled: false, recId: 'r5' }
+    ],
+    recurring: [
+      { id: 'r1', hh: 'h1', title: 'Hyra', amount: 24000, cadence: 'monthly', next: '2026-07-15', paidBy: 'u1', split: { mode: 'amount', vals: { u1: 9000, u2: 8000, u3: 7000 } }, active: true },
+      { id: 'r4', hh: 'h1', title: 'Städhjälp', amount: 1200, cadence: '2weeks', next: '2026-07-18', paidBy: 'u3', split: { mode: 'equal' }, active: true },
+      { id: 'r3', hh: 'h1', title: 'Spotify Family', amount: 169, cadence: 'monthly', next: '2026-07-28', paidBy: 'u2', split: { mode: 'equal' }, active: true },
+      { id: 'r2', hh: 'h1', title: 'Internet', amount: 449, cadence: 'monthly', next: '2026-08-01', paidBy: 'u1', split: { mode: 'equal' }, active: true },
+      { id: 'r5', hh: 'h2', title: 'Netflix', amount: 229, cadence: 'monthly', next: '2026-08-03', paidBy: 'u1', split: { mode: 'equal' }, active: true }
+    ]
+  };
+
+  componentDidMount() {
+    this._onResize = () => {
+      const wide = window.innerWidth >= 980;
+      if (wide !== this.state.wide) this.setState({ wide });
+    };
+    window.addEventListener('resize', this._onResize);
+    if (!this.props.layout) this._onResize();
+  }
+  componentWillUnmount() {
+    window.removeEventListener('resize', this._onResize);
+    clearTimeout(this._tt);
+  }
+
+  blankForm() {
+    return { type: 'expense', title: '', amount: '', paidBy: 'u1', iouDir: 'iowe', iouWith: null, mode: 'equal', vals: {}, cadence: 'monthly', date: '2026-08-01' };
+  }
+
+  fmt(n) { return Math.abs(n).toLocaleString('sv-SE', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + '\u00a0kr'; }
+  parseD(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d, 12); }
+  short(s) { const dt = this.parseD(s); return dt.getDate() + ' ' + ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'][dt.getMonth()]; }
+  daysUntil(s) { return Math.round((this.parseD(s) - this.TODAY) / 86400000); }
+  inDays(s) { const d = this.daysUntil(s); return d <= 0 ? 'idag' : d === 1 ? 'imorgon' : 'om ' + d + ' dagar'; }
+
+  hh() { return this.db.households.find(h => h.id === this.state.hhId); }
+  mem(id) { return this.db.members[id]; }
+
+  shares(e) {
+    const out = {};
+    if (e.type === 'iou') { out[e.from] = e.amount; return out; }
+    const hh = this.db.households.find(h => h.id === e.hh);
+    const ms = hh.members;
+    if (e.split.mode === 'equal') { ms.forEach(m => out[m] = e.amount / ms.length); }
+    else if (e.split.mode === 'percent') { ms.forEach(m => out[m] = e.amount * (e.split.vals[m] || 0) / 100); }
+    else { ms.forEach(m => out[m] = e.split.vals[m] || 0); }
+    return out;
+  }
+
+  debts(e) {
+    if (e.type === 'iou') return [{ from: e.from, to: e.to, amt: e.amount }];
+    const sh = this.shares(e); const out = [];
+    Object.keys(sh).forEach(m => { if (m !== e.paidBy && sh[m] > 0.004) out.push({ from: m, to: e.paidBy, amt: sh[m] }); });
+    return out;
+  }
+
+  pairKey(a, b) { return [a, b].sort().join('|'); }
+
+  openDebts(e) {
+    if (e.settled) return [];
+    const pp = e.paidPairs || {};
+    return this.debts(e).filter(d => !pp[this.pairKey(d.from, d.to)]);
+  }
+
+  netWith(mid, hhId) {
+    const id = hhId || this.state.hhId; let net = 0;
+    this.db.entries.filter(e => e.hh === id).forEach(e => {
+      this.openDebts(e).forEach(d => {
+        if (d.from === mid && d.to === 'u1') net += d.amt;
+        if (d.from === 'u1' && d.to === mid) net -= d.amt;
+      });
+    });
+    return net;
+  }
+
+  pairEntries(mid) {
+    return this.db.entries.filter(e => e.hh === this.state.hhId &&
+      this.openDebts(e).some(d => (d.from === mid && d.to === 'u1') || (d.from === 'u1' && d.to === mid)));
+  }
+
+  setToast(msg) {
+    clearTimeout(this._tt);
+    this.setState({ toast: msg });
+    this._tt = setTimeout(() => this.setState({ toast: '' }), 2600);
+  }
+
+  seg(label, active, onPick, wide) {
+    return { label, onPick, style: 'padding:8px ' + (wide ? '15px' : '13px') + ';border-radius:999px;font-size:12.5px;font-weight:600;transition:background .15s,color .15s;' + (active ? 'background:var(--ink);color:var(--bg)' : 'background:var(--chip);color:var(--sub)') };
+  }
+
+  avStyle(m, size) {
+    const s = size || 30;
+    return 'width:' + s + 'px;height:' + s + 'px;flex:none;border-radius:50%;background:' + m.bg + ';color:#2a2d26;display:grid;place-items:center;font-size:' + Math.round(s * 0.4) + 'px;font-weight:700;border:2px solid var(--card);margin-left:-6px';
+  }
+
+  splitLabel(split) {
+    return split.mode === 'equal' ? 'Delas lika' : split.mode === 'percent' ? 'Egna procent' : 'Egna belopp';
+  }
+
+  row(e) {
+    const payerIsYou = e.paidBy === 'u1';
+    const payer = e.paidBy ? this.mem(e.paidBy).name : '';
+    let meta, glyph, iconBg = 'var(--chip)', iconColor = 'var(--sub)';
+    if (e.type === 'iou') {
+      glyph = '\u21c4';
+      meta = (e.from === 'u1' ? 'L\u00e5n fr\u00e5n ' + this.mem(e.to).name : 'L\u00e5n till ' + this.mem(e.from).name) + ' \u00b7 ' + this.short(e.date);
+    } else if (e.type === 'recurring') {
+      glyph = '\u21bb'; iconBg = 'var(--soft)'; iconColor = 'var(--accent)';
+      meta = 'Autobokf\u00f6rd \u00b7 ' + (payerIsYou ? 'du betalar' : payer + ' betalar') + ' \u00b7 ' + this.short(e.date);
+    } else {
+      glyph = e.title.charAt(0).toUpperCase();
+      meta = (payerIsYou ? 'Du betalade' : payer + ' betalade') + ' \u00b7 ' + this.short(e.date);
+    }
+    let sub = '', subColor = 'var(--sub)';
+    const open = this.openDebts(e);
+    const allClosed = e.settled || (this.debts(e).length > 0 && open.length === 0);
+    if (allClosed) { sub = 'reglerad'; }
+    else {
+      let owed = 0, owe = 0;
+      open.forEach(d => { if (d.to === 'u1') owed += d.amt; if (d.from === 'u1') owe += d.amt; });
+      if (owe > 0.004) { sub = 'du \u00e4r skyldig ' + this.fmt(owe); subColor = 'var(--neg)'; }
+      else if (owed > 0.004) { sub = 'du ska f\u00e5 ' + this.fmt(owed); subColor = 'var(--pos)'; }
+      else if (e.paidPairs && Object.keys(e.paidPairs).length) { sub = 'din del reglerad'; }
+      else { sub = 'inte din del'; }
+    }
+    return {
+      title: e.title, meta, glyph, iconBg, iconColor,
+      amt: this.fmt(e.amount), sub, subColor,
+      op: allClosed ? '.5' : '1',
+      onOpen: () => this.setState({ sheet: { kind: 'entry', id: e.id } })
+    };
+  }
+
+  recShareOf(r) { const sh = this.shares({ ...r, hh: r.hh, type: 'expense' }); return sh['u1'] || 0; }
+  monthly(r) { return r.cadence === '2weeks' ? r.amount * 2 : r.cadence === 'weekly' ? r.amount * 4 : r.amount; }
+
+  saveEntry() {
+    const st = this.state.af;
+    const amt = parseFloat(String(st.amount).replace(',', '.'));
+    if (!amt || amt <= 0) { this.setToast('Ange ett belopp f\u00f6rst'); return; }
+    const hh = this.hh();
+    const title = st.title.trim() || (st.type === 'iou' ? 'L\u00e5n' : 'Utan titel');
+    const pv = (m) => parseFloat(String(st.vals[m] || '').replace(',', '.')) || 0;
+    if (st.type !== 'iou' && st.mode !== 'equal') {
+      const sum = hh.members.reduce((a, m) => a + pv(m), 0);
+      if (st.mode === 'percent' && Math.abs(sum - 100) > 0.5) { this.setToast('Procenten m\u00e5ste bli 100'); return; }
+      if (st.mode === 'amount' && Math.abs(sum - amt) > 0.05) { this.setToast('Delningen m\u00e5ste bli ' + this.fmt(amt)); return; }
+    }
+    const split = st.mode === 'equal' ? { mode: 'equal' } : { mode: st.mode, vals: Object.fromEntries(hh.members.map(m => [m, pv(m)])) };
+    const dateStr = '2026-07-12';
+    if (st.type === 'recurring') {
+      this.db.recurring.unshift({ id: 'r' + (this.nextId++), hh: hh.id, title, amount: amt, cadence: st.cadence, next: st.date, paidBy: st.paidBy, split, active: true });
+      this.setState({ sheet: null, tab: 'recurring', af: this.blankForm() });
+      this.setToast('P\u00e5 repeat \u2014 bokf\u00f6rs f\u00f6rst ' + this.short(st.date));
+    } else if (st.type === 'iou') {
+      const other = st.iouWith || hh.members.find(m => m !== 'u1');
+      const e = { id: 'e' + (this.nextId++), hh: hh.id, type: 'iou', title, amount: amt, date: dateStr, settled: false };
+      if (st.iouDir === 'iowe') { e.from = 'u1'; e.to = other; } else { e.from = other; e.to = 'u1'; }
+      this.db.entries.unshift(e);
+      this.setState({ sheet: null, af: this.blankForm() });
+      this.setToast('Antecknat');
+    } else {
+      this.db.entries.unshift({ id: 'e' + (this.nextId++), hh: hh.id, type: 'expense', title, amount: amt, paidBy: st.paidBy, split, date: dateStr, settled: false });
+      this.setState({ sheet: null, af: this.blankForm() });
+      this.setToast('Tillagd i loggboken');
+    }
+  }
+
+  setAf(patch) { this.setState({ af: { ...this.state.af, ...patch } }); }
+
+  renderVals() {
+    const dark = this.props.darkMode !== undefined ? !!this.props.darkMode : false;
+    const theme = (this.props.direction || 'mint') + (dark ? '-dark' : '');
+    const layout = this.props.layout || 'auto';
+    const embedded = layout === 'desktop' || layout === 'mobile';
+    const wide = layout === 'desktop' ? true : layout === 'mobile' ? false : this.state.wide;
+    const pos = embedded ? 'absolute' : 'fixed';
+    const showUp = this.props.upcomingPreview !== undefined ? !!this.props.upcomingPreview : true;
+    const tone = this.props.reminderTone || 'direct';
+    const hh = this.hh();
+    const others = hh.members.filter(m => m !== 'u1');
+    const tab = this.state.tab;
+
+    const nets = others.map(m => ({ id: m, net: this.netWith(m) }));
+    const overall = nets.reduce((a, n) => a + n.net, 0);
+    const square = Math.abs(overall) < 0.01;
+    const netLabel = square ? 'Allt \u00e4r kvitt' : overall > 0 ? 'Du ska f\u00e5 totalt' : 'Du \u00e4r skyldig totalt';
+    const netColor = square ? 'var(--sub)' : overall > 0 ? 'var(--pos)' : 'var(--neg)';
+    const netAmt = square ? '0 kr' : this.fmt(overall);
+    const openCount = this.db.entries.filter(e => e.hh === hh.id && this.openDebts(e).length > 0).length;
+    const netSub = openCount + ' \u00f6ppna poster i ' + hh.name;
+
+    const people = nets.map(({ id, net }) => {
+      const m = this.mem(id);
+      const sq = Math.abs(net) < 0.01;
+      return {
+        name: m.name, init: m.init,
+        avStyle: this.avStyle(m, 38).replace('margin-left:-6px', ''),
+        rel: sq ? 'kvitt' : net > 0 ? '\u00e4r skyldig dig' : 'du \u00e4r skyldig',
+        amt: sq ? '\u2014' : this.fmt(net),
+        amtColor: sq ? 'var(--sub)' : net > 0 ? 'var(--pos)' : 'var(--neg)',
+        onOpen: () => this.setState({ sheet: { kind: 'settle', id } })
+      };
+    });
+
+    const recs = this.db.recurring.filter(r => r.hh === hh.id && r.active).sort((a, b) => this.daysUntil(a.next) - this.daysUntil(b.next));
+    const upcoming = recs.filter(r => this.daysUntil(r.next) <= 30).slice(0, 4).map(r => ({
+      title: r.title,
+      when: 'Bokf\u00f6rs ' + this.short(r.next) + ' \u00b7 ' + this.inDays(r.next),
+      share: this.fmt(this.recShareOf(r)),
+      amt: this.fmt(r.amount),
+      onGo: () => this.setState({ tab: 'recurring', sheet: { kind: 'rec', id: r.id } })
+    }));
+
+    const hhEntries = this.db.entries.filter(e => e.hh === hh.id).sort((a, b) => b.date < a.date ? -1 : 1);
+    const recent = hhEntries.slice(0, 4).map(e => this.row(e));
+
+    const filterDefs = [['all', 'Alla'], ['expense', 'Utgifter'], ['iou', 'L\u00e5n'], ['recurring', 'Repeat']];
+    const filters = filterDefs.map(([id, label]) => this.seg(label, this.state.filter === id, () => this.setState({ filter: id })));
+    const filtered = hhEntries.filter(e => this.state.filter === 'all' || e.type === this.state.filter);
+    const groups = [];
+    filtered.forEach(e => {
+      const d = this.daysUntil(e.date);
+      const label = d === 0 ? 'Idag' : d === -1 ? 'Ig\u00e5r' : this.short(e.date);
+      let g = groups.find(x => x.label === label);
+      if (!g) { g = { label, rows: [] }; groups.push(g); }
+      g.rows.push(this.row(e));
+    });
+
+    const allRecs = this.db.recurring.filter(r => r.hh === hh.id);
+    const activeRecs = allRecs.filter(r => r.active);
+    const recTotal = this.fmt(activeRecs.reduce((a, r) => a + this.monthly(r), 0));
+    const recShare = this.fmt(activeRecs.reduce((a, r) => a + (r.cadence === '2weeks' ? 2 : 1) * this.recShareOf(r), 0));
+    const cadLabels = { monthly: 'Varje m\u00e5nad', '2weeks': 'Varannan vecka', weekly: 'Varje vecka' };
+    const recCards = allRecs.map(r => {
+      const len = r.cadence === '2weeks' ? 14 : r.cadence === 'weekly' ? 7 : 30;
+      const days = Math.max(0, this.daysUntil(r.next));
+      const pct = Math.round(Math.min(1, Math.max(0.04, 1 - days / len)) * 100) + '%';
+      const sh = this.shares({ ...r, type: 'expense' });
+      const avatars = hh.members.filter(m => (sh[m] || 0) > 0.004).map(m => ({ init: this.mem(m).init, style: this.avStyle(this.mem(m), 22) }));
+      return {
+        title: r.title, cadLabel: cadLabels[r.cadence] + ' \u00b7 ' + (r.paidBy === 'u1' ? 'du betalar' : this.mem(r.paidBy).name + ' betalar'),
+        amt: this.fmt(r.amount), per: r.cadence === '2weeks' ? '/ 2 v' : '/ m\u00e5n',
+        pct: r.active ? pct : '0%',
+        nextLabel: r.active ? 'Bokf\u00f6rs ' + this.inDays(r.next) : 'Pausad',
+        splitLabel: this.splitLabel(r.split), avatars,
+        op: r.active ? '1' : '.55',
+        toggleLabel: r.active ? 'Pausa' : '\u00c5teruppta',
+        onToggle: () => { r.active = !r.active; this.forceUpdate(); this.setToast(r.active ? r.title + ' \u00e5terupptagen' : r.title + ' pausad \u2014 inga fler autobokf\u00f6ringar'); },
+        onOpen: () => this.setState({ sheet: { kind: 'rec', id: r.id } })
+      };
+    });
+
+    const reminders = [];
+    recs.filter(r => this.daysUntil(r.next) <= 5).forEach(r => {
+      const share = this.fmt(this.recShareOf(r));
+      reminders.push({
+        title: tone === 'direct' ? r.title + ' dras ' + this.inDays(r.next) : r.title + ' bokf\u00f6rs ' + this.inDays(r.next),
+        body: tone === 'direct' ? 'Din del \u00e4r ' + share + '. Den bokf\u00f6rs automatiskt.' : 'Din del (' + share + ') hamnar i loggboken automatiskt \u2014 inget att g\u00f6ra.',
+        when: 'p\u00e5 g\u00e5ng',
+        actions: [{ label: 'Visa', onGo: () => this.setState({ tab: 'recurring', sheet: { kind: 'rec', id: r.id } }) }]
+      });
+    });
+    hhEntries.filter(e => !e.settled && e.type !== 'iou' && e.amount >= 1500 && this.daysUntil(e.date) >= -7).forEach(e => {
+      const sh = this.shares(e)['u1'] || 0;
+      const acts = [{ label: 'Visa', onGo: () => this.setState({ sheet: { kind: 'entry', id: e.id } }) }];
+      if (e.paidBy !== 'u1') acts.push({ label: 'G\u00f6r upp', onGo: () => this.setState({ sheet: { kind: 'settle', id: e.paidBy } }) });
+      reminders.push({
+        title: 'Stor utgift: ' + e.title,
+        body: tone === 'direct' ? this.mem(e.paidBy).name + ' la till ' + this.fmt(e.amount) + '. Din del \u00e4r ' + this.fmt(sh) + ' \u2014 g\u00f6r upp n\u00e4r du kan.' : this.mem(e.paidBy).name + ' la till ' + this.fmt(e.amount) + '. Din del \u00e4r ' + this.fmt(sh) + '. Ingen br\u00e5dska.',
+        when: this.short(e.date), actions: acts
+      });
+    });
+    nets.filter(n => Math.abs(n.net) >= 750).forEach(n => {
+      const nm = this.mem(n.id).name;
+      reminders.push({
+        title: tone === 'direct' ? (n.net < 0 ? 'Du \u00e4r skyldig ' + nm + ' ' + this.fmt(n.net) : nm + ' \u00e4r skyldig dig ' + this.fmt(n.net)) : 'Er nota med ' + nm + ' v\u00e4xer',
+        body: tone === 'direct' ? 'Saldot passerade 750 kr \u2014 dags att g\u00f6ra upp.' : 'Ert saldo passerade 750 kr. Kanske ett bra tillf\u00e4lle att g\u00f6ra upp.',
+        when: 'idag',
+        actions: [{ label: 'G\u00f6r upp', onGo: () => this.setState({ sheet: { kind: 'settle', id: n.id } }) }]
+      });
+    });
+
+    const mkTab = (id, label) => ({
+      label, dot: tab === id ? 'var(--accent)' : 'transparent',
+      color: tab === id ? 'var(--ink)' : 'var(--sub)',
+      onPick: () => this.setState({ tab: id })
+    });
+
+    const navItems = [['home', 'Hem'], ['ledger', 'Loggbok'], ['recurring', 'P\u00e5 repeat'], ['activity', 'Aktivitet']].map(([id, label]) => ({
+      label,
+      dot: tab === id ? 'var(--accent)' : 'transparent',
+      onPick: () => this.setState({ tab: id }),
+      style: 'display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;font-size:14px;font-weight:600;width:100%;box-sizing:border-box;' + (tab === id ? 'background:var(--card);border:1px solid var(--line);color:var(--ink)' : 'color:var(--sub);border:1px solid transparent')
+    }));
+
+    const sheet = this.state.sheet;
+    const vals = {};
+
+    if (sheet && sheet.kind === 'entry') {
+      const e = this.db.entries.find(x => x.id === sheet.id);
+      if (e) {
+        const sh = this.shares(e);
+        const rows = e.type === 'iou'
+          ? [{ name: this.mem(e.from).name, init: this.mem(e.from).init, avStyle: this.avStyle(this.mem(e.from), 30).replace('margin-left:-6px', ''), tag: '\u00b7 skyldig', share: this.fmt(e.amount) },
+             { name: this.mem(e.to).name, init: this.mem(e.to).init, avStyle: this.avStyle(this.mem(e.to), 30).replace('margin-left:-6px', ''), tag: '\u00b7 ska f\u00e5', share: '' }]
+          : hh.members.filter(m => (sh[m] || 0) > 0.004).map(m => ({
+              name: this.mem(m).name, init: this.mem(m).init,
+              avStyle: this.avStyle(this.mem(m), 30).replace('margin-left:-6px', ''),
+              tag: m === e.paidBy ? '\u00b7 betalade' : '', share: this.fmt(sh[m])
+            }));
+        vals.ed = {
+          typeLabel: e.type === 'iou' ? 'L\u00e5n' : e.type === 'recurring' ? 'P\u00e5 repeat' : 'Utgift',
+          date: this.short(e.date), title: e.title, amt: this.fmt(e.amount),
+          meta: e.type === 'iou' ? 'Informellt l\u00e5n \u2014 inget kvitto beh\u00f6vs' : (e.paidBy === 'u1' ? 'Du betalade' : this.mem(e.paidBy).name + ' betalade') + ' \u00b7 ' + this.splitLabel(e.split),
+          hasNote: !!e.recId,
+          note: e.recId ? 'Bokf\u00f6rd automatiskt fr\u00e5n \u201d' + (this.db.recurring.find(r => r.id === e.recId) || {}).title + '\u201d' : '',
+          rows,
+          toggleLabel: e.settled ? 'Reglerad \u2713 \u2014 tryck f\u00f6r att \u00f6ppna igen' : 'Markera som reglerad',
+          toggleStyle: 'width:100%;margin-top:14px;border-radius:16px;padding:14px 0;text-align:center;font-size:14.5px;font-weight:700;' + (e.settled ? 'background:var(--chip);color:var(--sub)' : 'background:var(--accent);color:#fff'),
+          onToggle: () => { e.settled = !e.settled; if (!e.settled) e.paidPairs = {}; this.forceUpdate(); this.setToast(e.settled ? 'Reglerad \u2014 snyggt' : '\u00d6ppnad igen'); }
+        };
+      }
+    }
+
+    if (sheet && sheet.kind === 'settle') {
+      const mid = sheet.id; const m = this.mem(mid);
+      const net = this.netWith(mid);
+      const items = this.pairEntries(mid).map(e => {
+        let signed = 0;
+        this.openDebts(e).forEach(d => { if (d.from === mid && d.to === 'u1') signed += d.amt; if (d.from === 'u1' && d.to === mid) signed -= d.amt; });
+        return { title: e.title, date: this.short(e.date), amt: (signed >= 0 ? '+' : '\u2212') + this.fmt(signed), color: signed >= 0 ? 'var(--pos)' : 'var(--neg)' };
+      });
+      vals.ss = {
+        name: m.name,
+        netLabel: Math.abs(net) < 0.01 ? 'Allt \u00e4r kvitt' : net > 0 ? m.name + ' \u00e4r skyldig dig' : 'Du \u00e4r skyldig ' + m.name,
+        amt: this.fmt(net), netColor: net > 0 ? 'var(--pos)' : net < 0 ? 'var(--neg)' : 'var(--sub)',
+        items,
+        onSettle: () => {
+          this.pairEntries(mid).forEach(e => {
+            e.paidPairs = e.paidPairs || {};
+            e.paidPairs[this.pairKey('u1', mid)] = true;
+            if (this.openDebts(e).length === 0) e.settled = true;
+          });
+          this.setState({ sheet: null });
+          this.setToast('Uppgjort med ' + m.name + ' \u2014 rent bord');
+        }
+      };
+    }
+
+    if (sheet && sheet.kind === 'rec') {
+      const r = this.db.recurring.find(x => x.id === sheet.id);
+      if (r) {
+        const sh = this.shares({ ...r, type: 'expense' });
+        const posts = this.db.entries.filter(e => e.recId === r.id).map(e => ({
+          title: e.title, amt: this.fmt(e.amount), status: e.settled ? 'reglerad' : '\u00f6ppen'
+        }));
+        vals.rd = {
+          title: r.title, amt: this.fmt(r.amount),
+          cadLabel: (r.cadence === '2weeks' ? 'Varannan vecka' : r.cadence === 'weekly' ? 'Varje vecka' : 'Varje m\u00e5nad') + ' \u00b7 ' + (r.paidBy === 'u1' ? 'du betalar' : this.mem(r.paidBy).name + ' betalar'),
+          nextTitle: r.active ? 'N\u00e4sta: ' + r.title + ' \u2014 ' + this.short(r.next) : 'Pausad \u2014 ingen kommande bokf\u00f6ring',
+          nextWhen: r.active ? 'Bokf\u00f6rs automatiskt ' + this.inDays(r.next) : '\u00c5teruppta f\u00f6r att schemal\u00e4gga n\u00e4sta period',
+          share: this.fmt(sh['u1'] || 0),
+          rows: hh.members.filter(m => (sh[m] || 0) > 0.004).map(m => ({
+            name: this.mem(m).name, init: this.mem(m).init,
+            avStyle: this.avStyle(this.mem(m), 30).replace('margin-left:-6px', ''),
+            tag: m === r.paidBy ? '\u00b7 betalar' : '', share: this.fmt(sh[m])
+          })),
+          hasPosts: posts.length > 0, posts,
+          toggleLabel: r.active ? 'Pausa autobokf\u00f6ring' : '\u00c5teruppta autobokf\u00f6ring',
+          onToggle: () => { r.active = !r.active; this.forceUpdate(); this.setToast(r.active ? r.title + ' \u00e5terupptagen' : r.title + ' pausad'); }
+        };
+      }
+    }
+
+    const hhRows = this.db.households.map(h => {
+      const net = h.members.filter(m => m !== 'u1').reduce((a, m) => a + this.netWith(m, h.id), 0);
+      const sq = Math.abs(net) < 0.01;
+      const active = h.id === hh.id;
+      return {
+        name: h.name, init: h.name.charAt(0),
+        membersLabel: h.members.map(m => this.mem(m).name).join(', '),
+        net: sq ? '\u2014' : this.fmt(net),
+        netColor: sq ? 'var(--sub)' : net > 0 ? 'var(--pos)' : 'var(--neg)',
+        netSub: sq ? 'kvitt' : net > 0 ? 'du ska f\u00e5' : 'du \u00e4r skyldig',
+        style: 'display:flex;align-items:center;gap:12px;width:100%;border-radius:16px;padding:12px 14px;border:1.5px solid ' + (active ? 'var(--accent)' : 'var(--line)') + ';background:var(--card)',
+        onPick: () => { this.setState({ hhId: h.id, sheet: null, tab: 'home', filter: 'all' }); this.setToast('Bytte till ' + h.name); }
+      };
+    });
+
+    const af = this.state.af;
+    const amt = parseFloat(String(af.amount).replace(',', '.')) || 0;
+    const afTypes = [['expense', 'Utgift'], ['iou', 'L\u00e5n'], ['recurring', '\u00c5terkommande']].map(([id, label]) =>
+      this.seg(label, af.type === id, () => this.setAf({ type: id }), true));
+    const afIouDirs = [['iowe', 'Jag \u00e4r skyldig'], ['theyowe', 'Skyldig mig']].map(([id, label]) =>
+      this.seg(label, af.iouDir === id, () => this.setAf({ iouDir: id }), true));
+    const iouWith = af.iouWith || others[0];
+    const afIouPeople = others.map(m => this.seg(this.mem(m).name, iouWith === m, () => this.setAf({ iouWith: m }), true));
+    const afPayers = hh.members.map(m => this.seg(this.mem(m).name, af.paidBy === m, () => this.setAf({ paidBy: m }), true));
+    const afModes = [['equal', 'Lika'], ['percent', '%'], ['amount', 'kr']].map(([id, label]) =>
+      this.seg(label, af.mode === id, () => this.setAf({ mode: id })));
+    const afCadences = [['monthly', 'Varje m\u00e5nad'], ['2weeks', 'Varannan vecka'], ['weekly', 'Varje vecka']].map(([id, label]) =>
+      this.seg(label, af.cadence === id, () => this.setAf({ cadence: id }), true));
+    const afRows = hh.members.map(m => ({
+      name: this.mem(m).name, init: this.mem(m).init,
+      avStyle: this.avStyle(this.mem(m), 28).replace('margin-left:-6px', ''),
+      showInput: af.mode !== 'equal', showText: af.mode === 'equal',
+      share: amt > 0 ? this.fmt(amt / hh.members.length) : '\u2014',
+      val: af.vals[m] || '', unit: af.mode === 'percent' ? '%' : 'kr',
+      onVal: (ev) => this.setAf({ vals: { ...af.vals, [m]: ev.target.value } })
+    }));
+    let afHint = '', afHintColor = 'var(--sub)';
+    const pv = (m) => parseFloat(String(af.vals[m] || '').replace(',', '.')) || 0;
+    if (af.mode === 'equal') afHint = amt > 0 ? this.fmt(amt / hh.members.length) + ' var' : 'Alla betalar lika mycket';
+    else {
+      const sum = hh.members.reduce((a, m) => a + pv(m), 0);
+      if (af.mode === 'percent') { afHint = sum + ' % av 100 % f\u00f6rdelat'; afHintColor = Math.abs(sum - 100) <= 0.5 ? 'var(--pos)' : 'var(--neg)'; }
+      else { afHint = this.fmt(sum) + ' av ' + this.fmt(amt) + ' f\u00f6rdelat'; afHintColor = Math.abs(sum - amt) <= 0.05 ? 'var(--pos)' : 'var(--neg)'; }
+    }
+
+    const saveLabel = af.type === 'recurring' ? 'S\u00e4tt p\u00e5 repeat' : af.type === 'iou' ? 'Anteckna' : 'L\u00e4gg i loggboken';
+
+    return Object.assign({
+      theme, wide, narrow: !wide,
+      rootStyle: (embedded ? 'position:relative;height:100%;overflow:hidden;' : 'min-height:100vh;') + 'background:var(--bg);color:var(--ink)',
+      scrollWrapStyle: embedded ? 'height:100%;overflow-y:auto' : '',
+      shellStyle: wide
+        ? 'max-width:1240px;margin:0 auto;display:grid;grid-template-columns:220px minmax(0,1fr) 300px;gap:30px;padding:28px 30px 56px;align-items:start;box-sizing:border-box'
+        : 'max-width:480px;margin:0 auto;display:flex;flex-direction:column' + (embedded ? '' : ';min-height:100vh'),
+      mainStyle: wide
+        ? 'display:flex;flex-direction:column;gap:22px;max-width:640px'
+        : 'padding:6px 18px 130px;display:flex;flex-direction:column;gap:22px',
+      tabBarStyle: 'position:' + pos + ';left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);z-index:30',
+      sheetWrapStyle: 'position:' + pos + ';inset:0;z-index:50;display:flex;flex-direction:column;' + (wide ? 'align-items:center;justify-content:center;padding:24px' : 'justify-content:flex-end'),
+      sheetBoxStyle: 'position:relative;box-sizing:border-box;background:var(--bg);overflow-y:auto;padding:10px 18px 26px;animation:sheetUp .32s cubic-bezier(.2,.9,.3,1);' + (wide ? 'border-radius:24px;width:min(480px,100%);max-height:86%;box-shadow:0 30px 70px -30px rgba(20,26,21,.55)' : 'border-radius:26px 26px 0 0;width:100%;max-height:90%'),
+      toastStyle: 'position:' + pos + ';left:50%;transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--bg);font-size:13px;font-weight:600;padding:10px 16px;border-radius:999px;white-space:nowrap;animation:toastIn .25s ease;bottom:' + (wide ? '28px' : '104px'),
+      hhName: hh.name, hhInitial: hh.name.charAt(0),
+      hhAvatars: hh.members.map(m => ({ init: this.mem(m).init, style: this.avStyle(this.mem(m), 28) })),
+      openHH: () => this.setState({ sheet: { kind: 'hh' } }),
+      tHome: tab === 'home', tLedger: tab === 'ledger', tRec: tab === 'recurring', tAct: tab === 'activity',
+      netLabel, netAmt, netColor, netSub,
+      people, upcoming, navItems,
+      showUpcomingHome: showUp && upcoming.length > 0 && !wide,
+      showUpcomingLedger: showUp && upcoming.length > 0 && this.state.filter !== 'iou' && this.state.filter !== 'expense' && !wide,
+      recent, goLedger: () => this.setState({ tab: 'ledger' }),
+      filters, groups,
+      recTotal, recShare, recCards,
+      reminders, hasReminders: reminders.length > 0, noReminders: reminders.length === 0,
+      tabsL: [mkTab('home', 'Hem'), mkTab('ledger', 'Loggbok')],
+      tabsR: [mkTab('recurring', 'Repeat'), mkTab('activity', 'Aktivitet')],
+      openAdd: () => this.setState({ sheet: { kind: 'add' } }),
+      hasSheet: !!sheet,
+      closeSheet: () => this.setState({ sheet: null }),
+      shHH: sheet && sheet.kind === 'hh', shAdd: sheet && sheet.kind === 'add',
+      shEntry: sheet && sheet.kind === 'entry' && !!vals.ed,
+      shSettle: sheet && sheet.kind === 'settle' && !!vals.ss,
+      shRec: sheet && sheet.kind === 'rec' && !!vals.rd,
+      hhRows, toastSoon: () => this.setToast('Inte i den h\u00e4r prototypen \u2014 \u00e4n'),
+      afTypes, afIouDirs, afIouPeople, afPayers, afModes, afCadences, afRows, afHint, afHintColor,
+      afAmount: af.amount, onAfAmount: (e) => this.setAf({ amount: e.target.value }),
+      afTitle: af.title, onAfTitle: (e) => this.setAf({ title: e.target.value }),
+      afTitlePh: af.type === 'recurring' ? 'Hyra, internet, Spotify\u2026' : af.type === 'iou' ? 'Vad g\u00e4ller det?' : 'Mat, middag, biljetter\u2026',
+      afIsIou: af.type === 'iou', afIsSplit: af.type !== 'iou', afIsRec: af.type === 'recurring',
+      afDate: af.date, onAfDate: (e) => this.setAf({ date: e.target.value }),
+      onSave: () => this.saveEntry(),
+      saveLabel,
+      saveStyle: 'width:100%;margin-top:20px;background:var(--accent);color:#fff;border-radius:16px;padding:14px 0;text-align:center;font-size:14.5px;font-weight:700;opacity:' + (amt > 0 ? '1' : '.45'),
+      toast: this.state.toast, hasToast: !!this.state.toast,
+      ed: vals.ed || {}, ss: vals.ss || {}, rd: vals.rd || {}
+    });
+  }
+}
+</script>
+</body>
+</html>

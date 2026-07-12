@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f0efec;font-family:'Bricolage Grotesque',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#1c2620}
+a{color:#2e7d5b}a:hover{color:#1c2620}
+</style>
+</helmet>
+<div style="max-width:880px;margin:0 auto;padding:56px 32px 96px;display:flex;flex-direction:column;gap:40px">
+
+  <div>
+    <div style="font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#6d7268">Developer handoff</div>
+    <h1 style="font-size:34px;font-weight:700;letter-spacing:-.02em;margin:8px 0 10px">Settl &rarr; shadcn/ui</h1>
+    <p style="font-size:15px;line-height:1.6;color:#4a5248;margin:0;max-width:640px">How to rebuild the Settl prototype on the shadcn/ui stack (Next.js + Tailwind + Radix). The prototype's design tokens and components map nearly 1:1 &mdash; this doc gives the theme CSS, the component mapping, and the behavioral details that are easy to miss.</p>
+  </div>
+
+  <div style="background:#fff;border:1px solid #e0dfd9;border-radius:16px;padding:24px 28px">
+    <h2 style="font-size:18px;font-weight:700;margin:0 0 12px">1 &middot; Stack &amp; fonts</h2>
+    <ul style="font-size:14px;line-height:1.7;color:#4a5248;margin:0;padding-left:20px">
+      <li><strong>shadcn/ui</strong> default preset, CSS variables mode (<code style="font-family:'Spline Sans Mono',monospace;font-size:12.5px;background:#f0efec;padding:2px 6px;border-radius:4px">cssVariables: true</code>)</li>
+      <li><strong>Fonts</strong> via <code style="font-family:'Spline Sans Mono',monospace;font-size:12.5px;background:#f0efec;padding:2px 6px;border-radius:4px">next/font</code>: Bricolage Grotesque (UI, headings) + Spline Sans Mono (all amounts &mdash; map to <code style="font-family:'Spline Sans Mono',monospace;font-size:12.5px;background:#f0efec;padding:2px 6px;border-radius:4px">font-mono</code>)</li>
+      <li><strong>Radius</strong>: the design is rounder than shadcn default &mdash; set <code style="font-family:'Spline Sans Mono',monospace;font-size:12.5px;background:#f0efec;padding:2px 6px;border-radius:4px">--radius: 1rem</code></li>
+      <li><strong>Locale</strong>: sv-SE throughout; amounts via <code style="font-family:'Spline Sans Mono',monospace;font-size:12.5px;background:#f0efec;padding:2px 6px;border-radius:4px">toLocaleString('sv-SE')</code> + non-breaking space before &rdquo;kr&rdquo;</li>
+    </ul>
+  </div>
+
+  <div style="background:#fff;border:1px solid #e0dfd9;border-radius:16px;padding:24px 28px">
+    <h2 style="font-size:18px;font-weight:700;margin:0 0 6px">2 &middot; Theme tokens (globals.css)</h2>
+    <p style="font-size:13.5px;line-height:1.6;color:#4a5248;margin:0 0 16px">Mint is the default direction. Paper and Citrus ship as opt-in theme classes. shadcn has no &rdquo;success&rdquo; token &mdash; Settl needs one for &rdquo;owed to you&rdquo; amounts, so <code style="font-family:'Spline Sans Mono',monospace;font-size:12.5px;background:#f0efec;padding:2px 6px;border-radius:4px">--success</code> is added as a custom token.</p>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <span style="width:26px;height:26px;border-radius:8px;background:#f4f6f2;border:1px solid #e0dfd9"></span>
+      <span style="width:26px;height:26px;border-radius:8px;background:#2e7d5b"></span>
+      <span style="width:26px;height:26px;border-radius:8px;background:#e2f0e6"></span>
+      <span style="width:26px;height:26px;border-radius:8px;background:#bb5433"></span>
+      <span style="width:26px;height:26px;border-radius:8px;background:#141a16"></span>
+      <span style="width:26px;height:26px;border-radius:8px;background:#3f9d72"></span>
+    </div>
+<pre style="background:#141a16;color:#d9e2d9;border-radius:12px;padding:18px 20px;font-family:'Spline Sans Mono',monospace;font-size:12px;line-height:1.65;overflow-x:auto;margin:0">:root {                            /* Mint, light */
+  --background: #f4f6f2;  --foreground: #1c2620;
+  --card: #ffffff;        --card-foreground: #1c2620;
+  --muted: #eaeee6;       --muted-foreground: #64715f;
+  --border: #e2e7dd;      --input: #e2e7dd;
+  --primary: #2e7d5b;     --primary-foreground: #ffffff;
+  --accent: #e2f0e6;      --accent-foreground: #2e7d5b;
+  --destructive: #bb5433; --destructive-foreground: #ffffff;
+  --success: #2e7d5b;     --ring: #2e7d5b;
+  --radius: 1rem;
+}
+.dark {                            /* Mint, dark */
+  --background: #141a16;  --foreground: #e6ece5;
+  --card: #1c241e;        --card-foreground: #e6ece5;
+  --muted: #232c25;       --muted-foreground: #8fa091;
+  --border: #29332b;      --input: #29332b;
+  --primary: #3f9d72;     --primary-foreground: #ffffff;
+  --accent: #213229;      --accent-foreground: #5fbf94;
+  --destructive: #e08663; --success: #5fbf94;  --ring: #3f9d72;
+}
+
+.theme-paper {                     /* Paper, light */
+  --background: #f8f3ea;  --foreground: #2c221a;
+  --card: #fffdf6;        --muted: #f0e9da;  --muted-foreground: #83725e;
+  --border: #eadfca;      --primary: #bd5d38;
+  --accent: #f6e4d7;      --accent-foreground: #bd5d38;
+  --destructive: #bd5d38; --success: #527d4c;
+}
+.theme-paper.dark {
+  --background: #1d1813;  --foreground: #efe7da;
+  --card: #261f19;        --muted: #2d261e;  --muted-foreground: #a4917b;
+  --border: #352c22;      --primary: #cf7448;
+  --accent: #372a1f;      --accent-foreground: #e08a5f;
+  --destructive: #e08a5f; --success: #8fbf85;
+}
+
+.theme-citrus {                    /* Citrus, light */
+  --background: #f3f3f0;  --foreground: #1a1b17;
+  --card: #ffffff;        --muted: #eaeae2;  --muted-foreground: #6d6f65;
+  --border: #e3e3db;      --primary: #5c7000;
+  --accent: #eef2d3;      --accent-foreground: #5c7000;
+  --destructive: #b04a2f; --success: #5c7000;
+}
+.theme-citrus.dark {
+  --background: #171814;  --foreground: #eaebe3;
+  --card: #20211c;        --muted: #262720;  --muted-foreground: #989b8d;
+  --border: #2c2d26;      --primary: #8aa626;
+  --accent: #272b18;      --accent-foreground: #aec84a;
+  --destructive: #e07a54; --success: #aec84a;
+}</pre>
+  </div>
+
+  <div style="background:#fff;border:1px solid #e0dfd9;border-radius:16px;padding:24px 28px">
+    <h2 style="font-size:18px;font-weight:700;margin:0 0 14px">3 &middot; Component mapping</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:13.5px;line-height:1.5">
+      <thead>
+        <tr style="text-align:left;color:#6d7268;font-size:11px;letter-spacing:.08em;text-transform:uppercase">
+          <th style="padding:8px 12px 8px 0;border-bottom:1px solid #e0dfd9;font-weight:600">Prototype element</th>
+          <th style="padding:8px 12px;border-bottom:1px solid #e0dfd9;font-weight:600">shadcn/ui</th>
+          <th style="padding:8px 0 8px 12px;border-bottom:1px solid #e0dfd9;font-weight:600">Notes</th>
+        </tr>
+      </thead>
+      <tbody style="color:#3c443c">
+        <tr><td style="padding:9px 12px 9px 0;border-bottom:1px solid #efeeea;font-weight:600">Bottom sheets (mobil)</td><td style="padding:9px 12px;border-bottom:1px solid #efeeea;font-family:'Spline Sans Mono',monospace;font-size:12px">Drawer (vaul)</td><td style="padding:9px 0 9px 12px;border-bottom:1px solid #efeeea">Ny post, postdetalj, g&ouml;r upp, byt hush&aring;ll</td></tr>
+        <tr><td style="padding:9px 12px 9px 0;border-bottom:1px solid #efeeea;font-weight:600">Same sheets (desktop)</td><td style="padding:9px 12px;border-bottom:1px solid #efeeea;font-family:'Spline Sans Mono',monospace;font-size:12px">Dialog</td><td style="padding:9px 0 9px 12px;border-bottom:1px solid #efeeea">Centered, width 480px; share one form component</td></tr>
+        <tr><td style="padding:9px 12px 9px 0;border-bottom:1px solid #efeeea;font-weight:600">Typv&auml;ljare (Utgift/L&aring;n/&Aring;terkommande)</td><td style="padding:9px 12px;border-bottom:1px solid #efeeea;font-family:'Spline Sans Mono',monospace;font-size:12px">Tabs</td><td style="padding:9px 0 9px 12px;border-bottom:1px solid #efeeea">Pill style: selected = foreground bg, background text</td></tr>
+        <tr><td style="padding:9px 12px 9px 0;border-bottom:1px solid #efeeea;font-weight:600">Delning Lika/%/kr, betalare, kadens</td><td style="padding:9px 12px;border-bottom:1px solid #efeeea;font-family:'Spline Sans Mono',monospace;font-size:12px">ToggleGroup</td><td style="padding:9px 0 9px 12px;border-bottom:1px solid #efeeea">type="single", required</td></tr>
+        <tr><td style="padding:9px 12px 9px 0;border-bottom:1px solid #efeeea;font-weight:600">Person-/postrader</td><td style="padding:9px 12px;border-bottom:1px solid #efeeea;font-family:'Spline Sans Mono',monospace;font-size:12px">Card + Avatar</td><td style="padding:9px 0 9px 12px;border-bottom:1px solid #efeeea">Whole row is a button; amounts in font-mono</td></tr>
+        <tr><td style="padding:9px 12px 9px 0;border-bottom:1px solid #efeeea;font-weight:600">&Aring;terkommande-kort, cykelindikator</td><td style="padding:9px 12px;border-bottom:1px solid #efeeea;font-family:'Spline Sans Mono',monospace;font-size:12px">Card + Progress</td><td style="padding:9px 0 9px 12px;border-bottom:1px solid #efeeea">Progress = elapsed share of current cycle</td></tr>
+        <tr><td style="padding:9px 12px 9px 0;border-bottom:1px solid #efeeea;font-weight:600">Kommande autobokf&ouml;ringar (streckade)</td><td style="padding:9px 12px;border-bottom:1px solid #efeeea;font-family:'Spline Sans Mono',monospace;font-size:12px">Card (custom)</td><td style="padding:9px 0 9px 12px;border-bottom:1px solid #efeeea">border-dashed variant &mdash; ghost state, not clickable rows in the real ledger</td></tr>
+        <tr><td style="padding:9px 12px 9px 0;border-bottom:1px solid #efeeea;font-weight:600">Knuffar (nudges)</td><td style="padding:9px 12px;border-bottom:1px solid #efeeea;font-family:'Spline Sans Mono',monospace;font-size:12px">Card + Button (secondary)</td><td style="padding:9px 0 9px 12px;border-bottom:1px solid #efeeea">In-app feed; push later via same event model</td></tr>
+        <tr><td style="padding:9px 12px 9px 0;border-bottom:1px solid #efeeea;font-weight:600">Toasts</td><td style="padding:9px 12px;border-bottom:1px solid #efeeea;font-family:'Spline Sans Mono',monospace;font-size:12px">Sonner</td><td style="padding:9px 0 9px 12px;border-bottom:1px solid #efeeea">Short confirmations (&rdquo;Tillagd i loggboken&rdquo;)</td></tr>
+        <tr><td style="padding:9px 12px 9px 0;border-bottom:1px solid #efeeea;font-weight:600">Byt hush&aring;ll</td><td style="padding:9px 12px;border-bottom:1px solid #efeeea;font-family:'Spline Sans Mono',monospace;font-size:12px">DropdownMenu / Drawer</td><td style="padding:9px 0 9px 12px;border-bottom:1px solid #efeeea">Keep multi-household: user can belong to several</td></tr>
+        <tr><td style="padding:9px 12px 9px 0;border-bottom:1px solid #efeeea;font-weight:600">Ledgerfilter (Alla/Utgifter/&hellip;)</td><td style="padding:9px 12px;border-bottom:1px solid #efeeea;font-family:'Spline Sans Mono',monospace;font-size:12px">ToggleGroup / Badge</td><td style="padding:9px 0 9px 12px;border-bottom:1px solid #efeeea">Pill chips, single-select</td></tr>
+        <tr><td style="padding:9px 12px 9px 0;font-weight:600">Sidomeny (desktop) / flikrad (mobil)</td><td style="padding:9px 12px;font-family:'Spline Sans Mono',monospace;font-size:12px">custom nav</td><td style="padding:9px 0 9px 12px">No stock shadcn component; simple links + active state</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="background:#fff;border:1px solid #e0dfd9;border-radius:16px;padding:24px 28px">
+    <h2 style="font-size:18px;font-weight:700;margin:0 0 12px">4 &middot; Behavior that must survive the port</h2>
+    <ul style="font-size:14px;line-height:1.75;color:#4a5248;margin:0;padding-left:20px">
+      <li><strong>Per-pair settlement.</strong> An entry is not a single &rdquo;settled&rdquo; boolean. Each entry holds debts (from &rarr; to). Settling up with one person closes only the debts between that pair; a 3-way expense stays open for the third person. The entry counts as settled when all its debts are closed.</li>
+      <li><strong>Recurring = template + posts.</strong> A recurring cost is a template (amount, cadence, split, payer, next date). Each cycle it posts an ordinary ledger entry and re-splits. Editing the split affects future cycles only. Pausing stops posting without deleting history.</li>
+      <li><strong>Pure ledger.</strong> No payments in-app. &rdquo;Markera som reglerad&rdquo; is the only settlement action; copy references Swish/kontanter/bank&ouml;verf&ouml;ring.</li>
+      <li><strong>Event-triggered nudges only.</strong> Three triggers: recurring posts within 5 days; a new expense &ge; 1&nbsp;500 kr; a pair balance crossing 750 kr. Two copy tones (gentle/direct) exist as a setting. Never scheduled daily reminders.</li>
+      <li><strong>Open trust model.</strong> Anyone in the household adds entries directly &mdash; no approval flow anywhere.</li>
+      <li><strong>Split validation.</strong> Percent must sum to 100 (&plusmn;0.5), exact amounts must sum to the total (&plusmn;0.05 kr); the running &rdquo;f&ouml;rdelat&rdquo; hint flips between success/destructive color.</li>
+    </ul>
+  </div>
+
+  <div style="background:#fff;border:1px solid #e0dfd9;border-radius:16px;padding:24px 28px">
+    <h2 style="font-size:18px;font-weight:700;margin:0 0 12px">5 &middot; Suggested data model</h2>
+<pre style="background:#141a16;color:#d9e2d9;border-radius:12px;padding:18px 20px;font-family:'Spline Sans Mono',monospace;font-size:12px;line-height:1.65;overflow-x:auto;margin:0">type Household = { id: string; name: string; memberIds: string[] }
+
+type Split =
+  | { mode: 'equal' }
+  | { mode: 'percent' | 'amount'; vals: Record&lt;MemberId, number&gt; }
+
+type Entry = {
+  id: string; householdId: string
+  type: 'expense' | 'iou' | 'recurring-post'
+  title: string; amount: number; date: string
+  paidBy?: MemberId              // expense / recurring-post
+  from?: MemberId; to?: MemberId // iou
+  split?: Split
+  recurringId?: string           // link to template
+  settledPairs: PairKey[]        // per-pair settlement, not a boolean
+}
+
+type Recurring = {
+  id: string; householdId: string
+  title: string; amount: number
+  cadence: 'monthly' | 'biweekly' | 'weekly'
+  nextPostDate: string; paidBy: MemberId
+  split: Split; active: boolean
+}</pre>
+  </div>
+
+  <div style="font-size:12.5px;color:#6d7268;line-height:1.6">Prototypes: <a href="Settl Web.dc.html">Settl Web</a> (desktop + mobil) &middot; <a href="Settl App.dc.html">Settl App</a> (responsiv, fristående) &middot; <a href="Settl Prototype.dc.html">Original (engelska)</a></div>
+</div>
+</x-dc>
+</body>
+</html>

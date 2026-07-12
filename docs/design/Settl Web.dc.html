@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#e7e5e0;font-family:'Bricolage Grotesque',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#1c2620}a:hover{color:#2e7d5b}
+button{cursor:pointer;font:inherit;color:inherit;background:none;border:none;padding:0;margin:0}
+</style>
+</helmet>
+<div style="padding:40px 48px 80px;display:flex;flex-direction:column;gap:28px;color:#1c2620">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px">
+    <div>
+      <div style="font-size:26px;font-weight:700;letter-spacing:-.02em">Settl &mdash; webbapp</div>
+      <div style="font-size:13px;color:#6d7268;margin-top:3px">Samma app i tv&aring; sk&auml;rmstorlekar. B&aring;da &auml;r interaktiva &mdash; klicka runt, l&auml;gg till poster, g&ouml;r upp.</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#6d7268">Stil</span>
+      <div style="display:flex;gap:6px">
+        <sc-for list="{{ dirChips }}" as="c" hint-placeholder-count="3"><button onClick="{{ c.onPick }}" style="{{ c.style }}">{{ c.label }}</button></sc-for>
+      </div>
+      <span style="width:1px;height:20px;background:rgba(0,0,0,.14);margin:0 4px"></span>
+      <div style="display:flex;gap:6px">
+        <sc-for list="{{ modeChips }}" as="c" hint-placeholder-count="2"><button onClick="{{ c.onPick }}" style="{{ c.style }}">{{ c.label }}</button></sc-for>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:56px;align-items:flex-start;flex-wrap:wrap">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#6d7268">Desktop &middot; 1240</div>
+      <div style="width:1240px;max-width:100%;height:920px;border-radius:18px;overflow:hidden;border:1px solid rgba(0,0,0,.1);box-shadow:0 34px 80px -36px rgba(20,26,21,.45);background:#fff">
+        <dc-import name="Settl App" layout="desktop" direction="{{ theme }}" dark-mode="{{ dark }}" reminder-tone="{{ tone }}" style="width:100%;height:100%" hint-size="1240px,920px"></dc-import>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#6d7268">Mobil &middot; 400</div>
+      <div style="width:400px;height:850px;border-radius:34px;overflow:hidden;border:1px solid rgba(0,0,0,.12);box-shadow:0 34px 80px -36px rgba(20,26,21,.45);background:#fff">
+        <dc-import name="Settl App" layout="mobile" direction="{{ theme }}" dark-mode="{{ dark }}" reminder-tone="{{ tone }}" style="width:100%;height:100%" hint-size="400px,850px"></dc-import>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;direction&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;mint&quot;,&quot;paper&quot;,&quot;citrus&quot;],&quot;default&quot;:&quot;mint&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Utseende&quot;},&quot;darkMode&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Utseende&quot;},&quot;reminderTone&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;gentle&quot;,&quot;direct&quot;],&quot;default&quot;:&quot;direct&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Beteende&quot;}}">
+class Component extends DCLogic {
+  state = { themeOverride: null, darkOverride: null };
+  chip(label, active, onPick) {
+    return {
+      label, onPick,
+      style: 'padding:7px 14px;border-radius:999px;font-size:12.5px;font-weight:600;border:1px solid rgba(0,0,0,.12);transition:background .15s;' + (active ? 'background:#1c2620;color:#f4f6f2;border-color:#1c2620' : 'background:#fff;color:#5a6055')
+    };
+  }
+  renderVals() {
+    const theme = this.state.themeOverride || this.props.direction || 'mint';
+    const dark = this.state.darkOverride !== null ? this.state.darkOverride : (this.props.darkMode !== undefined ? !!this.props.darkMode : false);
+    const tone = this.props.reminderTone || 'direct';
+    const dirChips = [['mint', 'Mint'], ['paper', 'Papper'], ['citrus', 'Citrus']].map(([id, label]) =>
+      this.chip(label, theme === id, () => this.setState({ themeOverride: id })));
+    const modeChips = [[false, 'Ljus'], [true, 'M\u00f6rk']].map(([val, label]) =>
+      this.chip(label, dark === val, () => this.setState({ darkOverride: val })));
+    return { theme, tone, dark, dirChips, modeChips };
+  }
+}
+</script>
+</body>
+</html>
