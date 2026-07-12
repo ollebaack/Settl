@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Settl.Api.Data;
 using Settl.Api.Domain;
+using Settl.Api.Dtos;
 using Settl.Api.Services;
 
 namespace Settl.Api.Features;
@@ -58,7 +59,9 @@ public static class NudgesEndpoints
 
             var nudges = NudgeCalculator.Build(tone ?? "direct", today, recurrings, expenses, balances);
             return Results.Ok(nudges);
-        }).WithName("GetNudges");
+        }).WithName("GetNudges")
+            .Produces<List<NudgeDto>>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         return app;
     }

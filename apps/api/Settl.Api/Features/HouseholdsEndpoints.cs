@@ -39,7 +39,9 @@ public static class HouseholdsEndpoints
             }
 
             return Results.Ok(result);
-        }).WithName("GetHouseholds");
+        }).WithName("GetHouseholds")
+            .Produces<List<HouseholdListItemDto>>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         app.MapPost("/households", async (CreateHouseholdRequest req, SettlDbContext db, CancellationToken ct) =>
         {
@@ -73,7 +75,9 @@ public static class HouseholdsEndpoints
             var dto = new HouseholdDto(household.Id, household.Name, household.Currency,
                 members.Select(m => new MemberDto(m.Id, m.Name, m.AvatarColor)).ToList());
             return Results.Created($"/households/{household.Id}", dto);
-        }).WithName("CreateHousehold");
+        }).WithName("CreateHousehold")
+            .Produces<HouseholdDto>(StatusCodes.Status201Created)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
 
         app.MapGet("/households/{id:guid}", async (Guid id, SettlDbContext db, CancellationToken ct) =>
         {
@@ -83,14 +87,18 @@ public static class HouseholdsEndpoints
             return Results.Ok(new HouseholdDto(
                 data.Household.Id, data.Household.Name, data.Household.Currency,
                 data.OrderedMembers.Select(m => new MemberDto(m.Id, m.Name, m.AvatarColor)).ToList()));
-        }).WithName("GetHousehold");
+        }).WithName("GetHousehold")
+            .Produces<HouseholdDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         app.MapGet("/households/{id:guid}/members", async (Guid id, SettlDbContext db, CancellationToken ct) =>
         {
             var data = await Loaders.LoadHousehold(db, id, ct);
             if (data is null) return Results.Problem("Hushållet hittades inte", statusCode: 404);
             return Results.Ok(data.OrderedMembers.Select(m => new MemberDto(m.Id, m.Name, m.AvatarColor)));
-        }).WithName("GetHouseholdMembers");
+        }).WithName("GetHouseholdMembers")
+            .Produces<List<MemberDto>>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         app.MapGet("/households/{id:guid}/summary", async (
             Guid id, ICurrentUserAccessor cu, SettlDbContext db, CancellationToken ct) =>
@@ -135,7 +143,9 @@ public static class HouseholdsEndpoints
                 .ToList();
 
             return Results.Ok(new HouseholdSummaryDto(overall, Labels.Net(overall), openCount, people, upcoming));
-        }).WithName("GetHouseholdSummary");
+        }).WithName("GetHouseholdSummary")
+            .Produces<HouseholdSummaryDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         return app;
     }

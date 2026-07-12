@@ -45,7 +45,9 @@ public static class EntriesEndpoints
                 .Select(e => Mapping.ToEntryDto(e, data.OrderedMemberIds, data.MembersById, titles, closures, me.Value))
                 .ToList();
             return Results.Ok(dtos);
-        }).WithName("GetEntries");
+        }).WithName("GetEntries")
+            .Produces<List<EntryDto>>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         app.MapPost("/households/{id:guid}/entries", async (
             Guid id, CreateEntryRequest req, ICurrentUserAccessor cu, SettlDbContext db, CancellationToken ct) =>
@@ -75,7 +77,10 @@ public static class EntriesEndpoints
             {
                 return Results.Problem(ex.Message, statusCode: 400);
             }
-        }).WithName("CreateEntry");
+        }).WithName("CreateEntry")
+            .Produces<EntryDto>(StatusCodes.Status201Created)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         app.MapGet("/entries/{id:guid}", async (
             Guid id, ICurrentUserAccessor cu, SettlDbContext db, CancellationToken ct) =>
@@ -85,7 +90,9 @@ public static class EntriesEndpoints
 
             var dto = await LoadEntryDto(db, id, me.Value, ct);
             return dto is null ? Results.Problem("Posten hittades inte", statusCode: 404) : Results.Ok(dto);
-        }).WithName("GetEntry");
+        }).WithName("GetEntry")
+            .Produces<EntryDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         app.MapPut("/entries/{id:guid}", async (
             Guid id, UpdateEntryRequest req, ICurrentUserAccessor cu, SettlDbContext db, CancellationToken ct) =>
@@ -130,7 +137,11 @@ public static class EntriesEndpoints
             {
                 return Results.Problem(ex.Message, statusCode: 400);
             }
-        }).WithName("UpdateEntry");
+        }).WithName("UpdateEntry")
+            .Produces<EntryDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
 
         app.MapDelete("/entries/{id:guid}", async (Guid id, SettlDbContext db, CancellationToken ct) =>
         {
@@ -143,7 +154,10 @@ public static class EntriesEndpoints
             db.Entries.Remove(entry);
             await db.SaveChangesAsync(ct);
             return Results.NoContent();
-        }).WithName("DeleteEntry");
+        }).WithName("DeleteEntry")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
 
         app.MapPost("/entries/{id:guid}/settlements", async (
             Guid id, ICurrentUserAccessor cu, SettlDbContext db, CancellationToken ct) =>
@@ -181,7 +195,9 @@ public static class EntriesEndpoints
 
             var dto = await LoadEntryDto(db, id, me.Value, ct);
             return Results.Ok(dto);
-        }).WithName("SettleEntry");
+        }).WithName("SettleEntry")
+            .Produces<EntryDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         app.MapDelete("/entries/{id:guid}/settlements", async (
             Guid id, ICurrentUserAccessor cu, SettlDbContext db, CancellationToken ct) =>
@@ -212,7 +228,9 @@ public static class EntriesEndpoints
 
             var dto = await LoadEntryDto(db, id, me.Value, ct);
             return Results.Ok(dto);
-        }).WithName("ReopenEntry");
+        }).WithName("ReopenEntry")
+            .Produces<EntryDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         return app;
     }

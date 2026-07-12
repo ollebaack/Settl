@@ -39,7 +39,9 @@ public static class RecurringEndpoints
             }
 
             return Results.Ok(new RecurringListDto(recTotal, recShare, dtos));
-        }).WithName("GetRecurringTemplates");
+        }).WithName("GetRecurringTemplates")
+            .Produces<RecurringListDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         app.MapPost("/households/{id:guid}/recurring", async (
             Guid id, CreateRecurringRequest req, ICurrentUserAccessor cu, SettlDbContext db, CancellationToken ct) =>
@@ -95,7 +97,10 @@ public static class RecurringEndpoints
             {
                 return Results.Problem(ex.Message, statusCode: 400);
             }
-        }).WithName("CreateRecurringTemplate");
+        }).WithName("CreateRecurringTemplate")
+            .Produces<RecurringDto>(StatusCodes.Status201Created)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         app.MapGet("/recurring/{id:guid}", async (
             Guid id, ICurrentUserAccessor cu, SettlDbContext db, CancellationToken ct) =>
@@ -130,7 +135,9 @@ public static class RecurringEndpoints
                 .ToList();
 
             return Results.Ok(new RecurringDetailDto(dto, shareRows, postedEntries));
-        }).WithName("GetRecurringTemplate");
+        }).WithName("GetRecurringTemplate")
+            .Produces<RecurringDetailDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         app.MapPatch("/recurring/{id:guid}", async (
             Guid id, UpdateRecurringRequest req, ICurrentUserAccessor cu, SettlDbContext db, CancellationToken ct) =>
@@ -190,7 +197,10 @@ public static class RecurringEndpoints
             {
                 return Results.Problem(ex.Message, statusCode: 400);
             }
-        }).WithName("UpdateRecurringTemplate");
+        }).WithName("UpdateRecurringTemplate")
+            .Produces<RecurringDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         return app;
     }

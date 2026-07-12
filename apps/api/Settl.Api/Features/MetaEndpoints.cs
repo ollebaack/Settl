@@ -18,13 +18,16 @@ public static class MetaEndpoints
             return m is null
                 ? Results.Problem("Ingen användare hittades", statusCode: StatusCodes.Status404NotFound)
                 : Results.Ok(new MemberDto(m.Id, m.Name, m.AvatarColor));
-        }).WithName("GetCurrentUser");
+        }).WithName("GetCurrentUser")
+            .Produces<MemberDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         app.MapGet("/dev/users", async (SettlDbContext db, CancellationToken ct) =>
         {
             var members = await db.Members.OrderBy(m => m.Name).ToListAsync(ct);
             return Results.Ok(members.Select(m => new MemberDto(m.Id, m.Name, m.AvatarColor)));
-        }).WithName("GetDevUsers");
+        }).WithName("GetDevUsers")
+            .Produces<List<MemberDto>>(StatusCodes.Status200OK);
 
         return app;
     }

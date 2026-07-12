@@ -39,7 +39,9 @@ public static class SettlementsEndpoints
             }
 
             return Results.Ok(new SettlePreviewDto(net, Labels.Relation(net), other.Name, items));
-        }).WithName("GetSettlePreview");
+        }).WithName("GetSettlePreview")
+            .Produces<SettlePreviewDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         app.MapPost("/households/{id:guid}/settlements", async (
             Guid id, CreateSettlementRequest req, ICurrentUserAccessor cu, SettlDbContext db, CancellationToken ct) =>
@@ -84,7 +86,9 @@ public static class SettlementsEndpoints
 
             return Results.Created($"/households/{id}/settlements/{settlement.Id}",
                 new CreateSettlementResponse(settlement.Id));
-        }).WithName("CreateSettlement");
+        }).WithName("CreateSettlement")
+            .Produces<CreateSettlementResponse>(StatusCodes.Status201Created)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         return app;
     }
