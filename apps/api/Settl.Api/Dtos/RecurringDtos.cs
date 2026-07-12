@@ -1,0 +1,55 @@
+namespace Settl.Api.Dtos;
+
+public sealed record RecurringDto(
+    Guid Id,
+    string Title,
+    long AmountMinor,
+    string Cadence,
+    DateOnly NextPostDate,
+    int DaysUntil,
+    bool Active,
+    string PayerName,
+    string SplitMode,
+    long YourShareMinor,
+    long MonthlyNormalizedMinor,
+    double CycleProgress,
+    IReadOnlyList<Guid> ContributingMemberIds);
+
+public sealed record RecurringListDto(
+    long RecTotalMinor,
+    long RecShareMinor,
+    IReadOnlyList<RecurringDto> Templates);
+
+public sealed record RecurringShareRowDto(
+    Guid MemberId,
+    string Name,
+    long ShareMinor,
+    bool IsPayer);
+
+public sealed record PostedEntrySummaryDto(
+    Guid Id,
+    string Title,
+    long AmountMinor,
+    bool Settled);
+
+public sealed record RecurringDetailDto(
+    RecurringDto Template,
+    IReadOnlyList<RecurringShareRowDto> Shares,
+    IReadOnlyList<PostedEntrySummaryDto> PostedEntries);
+
+public sealed record CreateRecurringRequest(
+    string? Title,
+    long AmountMinor,
+    string Cadence,
+    DateOnly NextPostDate,
+    Guid PaidByMemberId,
+    SplitInput Split);
+
+public sealed record UpdateRecurringRequest(
+    bool? Active,
+    string? Title,
+    long? AmountMinor,
+    string? Cadence,
+    DateOnly? NextPostDate,
+    Guid? PaidByMemberId,
+    SplitInput? Split);

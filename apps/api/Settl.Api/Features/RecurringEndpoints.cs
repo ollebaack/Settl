@@ -1,0 +1,197 @@
+using Microsoft.EntityFrameworkCore;
+using Settl.Api.Data;
+using Settl.Api.Domain;
+using Settl.Api.Dtos;
+using Settl.Api.Services;
+
+namespace Settl.Api.Features;
+
+public static class RecurringEndpoints
+{
+    public static IEndpointRouteBuilder MapRecurringEndpoints(this IEndpointRouteBuilder app)
+    {
+        app.MapGet("/households/{id:guid}/recurring", async (
+            Guid id, ICurrentUserAccessor cu, SettlDbContext db, CancellationToken ct) =>
+        {
+            var me = await cu.GetMemberIdAsync(ct);
+            if (me is null) return Results.Problem("Ingen användare", statusCode: 404);
+
+            var data = await Loaders.LoadHousehold(db, id, ct);
+            if (data is null) return Results.Problem("Hushållet hittades inte", statusCode: 404);
+
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var templates = await db.RecurringTemplates
+                .Where(t => t.HouseholdId == id)
+                .Include(t => t.Shares)
+                .ToListAsync(ct);
+
+            var dtos = templates
+                .Select(t => Mapping.ToRecurringDto(t, data.OrderedMemberIds, data.MembersById, me.Value, today))
+                .OrderBy(t => t.DaysUntil)
+                .ToList();
+
+            long recTotal = 0, recShare = 0;
+            foreach (var t in templates.Where(t => t.Active))
+            {
+                recTotal += RecurrenceCalculator.MonthlyNormalizedMinor(t.AmountMinor, t.Cadence);
+                var myShare = Mapping.TemplateShares(t, data.OrderedMemberIds).Where(s => s.MemberId == me).Sum(s => s.ShareMinor);
+                recShare += RecurrenceCalculator.MonthlyNormalizedMinor(myShare, t.Cadence);
+            }
+
+            return Results.Ok(new RecurringListDto(recTotal, recShare, dtos));
+        }).WithName("GetRecurringTemplates");
+
+        app.MapPost("/households/{id:guid}/recurring", async (
+            Guid id, CreateRecurringRequest req, ICurrentUserAccessor cu, SettlDbContext db, CancellationToken ct) =>
+        {
+            var me = await cu.GetMemberIdAsync(ct);
+            if (me is null) return Results.Problem("Ingen användare", statusCode: 404);
+
+            var data = await Loaders.LoadHousehold(db, id, ct);
+            if (data is null) return Results.Problem("Hushållet hittades inte", statusCode: 404);
+
+            if (req.AmountMinor <= 0) return Results.Problem("Ange ett belopp först", statusCode: 400);
+            if (!data.MembersById.ContainsKey(req.PaidByMemberId))
+                return Results.Problem("Okänd betalare", statusCode: 400);
+
+            try
+            {
+                var mode = Contract.ParseSplitMode(req.Split.Mode);
+                if (mode == SplitMode.None) mode = SplitMode.Equal;
+                var formula = req.Split.Values ?? new Dictionary<Guid, decimal>();
+
+                // Validate formula up front (throws on tolerance breach).
+                ShareFreezer.Freeze(mode, data.OrderedMemberIds, req.AmountMinor, formula);
+
+                var template = new RecurringTemplate
+                {
+                    Id = Guid.NewGuid(),
+                    HouseholdId = id,
+                    Title = string.IsNullOrWhiteSpace(req.Title) ? "Utan titel" : req.Title!.Trim(),
+                    AmountMinor = req.AmountMinor,
+                    Cadence = Contract.ParseCadence(req.Cadence),
+                    NextPostDate = req.NextPostDate,
+                    PaidByMemberId = req.PaidByMemberId,
+                    SplitMode = mode,
+                    Active = true,
+                    CreatedAt = DateTimeOffset.UtcNow
+                };
+                foreach (var m in data.OrderedMemberIds)
+                    template.Shares.Add(new RecurringShare
+                    {
+                        RecurringTemplateId = template.Id,
+                        MemberId = m,
+                        FormulaValue = mode == SplitMode.Equal ? null : formula.TryGetValue(m, out var v) ? v : 0m
+                    });
+
+                db.RecurringTemplates.Add(template);
+                await db.SaveChangesAsync(ct);
+
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
+                var dto = Mapping.ToRecurringDto(template, data.OrderedMemberIds, data.MembersById, me.Value, today);
+                return Results.Created($"/recurring/{template.Id}", dto);
+            }
+            catch (SplitValidationException ex)
+            {
+                return Results.Problem(ex.Message, statusCode: 400);
+            }
+        }).WithName("CreateRecurringTemplate");
+
+        app.MapGet("/recurring/{id:guid}", async (
+            Guid id, ICurrentUserAccessor cu, SettlDbContext db, CancellationToken ct) =>
+        {
+            var me = await cu.GetMemberIdAsync(ct);
+            if (me is null) return Results.Problem("Ingen användare", statusCode: 404);
+
+            var template = await db.RecurringTemplates.Include(t => t.Shares).FirstOrDefaultAsync(t => t.Id == id, ct);
+            if (template is null) return Results.Problem("Den återkommande posten hittades inte", statusCode: 404);
+
+            var data = await Loaders.LoadHousehold(db, template.HouseholdId, ct);
+            if (data is null) return Results.Problem("Hushållet hittades inte", statusCode: 404);
+
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var dto = Mapping.ToRecurringDto(template, data.OrderedMemberIds, data.MembersById, me.Value, today);
+
+            var frozen = Mapping.TemplateShares(template, data.OrderedMemberIds);
+            var shareRows = frozen
+                .Where(s => s.ShareMinor > 0)
+                .Select(s => new RecurringShareRowDto(
+                    s.MemberId, Mapping.Name(data.MembersById, s.MemberId), s.ShareMinor, s.MemberId == template.PaidByMemberId))
+                .ToList();
+
+            var posts = await db.Entries
+                .Where(e => e.RecurringTemplateId == id)
+                .Include(e => e.Shares)
+                .OrderByDescending(e => e.Date)
+                .ToListAsync(ct);
+            var closures = await Loaders.LoadClosures(db, template.HouseholdId, ct);
+            var postedEntries = posts
+                .Select(e => new PostedEntrySummaryDto(e.Id, e.Title, e.AmountMinor, BalanceCalculator.IsSettled(e, closures)))
+                .ToList();
+
+            return Results.Ok(new RecurringDetailDto(dto, shareRows, postedEntries));
+        }).WithName("GetRecurringTemplate");
+
+        app.MapPatch("/recurring/{id:guid}", async (
+            Guid id, UpdateRecurringRequest req, ICurrentUserAccessor cu, SettlDbContext db, CancellationToken ct) =>
+        {
+            var me = await cu.GetMemberIdAsync(ct);
+            if (me is null) return Results.Problem("Ingen användare", statusCode: 404);
+
+            var template = await db.RecurringTemplates.Include(t => t.Shares).FirstOrDefaultAsync(t => t.Id == id, ct);
+            if (template is null) return Results.Problem("Den återkommande posten hittades inte", statusCode: 404);
+
+            var data = await Loaders.LoadHousehold(db, template.HouseholdId, ct);
+            if (data is null) return Results.Problem("Hushållet hittades inte", statusCode: 404);
+
+            try
+            {
+                if (req.Active is not null) template.Active = req.Active.Value;
+                if (!string.IsNullOrWhiteSpace(req.Title)) template.Title = req.Title!.Trim();
+                if (req.AmountMinor is { } amt)
+                {
+                    if (amt <= 0) return Results.Problem("Ange ett belopp först", statusCode: 400);
+                    template.AmountMinor = amt;
+                }
+                if (!string.IsNullOrWhiteSpace(req.Cadence)) template.Cadence = Contract.ParseCadence(req.Cadence);
+                if (req.NextPostDate is { } next) template.NextPostDate = next;
+                if (req.PaidByMemberId is { } payer)
+                {
+                    if (!data.MembersById.ContainsKey(payer)) return Results.Problem("Okänd betalare", statusCode: 400);
+                    template.PaidByMemberId = payer;
+                }
+
+                if (req.Split is not null)
+                {
+                    var mode = Contract.ParseSplitMode(req.Split.Mode);
+                    if (mode == SplitMode.None) mode = SplitMode.Equal;
+                    var formula = req.Split.Values ?? new Dictionary<Guid, decimal>();
+                    ShareFreezer.Freeze(mode, data.OrderedMemberIds, template.AmountMinor, formula); // validate
+
+                    template.SplitMode = mode;
+                    db.RecurringShares.RemoveRange(template.Shares);
+                    template.Shares = new List<RecurringShare>();
+                    foreach (var m in data.OrderedMemberIds)
+                        template.Shares.Add(new RecurringShare
+                        {
+                            RecurringTemplateId = template.Id,
+                            MemberId = m,
+                            FormulaValue = mode == SplitMode.Equal ? null : formula.TryGetValue(m, out var v) ? v : 0m
+                        });
+                }
+
+                await db.SaveChangesAsync(ct);
+
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
+                var dto = Mapping.ToRecurringDto(template, data.OrderedMemberIds, data.MembersById, me.Value, today);
+                return Results.Ok(dto);
+            }
+            catch (SplitValidationException ex)
+            {
+                return Results.Problem(ex.Message, statusCode: 400);
+            }
+        }).WithName("UpdateRecurringTemplate");
+
+        return app;
+    }
+}
