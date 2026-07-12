@@ -26,3 +26,7 @@ Thumbs.db
 
 # Claude workflow worktrees
 .claude/worktrees/
+
+# Playwright
+test-results/
+playwright-report/
