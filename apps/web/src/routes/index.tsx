@@ -158,6 +158,7 @@ function PersonRow({
     <Card
       role="button"
       tabIndex={0}
+      data-testid="person-row"
       onClick={onOpen}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
