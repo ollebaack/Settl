@@ -64,20 +64,29 @@ public sealed class RecurringPostingService(
 
         foreach (var template in templates)
         {
-            var order = MembershipOrder.Order(template.Household.Memberships);
-
-            foreach (var postDate in RecurrenceCalculator.DuePosts(
-                         template.Active, template.NextPostDate, template.Cadence, today))
+            // Isolate each template: a malformed one (e.g. an inconsistent split) must not
+            // abort posting for the others or wedge every future run.
+            try
             {
-                var exists = await db.Entries.AnyAsync(
-                    e => e.RecurringTemplateId == template.Id && e.Date == postDate, ct);
-                if (!exists)
-                {
-                    db.Entries.Add(RecurringPoster.BuildPost(template, order, postDate, now));
-                    posted++;
-                }
+                var order = MembershipOrder.Order(template.Household.Memberships);
 
-                template.NextPostDate = RecurrenceCalculator.Advance(postDate, template.Cadence);
+                foreach (var postDate in RecurrenceCalculator.DuePosts(
+                             template.Active, template.NextPostDate, template.Cadence, today))
+                {
+                    var exists = await db.Entries.AnyAsync(
+                        e => e.RecurringTemplateId == template.Id && e.Date == postDate, ct);
+                    if (!exists)
+                    {
+                        db.Entries.Add(RecurringPoster.BuildPost(template, order, postDate, now));
+                        posted++;
+                    }
+
+                    template.NextPostDate = RecurrenceCalculator.Advance(postDate, template.Cadence);
+                }
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                logger.LogError(ex, "Skipping recurring template {TemplateId} — posting failed", template.Id);
             }
         }
 

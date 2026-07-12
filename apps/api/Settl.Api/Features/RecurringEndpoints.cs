@@ -151,8 +151,10 @@ public static class RecurringEndpoints
             var data = await Loaders.LoadHousehold(db, template.HouseholdId, ct);
             if (data is null) return Results.Problem("Hushållet hittades inte", statusCode: 404);
 
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
             try
             {
+                var wasActive = template.Active;
                 if (req.Active is not null) template.Active = req.Active.Value;
                 if (!string.IsNullOrWhiteSpace(req.Title)) template.Title = req.Title!.Trim();
                 if (req.AmountMinor is { } amt)
@@ -186,10 +188,24 @@ public static class RecurringEndpoints
                             FormulaValue = mode == SplitMode.Equal ? null : formula.TryGetValue(m, out var v) ? v : 0m
                         });
                 }
+                else
+                {
+                    // No new split supplied: the stored formula must still reconcile with the
+                    // (possibly changed) amount. For Amount mode a changed amount would otherwise
+                    // leave frozen shares that never sum to the total — wedging every later freeze
+                    // (reads + the background poster). Re-validate now → 400 if inconsistent.
+                    var effectiveFormula = template.Shares.ToDictionary(s => s.MemberId, s => s.FormulaValue ?? 0m);
+                    ShareFreezer.Freeze(template.SplitMode, data.OrderedMemberIds, template.AmountMinor, effectiveFormula);
+                }
+
+                // Resume (paused → active): skip the paused gap by scheduling the next cycle on or
+                // after today, rather than back-posting every missed cycle in one burst.
+                if (!wasActive && template.Active)
+                    template.NextPostDate = RecurrenceCalculator.FastForwardToOnOrAfter(
+                        template.NextPostDate, template.Cadence, today);
 
                 await db.SaveChangesAsync(ct);
 
-                var today = DateOnly.FromDateTime(DateTime.UtcNow);
                 var dto = Mapping.ToRecurringDto(template, data.OrderedMemberIds, data.MembersById, me.Value, today);
                 return Results.Ok(dto);
             }

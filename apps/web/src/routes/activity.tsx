@@ -50,7 +50,7 @@ function ActivityPage() {
     <div className="flex flex-col gap-4">
       <header>
         <h1 className="font-heading text-[19px] font-bold tracking-tight">Knuffar</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">
+        <p className="mt-0.5 text-[12.5px] text-muted-foreground">
           Settl säger bara till när något händer.
         </p>
       </header>
@@ -116,7 +116,7 @@ function NudgeCard({
         />
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-2">
-            <span className="text-sm font-semibold text-foreground">{nudge.title}</span>
+            <span className="text-sm font-[650] text-foreground">{nudge.title}</span>
             <span className="flex-none text-[10.5px] text-muted-foreground">{nudge.when}</span>
           </div>
           <p className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground">

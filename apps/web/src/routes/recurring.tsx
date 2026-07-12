@@ -73,12 +73,12 @@ function RecurringPage() {
               <Money minor={recurring.data.recTotalMinor} className="text-[15px] font-semibold" />
               <span className="text-xs text-muted-foreground">delat / månad</span>
             </Card>
-            <Card className="flex-1 gap-1 border-transparent bg-accent p-3.5">
+            <Card className="flex-1 gap-1 bg-accent p-3.5">
               <Money
                 minor={recurring.data.recShareMinor}
                 className="text-[15px] font-semibold text-accent-foreground"
               />
-              <span className="text-xs text-accent-foreground/70">din del / månad</span>
+              <span className="text-xs text-muted-foreground">din del / månad</span>
             </Card>
           </div>
 

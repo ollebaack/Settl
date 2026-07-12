@@ -50,12 +50,18 @@ function HomePage() {
   }
 
   const data = summary.data
-  const net = toNum(data.overallNetMinor)
   const openCount = toNum(data.openCount)
 
+  // Copy + colour intent come from the server-derived netLabel (ADR-0006),
+  // never from the sign of the amount.
   const netLabel =
-    net > 0 ? 'Du ska få totalt' : net < 0 ? 'Du är skyldig totalt' : 'Allt är kvitt'
-  const netIntent: MoneyIntent = net > 0 ? 'success' : net < 0 ? 'destructive' : 'muted'
+    data.netLabel === 'owed'
+      ? 'Du ska få totalt'
+      : data.netLabel === 'owe'
+        ? 'Du är skyldig totalt'
+        : 'Allt är kvitt'
+  const netIntent: MoneyIntent =
+    data.netLabel === 'owed' ? 'success' : data.netLabel === 'owe' ? 'destructive' : 'muted'
 
   const showUpcoming = !wide && data.upcoming.length > 0
 
@@ -133,9 +139,20 @@ function PersonRow({
   person: PersonBalanceDto
   onOpen: () => void
 }) {
-  const net = toNum(person.netMinor)
-  const relation = net > 0 ? 'är skyldig dig' : net < 0 ? 'du är skyldig' : 'kvitt'
-  const intent: MoneyIntent = net > 0 ? 'success' : net < 0 ? 'destructive' : 'muted'
+  // Relation copy + colour intent are server-derived (ADR-0006).
+  const relation =
+    person.relation === 'owesYou'
+      ? 'är skyldig dig'
+      : person.relation === 'youOwe'
+        ? 'du är skyldig'
+        : 'kvitt'
+  const intent: MoneyIntent =
+    person.relation === 'owesYou'
+      ? 'success'
+      : person.relation === 'youOwe'
+        ? 'destructive'
+        : 'muted'
+  const isSquare = person.relation === 'square'
 
   return (
     <Card
@@ -155,7 +172,7 @@ function PersonRow({
         <p className="truncate text-sm font-semibold">{person.name}</p>
         <p className="truncate text-xs text-muted-foreground">{relation}</p>
       </div>
-      {net === 0 ? (
+      {isSquare ? (
         <span className="font-mono text-sm text-muted-foreground">—</span>
       ) : (
         <Money minor={person.netMinor} intent={intent} className="text-sm" />

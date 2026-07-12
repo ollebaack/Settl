@@ -69,8 +69,8 @@ function SettleUpBody({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <p className="text-sm text-muted-foreground">
+      <div className="flex flex-col items-center gap-1 text-center">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {netCopy(preview.netLabel, preview.memberName)}
         </p>
         {!isSquare && (

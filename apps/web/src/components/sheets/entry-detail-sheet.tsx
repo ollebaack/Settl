@@ -128,13 +128,12 @@ function EntryDetailBody({ entry }: { entry: EntryDto }) {
       </div>
 
       <div className="flex flex-col gap-1">
-        <p className="text-base font-medium">{entry.title}</p>
         <Money minor={entry.amountMinor} className="text-[28px] leading-none" />
         <p className="text-sm text-muted-foreground">{meta}</p>
       </div>
 
       {entry.recurringTemplateId && entry.templateTitle && (
-        <p className="rounded-2xl bg-accent px-3 py-2 text-xs text-accent-foreground">
+        <p className="text-xs font-semibold text-accent-foreground">
           Bokförd automatiskt från ”{entry.templateTitle}”
         </p>
       )}
@@ -146,7 +145,7 @@ function EntryDetailBody({ entry }: { entry: EntryDto }) {
               <MemberAvatar name={row.name} avatarColor={row.avatarColor} size="sm" />
               <div className="min-w-0 flex-1 truncate text-sm">
                 <span className="font-medium">{row.name}</span>{' '}
-                <span className="text-muted-foreground">{row.tag}</span>
+                <span className="font-bold text-accent-foreground">{row.tag}</span>
               </div>
               <Money minor={row.minor} className="text-[13.5px]" />
             </Card>

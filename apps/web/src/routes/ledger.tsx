@@ -174,7 +174,9 @@ function LedgerBody({
     <div className="space-y-5">
       {groups.map((group) => (
         <section key={group.key} className="space-y-2">
-          <h2 className="px-1 text-xs font-medium text-muted-foreground">{group.label}</h2>
+          <h2 className="px-1 text-[11.5px] font-semibold uppercase tracking-[0.09em] text-muted-foreground">
+            {group.label}
+          </h2>
           <div className="space-y-2">
             {group.entries.map((entry) => (
               <EntryRow
@@ -200,7 +202,6 @@ function UpcomingRail({
 }) {
   return (
     <section className="space-y-2">
-      <h2 className="px-1 text-xs font-medium text-muted-foreground">På gång</h2>
       <div className="space-y-2">
         {upcoming.map((item) => (
           <GhostCard
@@ -210,7 +211,7 @@ function UpcomingRail({
           >
             <span
               aria-hidden="true"
-              className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent text-sm font-medium text-accent-foreground"
+              className="flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-accent text-sm font-medium text-accent-foreground"
             >
               ↻
             </span>

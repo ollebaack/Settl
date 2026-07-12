@@ -49,6 +49,10 @@ const SAVE_LABEL: Record<EntryTab, string> = {
   recurring: 'Sätt på repeat',
 }
 
+/** Uppercase tracked section field label (dc: 11.5px / .09em / uppercase). */
+const FIELD_LABEL =
+  'text-[11.5px] font-semibold uppercase tracking-[0.09em] text-muted-foreground'
+
 /** `1 234,50` → 123450 (öre). Accepts sv-SE comma decimals + space grouping. */
 function parseAmountMinor(raw: string): number {
   const n = parseFloat(raw.replace(/\s/g, '').replace(',', '.'))
@@ -253,22 +257,19 @@ export function AddEntrySheet({ open, onClose }: { open: boolean; onClose: () =>
             </span>
           </div>
 
-          {/* Title */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="entry-title">Titel</Label>
-            <Input
-              id="entry-title"
-              placeholder={TITLE_PLACEHOLDER[type]}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </div>
+          {/* Title — visible label dropped; aria-label + placeholder only */}
+          <Input
+            aria-label="Titel"
+            placeholder={TITLE_PLACEHOLDER[type]}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
 
           {/* IOU branch */}
           {type === 'iou' ? (
             <>
               <div className="flex flex-col gap-2">
-                <Label>Åt vilket håll</Label>
+                <Label className={FIELD_LABEL}>Åt vilket håll</Label>
                 <ToggleGroup
                   value={[iouDir]}
                   onValueChange={(v) => setIouDir(pickSingle<IouDir>(v, iouDir))}
@@ -285,7 +286,7 @@ export function AddEntrySheet({ open, onClose }: { open: boolean; onClose: () =>
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label>Med</Label>
+                <Label className={FIELD_LABEL}>Med</Label>
                 <ToggleGroup
                   value={iouOther ? [iouOther] : []}
                   onValueChange={(v) => setIouWith(pickSingle(v, iouOther ?? ''))}
@@ -305,7 +306,7 @@ export function AddEntrySheet({ open, onClose }: { open: boolean; onClose: () =>
             <>
               {/* Payer */}
               <div className="flex flex-col gap-2">
-                <Label>Vem betalade</Label>
+                <Label className={FIELD_LABEL}>Vem betalade</Label>
                 <ToggleGroup
                   value={payer ? [payer] : []}
                   onValueChange={(v) => setPaidBy(pickSingle(v, payer ?? ''))}
@@ -323,7 +324,7 @@ export function AddEntrySheet({ open, onClose }: { open: boolean; onClose: () =>
 
               {/* Split mode */}
               <div className="flex flex-col gap-2">
-                <Label>Delning</Label>
+                <Label className={FIELD_LABEL}>Delning</Label>
                 <ToggleGroup
                   value={[splitMode]}
                   onValueChange={changeSplitMode}
@@ -359,9 +360,11 @@ export function AddEntrySheet({ open, onClose }: { open: boolean; onClose: () =>
                       </div>
 
                       {splitMode === 'equal' ? (
-                        <span className="font-mono text-sm text-muted-foreground">
-                          {formatKr(equalShareMinor)} var
-                        </span>
+                        totalMinor > 0 ? (
+                          <Money minor={equalShareMinor} intent="muted" className="text-sm" />
+                        ) : (
+                          <span className="font-mono text-sm text-muted-foreground">—</span>
+                        )
                       ) : (
                         <div className="relative w-28">
                           <Input
@@ -380,25 +383,27 @@ export function AddEntrySheet({ open, onClose }: { open: boolean; onClose: () =>
                       )}
                     </div>
                   ))}
-                </Card>
 
-                {/* Live hint */}
-                <SplitHint
-                  splitMode={splitMode}
-                  totalMinor={totalMinor}
-                  equalShareMinor={equalShareMinor}
-                  percentSum={percentSum}
-                  percentOk={percentOk}
-                  amountSumMinor={amountSumMinor}
-                  amountOk={amountOk}
-                />
+                  {/* Live split hint — right-aligned final row inside the Card */}
+                  <div className="flex justify-end border-t border-border px-4 py-2.5 text-right">
+                    <SplitHint
+                      splitMode={splitMode}
+                      totalMinor={totalMinor}
+                      equalShareMinor={equalShareMinor}
+                      percentSum={percentSum}
+                      percentOk={percentOk}
+                      amountSumMinor={amountSumMinor}
+                      amountOk={amountOk}
+                    />
+                  </div>
+                </Card>
               </div>
 
               {/* Recurring extras */}
               {type === 'recurring' && (
                 <>
                   <div className="flex flex-col gap-2">
-                    <Label>Upprepas</Label>
+                    <Label className={FIELD_LABEL}>Upprepas</Label>
                     <ToggleGroup
                       value={[cadence]}
                       onValueChange={(v) => setCadence(pickSingle<Cadence>(v, cadence))}
@@ -470,10 +475,10 @@ function SplitHint({
 }) {
   if (splitMode === 'equal') {
     return (
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs font-semibold text-muted-foreground">
         {totalMinor > 0 ? (
           <>
-            <Money minor={equalShareMinor} intent="muted" className="text-xs" /> var
+            <Money minor={equalShareMinor} intent="muted" className="text-xs font-semibold" /> var
           </>
         ) : (
           'Alla betalar lika mycket'
@@ -484,14 +489,14 @@ function SplitHint({
 
   if (splitMode === 'percent') {
     return (
-      <p className={cn('text-xs', percentOk ? 'text-success' : 'text-destructive')}>
+      <p className={cn('text-xs font-semibold', percentOk ? 'text-success' : 'text-destructive')}>
         {formatNum(percentSum)} % av 100 % fördelat
       </p>
     )
   }
 
   return (
-    <p className={cn('text-xs', amountOk ? 'text-success' : 'text-destructive')}>
+    <p className={cn('text-xs font-semibold', amountOk ? 'text-success' : 'text-destructive')}>
       {formatKr(amountSumMinor)} av {formatKr(totalMinor)} fördelat
     </p>
   )

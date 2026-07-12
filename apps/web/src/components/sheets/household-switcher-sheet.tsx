@@ -82,12 +82,12 @@ export function HouseholdSwitcherSheet({
                   size="sm"
                   className={cn(
                     'flex flex-row items-center gap-3 p-3 text-left transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring',
-                    active && 'ring-2 ring-accent',
+                    active && 'ring-2 ring-primary',
                   )}
                 >
                   <span
                     aria-hidden="true"
-                    className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-sm font-medium text-muted-foreground"
+                    className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent text-sm font-medium text-accent-foreground"
                   >
                     {(h.name.trim()[0] ?? '?').toUpperCase()}
                   </span>

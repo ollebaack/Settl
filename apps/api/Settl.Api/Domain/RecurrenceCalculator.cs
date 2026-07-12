@@ -42,6 +42,20 @@ public static class RecurrenceCalculator
     };
 
     /// <summary>
+    /// Advances a post date forward by whole cycles until it is on or after <paramref name="today"/>.
+    /// Used on RESUME so a paused-through gap is skipped (scheduling the next period) rather than
+    /// back-posted in a burst. Downtime catch-up for always-active templates is unaffected.
+    /// </summary>
+    public static DateOnly FastForwardToOnOrAfter(DateOnly nextPostDate, Cadence cadence, DateOnly today)
+    {
+        var cursor = nextPostDate;
+        var guard = 0;
+        while (cursor.DayNumber < today.DayNumber && guard++ < 100_000)
+            cursor = Advance(cursor, cadence);
+        return cursor;
+    }
+
+    /// <summary>
     /// Yields every post date due up to and including <paramref name="today"/> for an active
     /// template, starting at its NextPostDate. Deterministic and terminating.
     /// </summary>

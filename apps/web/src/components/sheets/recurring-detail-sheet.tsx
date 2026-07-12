@@ -76,7 +76,6 @@ export function RecurringDetailSheet({
         if (!o) onClose()
       }}
       title={template ? template.title : 'På repeat'}
-      description={cadLabel || undefined}
     >
       {detail.isPending ? (
         <LoadingState rows={3} />
@@ -85,7 +84,7 @@ export function RecurringDetailSheet({
       ) : (
         <RecurringDetailBody
           detail={detail.data}
-          colorOf={(id) => members?.find((m) => m.id === id)?.avatarColor ?? '#cccccc'}
+          colorOf={(id) => members?.find((m) => m.id === id)?.avatarColor ?? ''}
           cadLabel={cadLabel}
           toggling={updateRecurring.isPending}
           onToggle={onToggle}

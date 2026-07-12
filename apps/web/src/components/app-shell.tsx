@@ -5,7 +5,7 @@
  * component (no stock shadcn nav) with an active-dot indicator.
  */
 import type { ReactNode } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import {
   BellIcon,
   ChevronDownIcon,
@@ -20,10 +20,22 @@ import { Separator } from '@/components/ui/separator'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { UserSwitcher } from '@/components/user-switcher'
 import { MemberAvatarStack } from '@/components/member-avatar'
+import { GhostCard } from '@/components/ghost-card'
+import { Money } from '@/components/money'
 import { cn } from '@/lib/utils'
+import { inDays, shortDate } from '@/lib/format'
 import { useSheet } from '@/lib/sheet'
 import { useActiveHousehold } from '@/lib/active-household'
-import { useMembers } from '@/lib/queries'
+import { useMembers, useNudges, useSummary } from '@/lib/queries'
+import type { NudgeActionDto, NudgeDto } from '@/lib/api'
+
+/** Uppercase tracked eyebrow used by the desktop right-rail section headers. */
+const RAIL_LABEL =
+  'text-[11.5px] font-semibold uppercase tracking-[0.09em] text-muted-foreground'
+
+/** Initial badge shared by the household switcher triggers (mobile + desktop). */
+const HH_BADGE =
+  'flex size-[26px] shrink-0 items-center justify-center rounded-[9px] bg-accent text-xs font-semibold text-accent-foreground'
 
 interface NavItem {
   to: string
@@ -45,7 +57,7 @@ const HELPER_TEXT =
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-dvh bg-background">
-      <div className="mx-auto flex min-h-dvh max-w-[1240px] flex-col min-[980px]:grid min-[980px]:grid-cols-[220px_minmax(0,1fr)]">
+      <div className="mx-auto flex min-h-dvh max-w-[1240px] flex-col min-[980px]:grid min-[980px]:grid-cols-[220px_minmax(0,1fr)_300px]">
         <Sidebar />
         <MobileHeader />
         <main className="flex-1 pb-24 min-[980px]:pb-8">
@@ -53,6 +65,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {children}
           </div>
         </main>
+        <RightRail />
       </div>
       <MobileTabBar />
     </div>
@@ -74,11 +87,14 @@ function Sidebar() {
 
       <Button
         variant="outline"
-        className="justify-between"
+        className="justify-start gap-2.5"
         onClick={() => openSheet('households')}
       >
-        <span className="truncate">{household?.name ?? 'Välj hushåll'}</span>
-        <ChevronDownIcon />
+        <span aria-hidden="true" className={HH_BADGE}>
+          {(household?.name?.[0] ?? 'S').toUpperCase()}
+        </span>
+        <span className="flex-1 truncate text-left">{household?.name ?? 'Välj hushåll'}</span>
+        <ChevronDownIcon className="text-muted-foreground" />
       </Button>
 
       <nav className="flex flex-col gap-1">
@@ -121,9 +137,12 @@ function NavLink({ item }: { item: NavItem }) {
               : 'text-muted-foreground hover:bg-muted hover:text-foreground',
           )}
         >
+          <span
+            aria-hidden="true"
+            className={cn('size-1.5 rounded-full', isActive ? 'bg-primary' : 'bg-transparent')}
+          />
           <Icon className="size-4" />
           <span className="flex-1">{item.label}</span>
-          {isActive && <span className="size-1.5 rounded-full bg-primary" />}
         </span>
       )}
     </Link>
@@ -144,7 +163,7 @@ function MobileHeader() {
         onClick={() => openSheet('households')}
         className="flex items-center gap-2 rounded-full bg-muted px-3 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <span className="flex size-5 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+        <span aria-hidden="true" className={HH_BADGE}>
           {(household?.name?.[0] ?? 'S').toUpperCase()}
         </span>
         <span className="max-w-[160px] truncate font-medium">{household?.name ?? 'Settl'}</span>
@@ -156,6 +175,131 @@ function MobileHeader() {
         />
       )}
     </header>
+  )
+}
+
+// --- Desktop right rail -----------------------------------------------------
+
+/** Dispatch a nudge action to its overlay — mirrors the /activity screen. */
+function useNudgeAction() {
+  const { openSheet } = useSheet()
+  const navigate = useNavigate()
+  return (action: NudgeActionDto) => {
+    switch (action.kind) {
+      case 'viewEntry':
+        openSheet('entry', { id: action.targetId })
+        break
+      case 'viewRecurring':
+        navigate({ to: '/recurring', search: { sheet: 'recurring', id: action.targetId } })
+        break
+      case 'settle':
+        openSheet('settle', { person: action.targetId })
+        break
+    }
+  }
+}
+
+/**
+ * Persistent desktop right rail (≥980px): upcoming auto-posts ("På gång") and
+ * compact nudges ("Knuffar"). Mirrors the canonical desktop layout's third
+ * column; hidden on mobile where the same content lives on Home / the activity
+ * route. Renders and calls only (ADR-0006).
+ */
+function RightRail() {
+  const { householdId } = useActiveHousehold()
+  const { openSheet } = useSheet()
+  const runAction = useNudgeAction()
+  const summary = useSummary(householdId)
+  const nudges = useNudges(householdId, 'direct')
+
+  const upcoming = summary.data?.upcoming ?? []
+  const nudgeList = nudges.data ?? []
+
+  return (
+    <aside className="sticky top-7 hidden h-fit flex-col gap-[22px] self-start py-8 pr-6 min-[980px]:flex">
+      {upcoming.length > 0 && (
+        <div>
+          <p className={RAIL_LABEL}>På gång</p>
+          <div className="mt-2.5 flex flex-col gap-2">
+            {upcoming.map((item) => (
+              <GhostCard
+                key={item.recurringId}
+                onClick={() => openSheet('recurring', { id: item.recurringId })}
+                className="flex items-center gap-3 rounded-[14px] px-3.5 py-2.5"
+              >
+                <span
+                  aria-hidden="true"
+                  className="grid size-8 shrink-0 place-items-center rounded-[10px] bg-accent text-sm font-bold text-accent-foreground"
+                >
+                  ↻
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[13px] font-semibold">{item.title}</span>
+                  <span className="block truncate text-[11px] font-semibold text-accent-foreground">
+                    Bokförs {shortDate(item.nextPostDate)} · {inDays(item.nextPostDate)}
+                  </span>
+                </span>
+                <span className="shrink-0 text-right">
+                  <Money minor={item.yourShareMinor} className="block text-xs font-semibold" />
+                  <span className="block text-[10px] text-muted-foreground">din del</span>
+                </span>
+              </GhostCard>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div>
+        <p className={RAIL_LABEL}>Knuffar</p>
+        <div className="mt-2.5 flex flex-col gap-2">
+          {nudgeList.length > 0 ? (
+            nudgeList.map((nudge, i) => (
+              <RailNudgeCard key={i} nudge={nudge} onAction={runAction} />
+            ))
+          ) : (
+            <p className="rounded-[14px] border-[1.5px] border-dashed border-border p-4 text-xs leading-relaxed text-muted-foreground">
+              Lugnt just nu. Knuffar skickas vid händelser — en stor utgift, ett växande saldo
+              eller hyra på gång.
+            </p>
+          )}
+        </div>
+      </div>
+    </aside>
+  )
+}
+
+function RailNudgeCard({
+  nudge,
+  onAction,
+}: {
+  nudge: NudgeDto
+  onAction: (action: NudgeActionDto) => void
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-3">
+      <div className="flex items-start gap-2.5">
+        <span aria-hidden="true" className="mt-1.5 size-[7px] flex-none rounded-full bg-primary" />
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-[650]">{nudge.title}</p>
+          <p className="mt-0.5 text-[11.5px] leading-snug text-muted-foreground">{nudge.body}</p>
+          {nudge.actions.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {nudge.actions.map((action, i) => (
+                <Button
+                  key={i}
+                  variant="secondary"
+                  size="sm"
+                  className="h-7 rounded-full px-3 text-[11.5px]"
+                  onClick={() => onAction(action)}
+                >
+                  {action.label}
+                </Button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
 
