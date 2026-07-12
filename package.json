@@ -1,0 +1,12 @@
+{
+  "name": "settl",
+  "private": true,
+  "scripts": {
+    "dev:web": "pnpm --filter web dev",
+    "dev:api": "dotnet run --project apps/api/Settl.Api",
+    "verify": "pnpm verify:api && pnpm verify:web",
+    "verify:api": "dotnet build && dotnet test --no-build",
+    "verify:web": "pnpm --filter web lint && pnpm --filter web build"
+  },
+  "packageManager": "pnpm@10.18.3"
+}

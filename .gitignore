@@ -1,0 +1,25 @@
+# Node
+node_modules/
+dist/
+
+# .NET
+bin/
+obj/
+*.user
+.vs/
+
+# Generated
+apps/web/src/routeTree.gen.ts
+
+# Local databases (SQLite dev)
+*.db
+*.db-shm
+*.db-wal
+
+# Environment
+.env
+.env.local
+
+# OS / editor
+.DS_Store
+Thumbs.db

@@ -1,0 +1,13 @@
+{
+  "name": "@settl/api-client",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "types": "./src/schema.d.ts",
+  "scripts": {
+    "generate": "openapi-typescript http://localhost:5000/openapi/v1.json -o src/schema.d.ts"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.9.1"
+  }
+}
