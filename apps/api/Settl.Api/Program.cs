@@ -10,6 +10,14 @@ using Settl.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Dev-only: also write logs to a file, since tools without a view into the console
+// (Claude Code) can't otherwise see what the API is doing.
+if (builder.Environment.IsDevelopment())
+{
+    var logPath = Path.Combine(builder.Environment.ContentRootPath, ".logs", "api.log");
+    builder.Logging.AddProvider(new FileLoggerProvider(logPath));
+}
+
 builder.Services.AddOpenApi();
 
 // Postgres (ADR-0010), provider-portable model — the fallback below is a local-only
