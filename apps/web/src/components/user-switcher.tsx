@@ -34,12 +34,12 @@ export function UserSwitcher({ className }: { className?: string }) {
         <span className="truncate">{member?.name ?? 'Dev-användare'}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-52">
-        <DropdownMenuLabel>Agera som (dev)</DropdownMenuLabel>
-        <DropdownMenuSeparator />
         <DropdownMenuRadioGroup
           value={memberId ?? ''}
           onValueChange={(value) => setMemberId(value)}
         >
+          <DropdownMenuLabel>Agera som (dev)</DropdownMenuLabel>
+          <DropdownMenuSeparator />
           {users.map((u) => (
             <DropdownMenuRadioItem key={u.id} value={u.id}>
               <MemberAvatar name={u.name} avatarColor={u.avatarColor} size="sm" />
