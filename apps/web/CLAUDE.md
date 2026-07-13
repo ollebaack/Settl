@@ -1,5 +1,12 @@
 # Web rules
 
+- **Check `docs/design/` before building or changing a screen.** `implementation-map.md`
+  is the synthesized build spec (routes, per-screen components, copy, states,
+  formatting rules) — start there. It also gives source precedence across the
+  raw design exports (`Settl Prototype.dc.html` for UI structure/interactions,
+  `Settl App`/`Settl Web.dc.html` for Swedish copy, `Settl Shadcn Handoff.dc.html`
+  for theme tokens/component mapping) plus the addenda files. Don't invent
+  screen structure, copy, or states that contradict it.
 - **shadcn first**: if a shadcn component fits, use it — never hand-roll one.
   Install missing: `pnpm dlx shadcn@latest add <name>`. Custom components are
   domain UI only, composed from shadcn primitives.
