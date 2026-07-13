@@ -110,7 +110,15 @@ public static class AuthEndpoints
                 var token = await users.GeneratePasswordResetTokenAsync(member);
                 var baseUrl = config["Web:BaseUrl"] ?? "http://localhost:5173";
                 var resetUrl = $"{baseUrl}/reset-password?userId={member.Id}&token={Uri.EscapeDataString(token)}";
-                await email.SendPasswordResetEmailAsync(member.Email!, resetUrl, ct);
+                try
+                {
+                    await email.SendPasswordResetEmailAsync(member.Email!, resetUrl, ct);
+                }
+                catch (InvalidOperationException)
+                {
+                    // The reset token already exists; a delivery failure shouldn't change the
+                    // response, which is always NoContent regardless of account existence.
+                }
             }
             return Results.NoContent();
         }).WithName("ForgotPassword")
@@ -142,7 +150,15 @@ public static class AuthEndpoints
         var token = await users.GenerateEmailConfirmationTokenAsync(member);
         var baseUrl = config["Web:BaseUrl"] ?? "http://localhost:5173";
         var confirmUrl = $"{baseUrl}/confirm-email?userId={member.Id}&token={Uri.EscapeDataString(token)}";
-        await email.SendVerificationEmailAsync(member.Email!, confirmUrl, ct);
+        try
+        {
+            await email.SendVerificationEmailAsync(member.Email!, confirmUrl, ct);
+        }
+        catch (InvalidOperationException)
+        {
+            // The account (or, for resend, the confirmation token) already exists — a
+            // delivery failure shouldn't fail the request. The user can ask to resend.
+        }
     }
 
     private static string DescribeError(IdentityResult result) =>
