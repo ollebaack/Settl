@@ -87,6 +87,7 @@ export type CreateSettlementResponse = Schemas['CreateSettlementResponse']
 export type ProblemDetails = Schemas['ProblemDetails']
 export type InviteDto = Schemas['InviteDto']
 export type InvitePreviewDto = Schemas['InvitePreviewDto']
+export type MeDto = Schemas['MeDto']
 
 // Request DTOs
 export type CreateEntryRequest = Schemas['CreateEntryRequest']
@@ -100,6 +101,9 @@ export type RegisterRequest = Schemas['RegisterRequest']
 export type LoginRequest = Schemas['LoginRequest']
 export type CreateInviteRequest = Schemas['CreateInviteRequest']
 export type AcceptInviteRequest = Schemas['AcceptInviteRequest']
+export type ConfirmEmailRequest = Schemas['ConfirmEmailRequest']
+export type ForgotPasswordRequest = Schemas['ForgotPasswordRequest']
+export type ResetPasswordRequest = Schemas['ResetPasswordRequest']
 
 // Domain string-union helpers (the API serialises these as plain strings)
 export type EntryType = 'expense' | 'iou' | 'recurringPost'

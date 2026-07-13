@@ -144,23 +144,40 @@ public static class InvitesEndpoints
             invite.AcceptedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(ct);
 
-            return Results.Ok(new MemberDto(member.Id, member.Name, member.AvatarColor));
+            return Results.Ok(new MeDto(member.Id, member.Name, member.AvatarColor, member.EmailConfirmed));
         }).WithName("AcceptInvite")
             .AllowAnonymous()
-            .Produces<MemberDto>(StatusCodes.Status200OK)
+            .Produces<MeDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
-        // Dev-only: lets Playwright complete the invite flow without a real inbox. The raw
-        // token is never persisted (only its hash is), so this reads the in-memory store
-        // DevEmailSender populates, not the database — 404s whenever Resend is configured.
-        app.MapGet("/dev/invites/latest", (IHostEnvironment env, DevInviteLinkStore store) =>
+        // Dev-only: lets Playwright complete the invite/verification/reset flows without a
+        // real inbox. The raw invite token is never persisted (only its hash is), so this
+        // reads the in-memory store DevEmailSender populates, not the database — all 404
+        // whenever Resend is configured.
+        app.MapGet("/dev/invites/latest", (IHostEnvironment env, DevEmailLinkStore store) =>
         {
             if (!env.IsDevelopment()) return Results.NotFound();
-            var url = store.LastAcceptUrl;
+            var url = store.LastInviteAcceptUrl;
             return url is null ? Results.NotFound() : Results.Ok(new { acceptUrl = url });
         }).WithName("GetLatestDevInvite")
+            .AllowAnonymous();
+
+        app.MapGet("/dev/verifications/latest", (IHostEnvironment env, DevEmailLinkStore store) =>
+        {
+            if (!env.IsDevelopment()) return Results.NotFound();
+            var url = store.LastVerificationUrl;
+            return url is null ? Results.NotFound() : Results.Ok(new { confirmUrl = url });
+        }).WithName("GetLatestDevVerification")
+            .AllowAnonymous();
+
+        app.MapGet("/dev/password-resets/latest", (IHostEnvironment env, DevEmailLinkStore store) =>
+        {
+            if (!env.IsDevelopment()) return Results.NotFound();
+            var url = store.LastPasswordResetUrl;
+            return url is null ? Results.NotFound() : Results.Ok(new { resetUrl = url });
+        }).WithName("GetLatestDevPasswordReset")
             .AllowAnonymous();
 
         return app;

@@ -14,7 +14,14 @@ export const Route = createRootRoute({
 
 // Auth pages (ADR-0011) render without the app chrome — there's no household nav
 // to show before/without a logged-in user.
-const AUTH_ROUTES = ['/login', '/signup', '/accept-invite']
+const AUTH_ROUTES = [
+  '/login',
+  '/signup',
+  '/accept-invite',
+  '/verify-email',
+  '/confirm-email',
+  '/reset-password',
+]
 
 function RootLayout() {
   const { pathname } = useLocation()

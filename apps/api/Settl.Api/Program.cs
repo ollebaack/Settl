@@ -47,7 +47,8 @@ builder.Services.AddIdentityCore<Member>(options =>
     options.User.RequireUniqueEmail = true;
 })
     .AddEntityFrameworkStores<SettlDbContext>()
-    .AddSignInManager();
+    .AddSignInManager()
+    .AddDefaultTokenProviders();
 
 builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
     .AddIdentityCookies();
@@ -68,18 +69,25 @@ builder.Services.ConfigureApplicationCookie(options =>
     };
 });
 
-// Every endpoint requires auth unless explicitly AllowAnonymous — new endpoint files
-// need no per-route auth wiring (tech-debt/0003's "nothing else should need to change").
+// Every endpoint requires auth AND a confirmed email unless explicitly AllowAnonymous or
+// opted into the lighter "AuthenticatedOnly" policy — new endpoint files need no per-route
+// auth wiring (tech-debt/0003's "nothing else should need to change"). Signed-in-but-
+// unconfirmed requests fail the extra requirement (not RequireAuthenticatedUser), which the
+// cookie scheme's OnRedirectToAccessDenied above turns into 403 — the signal the web app
+// uses to route to /verify-email instead of /login.
+builder.Services.AddScoped<IAuthorizationHandler, EmailConfirmedHandler>();
 builder.Services.AddAuthorization(options =>
 {
+    options.AddPolicy("AuthenticatedOnly", p => p.RequireAuthenticatedUser());
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
+        .AddRequirements(new EmailConfirmedRequirement())
         .Build();
 });
 
 // ADR-0011: Resend for real send; falls back to a logging sender whenever no key is
 // configured (always true in local dev — see tech-debt/README on dev-only stand-ins).
-builder.Services.AddSingleton<DevInviteLinkStore>();
+builder.Services.AddSingleton<DevEmailLinkStore>();
 var resendApiKey = builder.Configuration["Resend:ApiKey"];
 if (!string.IsNullOrWhiteSpace(resendApiKey))
 {

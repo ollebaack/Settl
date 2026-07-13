@@ -167,6 +167,28 @@ export async function latestDevInviteToken(request: APIRequestContext): Promise<
   return new URL(acceptUrl).searchParams.get('token')!
 }
 
+/** Reads the most recent email-verification link via the Development-only dev side channel
+ * (same reasoning as latestDevInviteToken — a real inbox is the only other way to get it). */
+export async function latestDevVerificationUrl(request: APIRequestContext): Promise<string> {
+  const res = await request.get(`${API}/dev/verifications/latest`)
+  expect(res.ok(), 'GET /dev/verifications/latest').toBeTruthy()
+  return ((await res.json()) as { confirmUrl: string }).confirmUrl
+}
+
+/** Reads the most recent password-reset link via the Development-only dev side channel. */
+export async function latestDevPasswordResetUrl(request: APIRequestContext): Promise<string> {
+  const res = await request.get(`${API}/dev/password-resets/latest`)
+  expect(res.ok(), 'GET /dev/password-resets/latest').toBeTruthy()
+  return ((await res.json()) as { resetUrl: string }).resetUrl
+}
+
+/** Converts an absolute dev-emailed link (Web:BaseUrl + path) into a same-origin relative
+ * path + query so it can be passed straight to page.goto. */
+export function relativePath(url: string): string {
+  const u = new URL(url)
+  return `${u.pathname}${u.search}`
+}
+
 /** Sends a household invite and returns its accept token. */
 export async function inviteAndGetToken(
   request: APIRequestContext,

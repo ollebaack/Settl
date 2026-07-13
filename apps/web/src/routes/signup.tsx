@@ -32,7 +32,7 @@ function SignupPage() {
     setError('')
     try {
       await register.mutateAsync({ name: name.trim(), email: email.trim(), password })
-      navigate({ to: '/' })
+      navigate({ to: '/verify-email' })
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Något gick fel. Försök igen.')
     }

@@ -88,10 +88,13 @@ public sealed class SettlApiFactory : WebApplicationFactory<Program>
         return client;
     }
 
-    /// <summary>The most recent invite accept link recorded by <see cref="DevEmailSender"/> —
-    /// the same in-memory side channel GET /dev/invites/latest reads from. Tests use this
-    /// instead of that endpoint since it's Development-only and the test host runs "Testing".</summary>
-    public string? LastDevInviteAcceptUrl => Services.GetRequiredService<DevInviteLinkStore>().LastAcceptUrl;
+    /// <summary>The most recent invite/verification/reset link recorded by
+    /// <see cref="DevEmailSender"/> — the same in-memory side channel the GET /dev/... endpoints
+    /// read from. Tests use these instead of those endpoints since they're Development-only and
+    /// the test host runs "Testing".</summary>
+    public string? LastDevInviteAcceptUrl => Services.GetRequiredService<DevEmailLinkStore>().LastInviteAcceptUrl;
+    public string? LastDevVerificationUrl => Services.GetRequiredService<DevEmailLinkStore>().LastVerificationUrl;
+    public string? LastDevPasswordResetUrl => Services.GetRequiredService<DevEmailLinkStore>().LastPasswordResetUrl;
 
     /// <summary>Runs work against a fresh scoped <see cref="SettlDbContext"/> and returns a result.</summary>
     public async Task<T> WithDb<T>(Func<SettlDbContext, Task<T>> work)

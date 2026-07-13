@@ -1,17 +1,18 @@
 import { test, expect } from '@playwright/test'
-import { uniqueSuffix } from './helpers'
+import { latestDevVerificationUrl, relativePath, uniqueSuffix } from './helpers'
 
-// LOGIN & SIGNUP (ADR-0011). Uses a brand-new account per run so it never
-// collides with seeded members or other specs. The account menu's accessible
-// name is a stable aria-label (its visible text is desktop-only, see
-// components/account-menu.tsx), so the same selector works on both projects.
+// LOGIN, SIGNUP & EMAIL VERIFICATION (ADR-0011 + the email-verification decision made
+// alongside it). Uses a brand-new account per run so it never collides with seeded members
+// or other specs. The account menu's accessible name is a stable aria-label (its visible
+// text is desktop-only, see components/account-menu.tsx), so the same selector works on
+// both projects.
 test('unauthenticated visitors are redirected to /login', async ({ page }) => {
   await page.goto('/')
   await expect(page).toHaveURL(/\/login$/)
   await expect(page.getByText('Välkommen tillbaka')).toBeVisible()
 })
 
-test('signs up, logs out, and logs back in', async ({ page }) => {
+test('signs up, verifies email, logs out, and logs back in', async ({ page, request }) => {
   const suffix = uniqueSuffix()
   const name = `E2E Person ${suffix}`
   const email = `e2e-${suffix}@example.com`
@@ -23,8 +24,17 @@ test('signs up, logs out, and logs back in', async ({ page }) => {
   await page.getByLabel('Lösenord').fill(password)
   await page.getByRole('button', { name: 'Skapa konto' }).click()
 
-  // Signed in — lands in the app shell (no household yet, so home shows its
-  // loading state, but the shell chrome — including the account menu — renders).
+  // Signed in but unconfirmed — blocked from the app until the emailed link is followed.
+  await expect(page).toHaveURL(/\/verify-email$/)
+  await expect(page.getByText('Bekräfta din e-postadress')).toBeVisible()
+
+  const confirmUrl = await latestDevVerificationUrl(request)
+  await page.goto(relativePath(confirmUrl))
+  await expect(page.getByText('E-post bekräftad')).toBeVisible()
+
+  // Now lands in the app shell (no household yet, so home shows its loading state, but the
+  // shell chrome — including the account menu — renders).
+  await page.goto('/')
   await expect(page).toHaveURL('http://localhost:5173/')
   await expect(page.getByRole('button', { name: `Konto: ${name}` })).toBeVisible()
 
@@ -49,10 +59,12 @@ test('shows an inline error for the wrong password', async ({ page }) => {
   await page.getByLabel('E-post').fill(email)
   await page.getByLabel('Lösenord').fill('CorrectPassword123!')
   await page.getByRole('button', { name: 'Skapa konto' }).click()
-  await expect(page).toHaveURL('http://localhost:5173/')
+  await expect(page).toHaveURL(/\/verify-email$/)
 
-  await page.getByRole('button', { name: /Konto:/ }).click()
-  await page.getByRole('menuitem', { name: 'Logga ut' }).click()
+  // Log out via the pending-verification screen's own logout button — no need to verify
+  // the email just to exercise the login form's wrong-password error.
+  await page.getByRole('button', { name: 'Logga ut' }).click()
+  await expect(page).toHaveURL(/\/login$/)
 
   await page.getByLabel('E-post').fill(email)
   await page.getByLabel('Lösenord').fill('WrongPassword!')

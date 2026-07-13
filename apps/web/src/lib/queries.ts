@@ -17,6 +17,7 @@ import {
   apiPost,
   apiPut,
   type AcceptInviteRequest,
+  type ConfirmEmailRequest,
   type CreateEntryRequest,
   type CreateHouseholdRequest,
   type CreateInviteRequest,
@@ -25,12 +26,14 @@ import {
   type CreateSettlementResponse,
   type EntryDto,
   type EntryFilter,
+  type ForgotPasswordRequest,
   type HouseholdDto,
   type HouseholdListItemDto,
   type HouseholdSummaryDto,
   type InviteDto,
   type InvitePreviewDto,
   type LoginRequest,
+  type MeDto,
   type MemberDto,
   type NudgeDto,
   type NudgeTone,
@@ -38,6 +41,7 @@ import {
   type RecurringDto,
   type RecurringListDto,
   type RegisterRequest,
+  type ResetPasswordRequest,
   type SettlePreviewDto,
   type UpdateEntryRequest,
   type UpdateRecurringRequest,
@@ -70,6 +74,8 @@ export const queryKeys = {
     ['household', id, 'nudges', tone] as const,
   householdInvites: (id: string | undefined) => ['household', id, 'invites'] as const,
   invitePreview: (token: string | undefined) => ['invite', token] as const,
+  confirmEmail: (userId: string | undefined, token: string | undefined) =>
+    ['confirm-email', userId, token] as const,
 }
 
 /** Invalidate everything derived from a household's ledger state. */
@@ -98,7 +104,7 @@ function buildQuery(params: Record<string, string | number | undefined>): string
 export function useMe() {
   return useQuery({
     queryKey: queryKeys.me,
-    queryFn: () => apiGet<MemberDto>('/me'),
+    queryFn: () => apiGet<MeDto>('/me'),
     retry: false,
   })
 }
@@ -108,6 +114,21 @@ export function useInvitePreview(token: string | undefined) {
     queryKey: queryKeys.invitePreview(token),
     queryFn: () => apiGet<InvitePreviewDto>(`/invites/${token}`),
     enabled: !!token,
+    retry: false,
+  })
+}
+
+/** Fires the confirmation POST automatically once both params are present — modelled as a
+ * query (like useInvitePreview) rather than a mutation triggered from an effect, so the page
+ * just renders off `isPending`/`isError`/`data` with no manual fetch-on-mount wiring. */
+export function useConfirmEmail(userId: string | undefined, token: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.confirmEmail(userId, token),
+    // React Query rejects `undefined` as query data (apiPost<void> resolves to that for a
+    // 204) — resolve to `true` instead so a successful confirmation still counts as data.
+    queryFn: () =>
+      apiPost<void>('/auth/confirm-email', { userId, token } as ConfirmEmailRequest).then(() => true),
+    enabled: !!userId && !!token,
     retry: false,
   })
 }
@@ -223,7 +244,7 @@ export function useNudges(id: string | undefined, tone: NudgeTone = 'direct') {
 export function useRegister() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (body: RegisterRequest) => apiPost<MemberDto>('/auth/register', body),
+    mutationFn: (body: RegisterRequest) => apiPost<MeDto>('/auth/register', body),
     onSuccess: (me) => {
       qc.setQueryData(queryKeys.me, me)
       qc.invalidateQueries()
@@ -234,7 +255,7 @@ export function useRegister() {
 export function useLogin() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (body: LoginRequest) => apiPost<MemberDto>('/auth/login', body),
+    mutationFn: (body: LoginRequest) => apiPost<MeDto>('/auth/login', body),
     onSuccess: (me) => {
       qc.setQueryData(queryKeys.me, me)
       qc.invalidateQueries()
@@ -253,6 +274,29 @@ export function useLogout() {
   })
 }
 
+export function useResendVerification() {
+  return useMutation({
+    mutationFn: () => apiPost<void>('/auth/resend-verification'),
+  })
+}
+
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: (body: ForgotPasswordRequest) => apiPost<void>('/auth/forgot-password', body),
+  })
+}
+
+export function useResetPassword() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: ResetPasswordRequest) => apiPost<MeDto>('/auth/reset-password', body),
+    onSuccess: (me) => {
+      qc.setQueryData(queryKeys.me, me)
+      qc.invalidateQueries()
+    },
+  })
+}
+
 export function useSendInvite(householdId: string | undefined) {
   const qc = useQueryClient()
   return useMutation({
@@ -266,7 +310,7 @@ export function useAcceptInvite(token: string | undefined) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (body: AcceptInviteRequest) =>
-      apiPost<MemberDto>(`/invites/${token}/accept`, body),
+      apiPost<MeDto>(`/invites/${token}/accept`, body),
     onSuccess: (me) => {
       // Same reasoning as useLogin: set directly so a same-tick navigate to '/'
       // doesn't see stale (unauthenticated) cache before the invalidation refetch.
