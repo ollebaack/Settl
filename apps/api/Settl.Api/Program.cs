@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
 using Settl.Api.Data;
 using Settl.Api.Features;
 using Settl.Api.Services;
@@ -32,6 +33,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 // Migrations run at container startup (ADR-0009) — not at build/release time, since a
