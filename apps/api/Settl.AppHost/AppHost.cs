@@ -7,15 +7,21 @@ var builder = DistributedApplication.CreateBuilder(args);
 var postgres = builder.AddPostgres("postgres");
 var settlDb = postgres.AddDatabase("Settl");
 
-// ADR-0011: Resend sends invite email. Secret, user-secrets-backed locally (never in
-// appsettings*.json, per apps/api/CLAUDE.md) — first secret parameter in this AppHost.
-// Left unset in local dev, the API falls back to its logging-only DevEmailSender.
-var resendApiKey = builder.AddParameter("resend-api-key", secret: true);
+// ADR-0011: Resend sends invite email. Read via configuration (user-secrets or an
+// env var on the AppHost — e.g. `dotnet user-secrets set Resend:ApiKey ... --project
+// apps/api/Settl.AppHost` — never appsettings*.json) rather than an Aspire AddParameter:
+// a required parameter prompts/blocks `dotnet run` when unset, and this key is meant to
+// stay unset in local dev, where the API falls back to its logging-only DevEmailSender.
+var resendApiKey = builder.Configuration["Resend:ApiKey"];
 
 var api = builder.AddProject<Projects.Settl_Api>("api")
     .WithReference(settlDb)
-    .WithEnvironment("Resend__ApiKey", resendApiKey)
     .WaitFor(postgres);
+
+if (!string.IsNullOrWhiteSpace(resendApiKey))
+{
+    api.WithEnvironment("Resend__ApiKey", resendApiKey);
+}
 
 if (builder.ExecutionContext.IsPublishMode)
 {
