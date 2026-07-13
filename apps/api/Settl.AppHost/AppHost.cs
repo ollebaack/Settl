@@ -58,9 +58,12 @@ if (builder.ExecutionContext.IsPublishMode)
 }
 else
 {
-    // Local dev: Postgres runs as an Aspire-managed container with a data volume so the
-    // schema/seed survive AppHost restarts (ADR-0010).
-    postgres.WithDataVolume();
+    // Local dev: deliberately NO data volume — every `pnpm dev` starts Postgres empty,
+    // so Program.cs's migrate+seed runs fresh each time. Trades "state survives a
+    // restart" for two things worth more in dev: never hitting stale-schema seed data
+    // (bit us once already, from data seeded before the Identity migration landed) and
+    // being able to re-test signup/invite flows with the same email repeatedly instead
+    // of hitting "already exists".
 
     builder.AddViteApp("web", "../../web")
         .WithPnpm()
