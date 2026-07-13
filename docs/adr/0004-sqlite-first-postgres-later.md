@@ -1,6 +1,6 @@
 # ADR-0004: SQLite first, Postgres when hosting demands it
 
-- **Status:** accepted
+- **Status:** superseded by ADR-0010
 - **Date:** 2026-07-12
 
 ## Context
