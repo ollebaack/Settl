@@ -586,6 +586,7 @@ export interface components {
             email: string;
             /** Format: date-time */
             expiresAt: string;
+            emailSent: boolean;
         };
         InvitePreviewDto: {
             householdName: string;

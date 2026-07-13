@@ -53,10 +53,20 @@ public static class InvitesEndpoints
 
             var baseUrl = config["Web:BaseUrl"] ?? "http://localhost:5173";
             var acceptUrl = $"{baseUrl}/accept-invite?token={rawToken}";
-            await email.SendInviteEmailAsync(normalizedEmail, household.Name, inviter.Name, acceptUrl, ct);
+            var emailSent = true;
+            try
+            {
+                await email.SendInviteEmailAsync(normalizedEmail, household.Name, inviter.Name, acceptUrl, ct);
+            }
+            catch (InvalidOperationException)
+            {
+                // The invite row already exists (it can be resent or shared manually), so a
+                // delivery failure shouldn't fail the whole request — just flag it for the UI.
+                emailSent = false;
+            }
 
             return Results.Created($"/households/{id}/invites/{invite.Id}",
-                new InviteDto(invite.Id, invite.Email, invite.ExpiresAt));
+                new InviteDto(invite.Id, invite.Email, invite.ExpiresAt, emailSent));
         }).WithName("CreateInvite")
             .Produces<InviteDto>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status400BadRequest)
@@ -79,7 +89,7 @@ public static class InvitesEndpoints
                 .ToListAsync(ct);
             return Results.Ok(pending
                 .OrderBy(i => i.CreatedAt)
-                .Select(i => new InviteDto(i.Id, i.Email, i.ExpiresAt)));
+                .Select(i => new InviteDto(i.Id, i.Email, i.ExpiresAt, EmailSent: true)));
         }).WithName("GetHouseholdInvites")
             .Produces<List<InviteDto>>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status403Forbidden);

@@ -150,8 +150,12 @@ function InviteSection({
       return
     }
     try {
-      await sendInvite.mutateAsync({ email: trimmed })
-      toast(`Inbjudan skickad till ${trimmed}`)
+      const invite = await sendInvite.mutateAsync({ email: trimmed })
+      toast(
+        invite.emailSent
+          ? `Inbjudan skickad till ${trimmed}`
+          : `Inbjudan skapad men mejlet kunde inte skickas till ${trimmed} — försök igen senare`,
+      )
       setEmail('')
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Något gick fel. Försök igen.')
