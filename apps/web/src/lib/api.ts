@@ -7,6 +7,7 @@
  * Response/request DTO types are re-exported here so screens import from one place.
  */
 import type { components, paths } from '@settl/api-client'
+import { recordRequest } from './dev-bar-store'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000'
 
@@ -21,21 +22,35 @@ async function request<T>(method: Method, path: string, body?: unknown): Promise
     init.body = JSON.stringify(body)
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, init)
+  const startedAt = performance.now()
+  let status: number | 'error' = 'error'
 
-  if (!response.ok) {
-    let detail: string | undefined
-    try {
-      const problem = (await response.json()) as ProblemDetails
-      detail = problem?.detail ?? problem?.title ?? undefined
-    } catch {
-      /* body was not ProblemDetails JSON */
+  try {
+    const response = await fetch(`${API_BASE_URL}${path}`, init)
+    status = response.status
+
+    if (!response.ok) {
+      let detail: string | undefined
+      try {
+        const problem = (await response.json()) as ProblemDetails
+        detail = problem?.detail ?? problem?.title ?? undefined
+      } catch {
+        /* body was not ProblemDetails JSON */
+      }
+      throw new Error(detail ?? `API ${response.status} ${method} ${path}`)
     }
-    throw new Error(detail ?? `API ${response.status} ${method} ${path}`)
-  }
 
-  if (response.status === 204) return undefined as T
-  return (await response.json()) as T
+    if (response.status === 204) return undefined as T
+    return (await response.json()) as T
+  } finally {
+    recordRequest({
+      method,
+      path,
+      status,
+      durationMs: Math.round(performance.now() - startedAt),
+      timestamp: new Date().toISOString(),
+    })
+  }
 }
 
 export const apiGet = <T>(path: string) => request<T>('GET', path)

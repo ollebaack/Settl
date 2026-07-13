@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { AccountMenu } from '@/components/account-menu'
+import { DevBar } from '@/components/dev-bar'
 import { MemberAvatarStack } from '@/components/member-avatar'
 import { GhostCard } from '@/components/ghost-card'
 import { Money } from '@/components/money'
@@ -60,14 +61,17 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="mx-auto flex min-h-dvh max-w-[1240px] flex-col min-[980px]:grid min-[980px]:grid-cols-[220px_minmax(0,1fr)_300px]">
         <Sidebar />
         <MobileHeader />
-        <main className="flex-1 pb-24 min-[980px]:pb-8">
+        <main className="flex-1 pb-32 min-[980px]:pb-16">
           <div className="mx-auto w-full max-w-md px-4 py-4 min-[980px]:max-w-[640px] min-[980px]:px-8 min-[980px]:py-8">
             {children}
           </div>
         </main>
         <RightRail />
       </div>
-      <MobileTabBar />
+      <div className="fixed inset-x-0 bottom-0 z-40 flex flex-col-reverse">
+        <MobileTabBar />
+        <DevBar />
+      </div>
     </div>
   )
 }
@@ -79,7 +83,7 @@ function Sidebar() {
   const { household } = useActiveHousehold()
 
   return (
-    <aside className="sticky top-0 hidden h-dvh flex-col gap-4 border-r border-border bg-sidebar px-4 py-6 min-[980px]:flex">
+    <aside className="sticky top-0 hidden h-dvh flex-col gap-4 border-r border-border bg-sidebar px-4 pt-6 pb-16 min-[980px]:flex">
       <div className="px-2">
         <p className="font-heading text-xl font-semibold tracking-tight text-foreground">Settl</p>
         <p className="text-xs text-muted-foreground">Hushållets delade anteckningsbok</p>
@@ -312,7 +316,7 @@ function MobileTabBar() {
   const { openSheet } = useSheet()
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-[1fr_1fr_66px_1fr_1fr] items-center border-t border-border bg-background/95 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur min-[980px]:hidden">
+    <nav className="grid grid-cols-[1fr_1fr_66px_1fr_1fr] items-center border-t border-border bg-background/95 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur min-[980px]:hidden">
       <TabLink item={NAV[0]} />
       <TabLink item={NAV[1]} />
       <div className="flex justify-center">

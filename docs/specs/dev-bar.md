@@ -42,16 +42,19 @@ Build with shadcn primitives already in the project (`drawer`, `tabs`,
 
 ## Capture
 
-**Console errors** — uncaught only:
+**Console errors** — uncaught exceptions/rejections, plus `console.error()` calls:
 
 ```ts
 window.addEventListener('error', handler)
 window.addEventListener('unhandledrejection', handler)
+console.error = (...args) => { original(...args); capture(...args) }
 ```
 
-No monkey-patching `console.error`/`console.warn`. Known, accepted gap:
-errors that are caught and merely logged via `console.error()` inside app code
-won't appear.
+Revised from the original "no monkey-patching" decision: most errors devs care
+about while building a screen (React warnings, caught-and-logged failures)
+only ever go through `console.error()`, never an uncaught throw, so excluding
+it left the tool blind to the common case. `console.warn` stays unpatched —
+this bar tracks errors, not warnings.
 
 **Requests** — instrument the single choke point in
 [api.ts](../../apps/web/src/lib/api.ts), the `request()` function all
