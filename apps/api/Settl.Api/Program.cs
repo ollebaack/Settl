@@ -83,12 +83,11 @@ builder.Services.AddSingleton<DevInviteLinkStore>();
 var resendApiKey = builder.Configuration["Resend:ApiKey"];
 if (!string.IsNullOrWhiteSpace(resendApiKey))
 {
-    builder.Services.AddHttpClient<ResendEmailSender>(client =>
+    builder.Services.AddHttpClient<IEmailSender, ResendEmailSender>(client =>
     {
         client.BaseAddress = new Uri("https://api.resend.com/");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", resendApiKey);
     });
-    builder.Services.AddScoped<IEmailSender, ResendEmailSender>();
 }
 else
 {
