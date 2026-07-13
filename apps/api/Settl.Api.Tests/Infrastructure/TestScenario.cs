@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Settl.Api.Data;
 using Settl.Api.Domain;
 
@@ -44,16 +45,29 @@ public sealed class TestScenario
 
     private DateOnly Day(int offset) => DateOnly.FromDateTime(_now.UtcDateTime).AddDays(offset);
 
-    /// <summary>Adds a member and joins them to the household. Returns the new member id.</summary>
+    /// <summary>Adds a member and joins them to the household. Returns the new member id.
+    /// Gets real Identity credentials (a per-member @test.settl.dev email,
+    /// <see cref="SeedIds.DevPassword"/>) so <see cref="SettlApiFactory.ClientAs"/> can log
+    /// them in.</summary>
     public Guid AddMember(string name, string? avatarColor = null)
     {
         var id = Guid.NewGuid();
-        _members.Add(new Member
+        var email = $"{id:N}@test.settl.dev";
+        var member = new Member
         {
             Id = id,
             Name = name,
-            AvatarColor = avatarColor ?? Palette[_members.Count % Palette.Length]
-        });
+            AvatarColor = avatarColor ?? Palette[_members.Count % Palette.Length],
+            UserName = email,
+            NormalizedUserName = email.ToUpperInvariant(),
+            Email = email,
+            NormalizedEmail = email.ToUpperInvariant(),
+            EmailConfirmed = true,
+            SecurityStamp = Guid.NewGuid().ToString(),
+            ConcurrencyStamp = Guid.NewGuid().ToString()
+        };
+        member.PasswordHash = new PasswordHasher<Member>().HashPassword(member, SeedIds.DevPassword);
+        _members.Add(member);
         _memberships.Add(new HouseholdMembership
         {
             HouseholdId = HouseholdId,

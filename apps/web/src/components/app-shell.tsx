@@ -18,7 +18,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { UserSwitcher } from '@/components/user-switcher'
+import { AccountMenu } from '@/components/account-menu'
 import { MemberAvatarStack } from '@/components/member-avatar'
 import { GhostCard } from '@/components/ghost-card'
 import { Money } from '@/components/money'
@@ -112,7 +112,7 @@ function Sidebar() {
         <p className="px-2 text-xs text-muted-foreground text-balance">{HELPER_TEXT}</p>
         <Separator />
         <div className="flex items-center justify-between gap-2">
-          <UserSwitcher />
+          <AccountMenu />
           <ThemeToggle />
         </div>
       </div>
@@ -169,11 +169,14 @@ function MobileHeader() {
         <span className="max-w-[160px] truncate font-medium">{household?.name ?? 'Settl'}</span>
         <ChevronDownIcon className="size-4 text-muted-foreground" />
       </button>
-      {members && members.length > 0 && (
-        <MemberAvatarStack
-          members={members.map((m) => ({ name: m.name, avatarColor: m.avatarColor }))}
-        />
-      )}
+      <div className="flex items-center gap-1.5">
+        {members && members.length > 0 && (
+          <MemberAvatarStack
+            members={members.map((m) => ({ name: m.name, avatarColor: m.avatarColor }))}
+          />
+        )}
+        <AccountMenu />
+      </div>
     </header>
   )
 }

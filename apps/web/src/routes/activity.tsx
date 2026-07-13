@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { RequireAuth } from '@/components/require-auth'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { EmptyState, ErrorState, LoadingState } from '@/components/screen-states'
@@ -8,7 +9,11 @@ import { useSheet } from '@/lib/sheet'
 import type { NudgeActionDto, NudgeDto, NudgeTone } from '@/lib/api'
 
 export const Route = createFileRoute('/activity')({
-  component: ActivityPage,
+  component: () => (
+    <RequireAuth>
+      <ActivityPage />
+    </RequireAuth>
+  ),
 })
 
 // Tone comes from a setting; direct is the default (implementation-map §2.4,

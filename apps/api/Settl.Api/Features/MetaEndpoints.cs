@@ -22,13 +22,6 @@ public static class MetaEndpoints
             .Produces<MemberDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
-        app.MapGet("/dev/users", async (SettlDbContext db, CancellationToken ct) =>
-        {
-            var members = await db.Members.OrderBy(m => m.Name).ToListAsync(ct);
-            return Results.Ok(members.Select(m => new MemberDto(m.Id, m.Name, m.AvatarColor)));
-        }).WithName("GetDevUsers")
-            .Produces<List<MemberDto>>(StatusCodes.Status200OK);
-
         return app;
     }
 }

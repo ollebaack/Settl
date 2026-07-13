@@ -1,3 +1,4 @@
+using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
@@ -67,13 +68,30 @@ public sealed class SettlApiFactory : WebApplicationFactory<Program>
         });
     }
 
-    /// <summary>An <see cref="HttpClient"/> acting as a specific member (sets X-Settl-User).</summary>
+    /// <summary>
+    /// An <see cref="HttpClient"/> authenticated as a specific member — logs in with that
+    /// member's seeded/dev-scenario credentials (<see cref="SeedIds.DevPassword"/> for both
+    /// <see cref="DbInitializer"/> and <see cref="TestScenario"/> members) and keeps the auth
+    /// cookie for subsequent requests (WebApplicationFactory's default client handles cookies).
+    /// </summary>
     public HttpClient ClientAs(Guid memberId)
     {
         var client = CreateClient();
-        client.DefaultRequestHeaders.Add(CurrentUserAccessor.HeaderName, memberId.ToString());
+        var email = WithDb(db => db.Members
+            .Where(m => m.Id == memberId)
+            .Select(m => m.Email!)
+            .SingleAsync()).GetAwaiter().GetResult();
+
+        var login = client.PostAsJsonAsync("/auth/login",
+            new { Email = email, Password = SeedIds.DevPassword }).GetAwaiter().GetResult();
+        login.EnsureSuccessStatusCode();
         return client;
     }
+
+    /// <summary>The most recent invite accept link recorded by <see cref="DevEmailSender"/> —
+    /// the same in-memory side channel GET /dev/invites/latest reads from. Tests use this
+    /// instead of that endpoint since it's Development-only and the test host runs "Testing".</summary>
+    public string? LastDevInviteAcceptUrl => Services.GetRequiredService<DevInviteLinkStore>().LastAcceptUrl;
 
     /// <summary>Runs work against a fresh scoped <see cref="SettlDbContext"/> and returns a result.</summary>
     public async Task<T> WithDb<T>(Func<SettlDbContext, Task<T>> work)

@@ -1,17 +1,14 @@
 import { test, expect } from '@playwright/test'
-import { getHouseholdId, getMemberId, openAddSheet, pin, uniqueSuffix } from './helpers'
+import { getHouseholdId, loginAs, openAddSheet, pinHousehold, uniqueSuffix } from './helpers'
 
 // ADD ENTRY (Ny post, §2.6 + flow §4): create an equal expense, and the live
 // percent-split validation that blocks save. Data is created with a unique title
 // per run so parallel workers / both projects never collide.
 test.describe('Add entry', () => {
-  let du: string
-  let household: string
-
-  test.beforeEach(async ({ page, request }) => {
-    du = await getMemberId(request, 'Du')
-    household = await getHouseholdId(request, du, 'Lönnvägen 3')
-    await pin(page, du, household)
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page, 'Du')
+    const household = await getHouseholdId(page.request, 'Lönnvägen 3')
+    await pinHousehold(page, household)
     await page.goto('/')
   })
 

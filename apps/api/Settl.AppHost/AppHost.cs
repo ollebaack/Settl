@@ -7,8 +7,14 @@ var builder = DistributedApplication.CreateBuilder(args);
 var postgres = builder.AddPostgres("postgres");
 var settlDb = postgres.AddDatabase("Settl");
 
+// ADR-0011: Resend sends invite email. Secret, user-secrets-backed locally (never in
+// appsettings*.json, per apps/api/CLAUDE.md) — first secret parameter in this AppHost.
+// Left unset in local dev, the API falls back to its logging-only DevEmailSender.
+var resendApiKey = builder.AddParameter("resend-api-key", secret: true);
+
 var api = builder.AddProject<Projects.Settl_Api>("api")
     .WithReference(settlDb)
+    .WithEnvironment("Resend__ApiKey", resendApiKey)
     .WaitFor(postgres);
 
 if (builder.ExecutionContext.IsPublishMode)

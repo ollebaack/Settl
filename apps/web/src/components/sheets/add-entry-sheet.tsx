@@ -21,8 +21,7 @@ import { MemberAvatar } from '@/components/member-avatar'
 import { Money } from '@/components/money'
 
 import { useActiveHousehold } from '@/lib/active-household'
-import { useDevUser } from '@/lib/dev-user'
-import { useMembers, useCreateEntry, useCreateRecurring } from '@/lib/queries'
+import { useMe, useMembers, useCreateEntry, useCreateRecurring } from '@/lib/queries'
 import { formatKr, shortDate } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import type {
@@ -82,7 +81,8 @@ function pickSingle<T extends string>(next: string[], current: T): T {
 
 export function AddEntrySheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { householdId } = useActiveHousehold()
-  const { memberId: currentMemberId } = useDevUser()
+  const { data: me } = useMe()
+  const currentMemberId = me?.id
   const { data: members, isLoading, isError, error, refetch } = useMembers(householdId)
   const createEntry = useCreateEntry(householdId)
   const createRecurring = useCreateRecurring(householdId)

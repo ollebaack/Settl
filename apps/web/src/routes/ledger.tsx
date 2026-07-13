@@ -9,6 +9,7 @@
  */
 import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import { RequireAuth } from '@/components/require-auth'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { EntryRow } from '@/components/entry-row'
 import { GhostCard } from '@/components/ghost-card'
@@ -23,7 +24,11 @@ import { useIsWide } from '@/lib/use-media'
 import type { EntryDto, EntryFilter, MemberDto, UpcomingDto } from '@/lib/api'
 
 export const Route = createFileRoute('/ledger')({
-  component: LedgerPage,
+  component: () => (
+    <RequireAuth>
+      <LedgerPage />
+    </RequireAuth>
+  ),
 })
 
 interface FilterOption {

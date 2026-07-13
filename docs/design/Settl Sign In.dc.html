@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Bricolage Grotesque',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}a:hover{color:var(--ink)}
+button{cursor:pointer;font:inherit;color:inherit;background:none;border:none;padding:0;margin:0;text-align:left}
+input{font:inherit;color:inherit}
+input:focus{outline:2px solid var(--accent);outline-offset:1px}
+input::placeholder{color:var(--sub);opacity:.55}
+[data-theme="mint"]{--bg:#f4f6f2;--card:#ffffff;--ink:#1c2620;--sub:#64715f;--line:#e2e7dd;--accent:#2e7d5b;--soft:#e2f0e6;--neg:#bb5433;--chip:#eaeee6}
+[data-theme="paper"]{--bg:#f8f3ea;--card:#fffdf6;--ink:#2c221a;--sub:#83725e;--line:#eadfca;--accent:#bd5d38;--soft:#f6e4d7;--neg:#bd5d38;--chip:#f0e9da}
+[data-theme="citrus"]{--bg:#f3f3f0;--card:#ffffff;--ink:#1a1b17;--sub:#6d6f65;--line:#e3e3db;--accent:#5c7000;--soft:#eef2d3;--neg:#b04a2f;--chip:#eaeae2}
+[data-theme="mint-dark"]{--bg:#141a16;--card:#1c241e;--ink:#e6ece5;--sub:#8fa091;--line:#29332b;--accent:#3f9d72;--soft:#213229;--neg:#e08663;--chip:#232c25}
+[data-theme="paper-dark"]{--bg:#1d1813;--card:#261f19;--ink:#efe7da;--sub:#a4917b;--line:#352c22;--accent:#cf7448;--soft:#372a1f;--neg:#e08a5f;--chip:#2d261e}
+[data-theme="citrus-dark"]{--bg:#171814;--card:#20211c;--ink:#eaebe3;--sub:#989b8d;--line:#2c2d26;--accent:#8aa626;--soft:#272b18;--neg:#e07a54;--chip:#262720}
+@keyframes rise{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</helmet>
+<div data-theme="{{ theme }}" data-screen-label="Logga in" style="min-height:100vh;box-sizing:border-box;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px;gap:28px">
+  <div style="text-align:center;animation:rise .3s ease">
+    <div style="width:52px;height:52px;margin:0 auto 14px;border-radius:16px;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:24px;font-weight:700;letter-spacing:-.02em">S</div>
+    <div style="font-size:26px;font-weight:700;letter-spacing:-.02em">Settl</div>
+    <div style="font-size:13px;color:var(--sub);margin-top:4px">Den delade anteckningsboken &mdash; f&ouml;r hush&aring;llet, resan eller g&auml;nget</div>
+  </div>
+
+  <div style="width:100%;max-width:380px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:26px 24px;box-sizing:border-box;animation:rise .35s ease">
+    <sc-if value="{{ showForm }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div>
+        <div style="font-size:18px;font-weight:700;letter-spacing:-.01em">V&auml;lkommen tillbaka</div>
+        <div style="font-size:12.5px;color:var(--sub);margin-top:3px">Logga in f&ouml;r att se hur ni ligger till.</div>
+      </div>
+      <sc-if value="{{ hasError }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:12.5px;font-weight:600;color:var(--neg);background:var(--chip);border-radius:10px;padding:9px 12px">{{ errorMsg }}</div>
+      </sc-if>
+      <label style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--sub)">E-post</span>
+        <input type="email" value="{{ email }}" onChange="{{ onEmail }}" placeholder="namn@exempel.se" autocomplete="email" style="box-sizing:border-box;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14.5px">
+      </label>
+      <label style="display:flex;flex-direction:column;gap:6px">
+        <span style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--sub)">L&ouml;senord</span><button onClick="{{ onForgot }}" style="font-size:12px;font-weight:600;color:var(--accent)">Gl&ouml;mt?</button></span>
+        <input type="password" value="{{ password }}" onChange="{{ onPassword }}" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="current-password" style="box-sizing:border-box;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14.5px">
+      </label>
+      <button onClick="{{ onSubmit }}" style="display:flex;align-items:center;justify-content:center;gap:8px;background:var(--accent);color:#fff;border-radius:14px;padding:13px 0;font-size:14.5px;font-weight:700;min-height:48px" style-hover="filter:brightness(1.06)">
+        <sc-if value="{{ busy }}" hint-placeholder-val="{{ false }}"><span style="width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite"></span></sc-if>
+        {{ submitLabel }}
+      </button>
+      <div style="display:flex;align-items:center;gap:12px"><span style="flex:1;height:1px;background:var(--line)"></span><span style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--sub)">eller</span><span style="flex:1;height:1px;background:var(--line)"></span></div>
+      <button onClick="{{ onMagic }}" style="display:flex;align-items:center;justify-content:center;gap:9px;background:var(--soft);color:var(--accent);border:1px solid var(--line);border-radius:14px;padding:12px 0;font-size:14px;font-weight:650;min-height:46px" style-hover="filter:brightness(.98)">&#9993;&#65038; Skicka inloggningsl&auml;nk</button>
+    </div>
+    </sc-if>
+    <sc-if value="{{ showSent }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:12px;text-align:center;padding:8px 0;animation:rise .3s ease">
+      <div style="width:44px;height:44px;margin:0 auto;border-radius:14px;background:var(--soft);color:var(--accent);display:grid;place-items:center;font-size:20px;font-weight:700">&#10003;</div>
+      <div style="font-size:17px;font-weight:700">Kolla din inkorg</div>
+      <div style="font-size:13px;color:var(--sub);line-height:1.5">Vi har skickat en inloggningsl&auml;nk till<br><span style="font-family:'Spline Sans Mono',monospace;font-size:12.5px;color:var(--ink)">{{ sentTo }}</span></div>
+      <button onClick="{{ onBack }}" style="font-size:13px;font-weight:600;color:var(--accent);margin-top:4px;align-self:center">&larr; Tillbaka till inloggning</button>
+    </div>
+    </sc-if>
+    <sc-if value="{{ showSignup }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Skapa konto" style="display:flex;flex-direction:column;gap:16px;animation:rise .3s ease">
+      <div>
+        <div style="font-size:18px;font-weight:700;letter-spacing:-.01em">Skapa konto</div>
+        <div style="font-size:12.5px;color:var(--sub);margin-top:3px">Ett konto per person &mdash; hush&aring;ll och grupper delar ni p&aring; sen.</div>
+      </div>
+      <sc-if value="{{ hasError }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:12.5px;font-weight:600;color:var(--neg);background:var(--chip);border-radius:10px;padding:9px 12px">{{ errorMsg }}</div>
+      </sc-if>
+      <label style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--sub)">Namn</span>
+        <input type="text" value="{{ suName }}" onChange="{{ onSuName }}" placeholder="F&ouml;rnamn r&auml;cker" autocomplete="name" style="box-sizing:border-box;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14.5px">
+      </label>
+      <label style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--sub)">E-post</span>
+        <input type="email" value="{{ suEmail }}" onChange="{{ onSuEmail }}" placeholder="namn@exempel.se" autocomplete="email" style="box-sizing:border-box;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14.5px">
+      </label>
+      <label style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--sub)">L&ouml;senord</span>
+        <input type="password" value="{{ suPassword }}" onChange="{{ onSuPassword }}" placeholder="Minst 8 tecken" autocomplete="new-password" style="box-sizing:border-box;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14.5px">
+      </label>
+      <button onClick="{{ onSignupSubmit }}" style="display:flex;align-items:center;justify-content:center;gap:8px;background:var(--accent);color:#fff;border-radius:14px;padding:13px 0;font-size:14.5px;font-weight:700;min-height:48px" style-hover="filter:brightness(1.06)">
+        <sc-if value="{{ busy }}" hint-placeholder-val="{{ false }}"><span style="width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite"></span></sc-if>
+        {{ signupLabel }}
+      </button>
+      <div style="font-size:11.5px;color:var(--sub);line-height:1.5;text-align:center">Genom att skapa konto godk&auml;nner du <a href="#" style="font-weight:600">villkoren</a>.</div>
+    </div>
+    </sc-if>
+    <sc-if value="{{ showInvite }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Bjud in" style="display:flex;flex-direction:column;gap:16px;animation:rise .3s ease">
+      <div>
+        <div style="font-size:18px;font-weight:700;letter-spacing:-.01em">Bjud in din grupp</div>
+        <div style="font-size:12.5px;color:var(--sub);margin-top:3px">Alla i gruppen ser samma loggbok.</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:10px 12px">
+        <span style="width:30px;height:30px;flex:none;border-radius:10px;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:700">{{ hhInitial }}</span>
+        <span style="flex:1;font-size:14px;font-weight:650">{{ hhName }}</span>
+        <span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--sub)">{{ memberCount }}</span>
+      </div>
+      <sc-if value="{{ hasError }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:12.5px;font-weight:600;color:var(--neg);background:var(--chip);border-radius:10px;padding:9px 12px">{{ errorMsg }}</div>
+      </sc-if>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--sub)">Dela l&auml;nk</span>
+        <div style="display:flex;align-items:center;gap:8px;border:1.5px dashed var(--line);border-radius:12px;padding:10px 12px">
+          <span style="flex:1;font-family:'Spline Sans Mono',monospace;font-size:12.5px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">settl.se/inbjudan/k3x9-vr72</span>
+          <button onClick="{{ onCopyLink }}" style="flex:none;font-size:12.5px;font-weight:650;color:var(--accent);background:var(--soft);border-radius:8px;padding:6px 11px">Kopiera</button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--sub)">Eller via e-post</span>
+        <div style="display:flex;gap:8px">
+          <input type="email" value="{{ invEmail }}" onChange="{{ onInvEmail }}" placeholder="namn@exempel.se" style="box-sizing:border-box;flex:1;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14px">
+          <button onClick="{{ onSendInvite }}" style="flex:none;background:var(--accent);color:#fff;border-radius:12px;padding:0 16px;font-size:13.5px;font-weight:700;min-height:44px" style-hover="filter:brightness(1.06)">Skicka</button>
+        </div>
+      </div>
+      <sc-if value="{{ hasInvited }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <sc-for list="{{ invited }}" as="i" hint-placeholder-count="1">
+          <div style="display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:9px 12px">
+            <span style="width:26px;height:26px;flex:none;border-radius:9px;background:var(--chip);color:var(--sub);display:grid;place-items:center;font-size:11px;font-weight:700">{{ i.init }}</span>
+            <span style="flex:1;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ i.email }}</span>
+            <span style="font-size:11px;font-weight:650;color:var(--accent);background:var(--soft);border-radius:999px;padding:3px 9px">V&auml;ntar</span>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+      <button onClick="{{ onInviteDone }}" style="display:flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;border-radius:14px;padding:13px 0;font-size:14.5px;font-weight:700;min-height:48px" style-hover="filter:brightness(1.06)">Klart &mdash; till appen</button>
+      <button onClick="{{ onInviteSkip }}" style="font-size:13px;font-weight:600;color:var(--sub);align-self:center">Hoppa &ouml;ver s&aring; l&auml;nge</button>
+    </div>
+    </sc-if>
+    <sc-if value="{{ showAccept }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Acceptera inbjudan" style="display:flex;flex-direction:column;gap:16px;animation:rise .3s ease">
+      <div style="text-align:center;padding-top:4px">
+        <div style="width:48px;height:48px;margin:0 auto 12px;border-radius:15px;background:var(--soft);color:var(--accent);display:grid;place-items:center;font-size:20px;font-weight:700">A</div>
+        <div style="font-size:18px;font-weight:700;letter-spacing:-.01em">Anna har bjudit in dig</div>
+        <div style="font-size:13px;color:var(--sub);margin-top:4px">till hush&aring;llet <span style="font-weight:650;color:var(--ink)">S&ouml;dergatan 12</span> &middot; 2 medlemmar</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:11px 13px">
+        <span style="display:flex">
+          <span style="width:28px;height:28px;border-radius:10px;background:var(--soft);color:var(--accent);display:grid;place-items:center;font-size:12px;font-weight:700;border:2px solid var(--card)">A</span>
+          <span style="width:28px;height:28px;border-radius:10px;background:var(--chip);color:var(--sub);display:grid;place-items:center;font-size:12px;font-weight:700;border:2px solid var(--card);margin-left:-8px">J</span>
+        </span>
+        <span style="flex:1;font-size:12.5px;color:var(--sub)">Anna och Johan delar redan p&aring; loggboken.</span>
+      </div>
+      <sc-if value="{{ hasError }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:12.5px;font-weight:600;color:var(--neg);background:var(--chip);border-radius:10px;padding:9px 12px">{{ errorMsg }}</div>
+      </sc-if>
+      <div style="font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--sub);border-top:1px solid var(--line);padding-top:14px">Skapa ditt konto f&ouml;r att g&aring; med</div>
+      <label style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--sub)">Ditt namn</span>
+        <input type="text" value="{{ accName }}" onChange="{{ onAccName }}" placeholder="S&aring; h&auml;r syns du i loggboken" autocomplete="name" style="box-sizing:border-box;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14.5px">
+      </label>
+      <label style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--sub)">E-post</span>
+        <input type="email" value="{{ accEmail }}" onChange="{{ onAccEmail }}" placeholder="namn@exempel.se" autocomplete="email" style="box-sizing:border-box;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14.5px">
+      </label>
+      <label style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--sub)">L&ouml;senord</span>
+        <input type="password" value="{{ accPassword }}" onChange="{{ onAccPassword }}" placeholder="Minst 8 tecken" autocomplete="new-password" style="box-sizing:border-box;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14.5px">
+      </label>
+      <button onClick="{{ onAccept }}" style="display:flex;align-items:center;justify-content:center;gap:8px;background:var(--accent);color:#fff;border-radius:14px;padding:13px 0;font-size:14.5px;font-weight:700;min-height:48px" style-hover="filter:brightness(1.06)">
+        <sc-if value="{{ busy }}" hint-placeholder-val="{{ false }}"><span style="width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite"></span></sc-if>
+        {{ acceptLabel }}
+      </button>
+      <button onClick="{{ onDecline }}" style="font-size:13px;font-weight:600;color:var(--sub);align-self:center">Avb&ouml;j inbjudan</button>
+    </div>
+    </sc-if>
+  </div>
+
+  <div style="font-size:13px;color:var(--sub);animation:rise .4s ease;min-height:20px">
+    <sc-if value="{{ showForm }}" hint-placeholder-val="{{ true }}">Ny p&aring; Settl? <button onClick="{{ goSignup }}" style="font-weight:650;color:var(--accent)">Skapa konto</button></sc-if>
+    <sc-if value="{{ showSignup }}" hint-placeholder-val="{{ false }}">Har du redan ett konto? <button onClick="{{ goSignin }}" style="font-weight:650;color:var(--accent)">Logga in</button></sc-if>
+    <sc-if value="{{ showAccept }}" hint-placeholder-val="{{ false }}">Har du redan ett konto? <button onClick="{{ goSignin }}" style="font-weight:650;color:var(--accent)">Logga in</button></sc-if>
+  </div>
+
+  <sc-if value="{{ showNoHH }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Skapa f&ouml;rsta hush&aring;llet" style="position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(10,14,11,.45);animation:rise .2s ease">
+      <div style="width:100%;max-width:400px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:26px 24px;box-sizing:border-box;position:relative;animation:rise .3s ease">
+        <button onClick="{{ onNoHHClose }}" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:10px;background:var(--chip);color:var(--sub);display:grid;place-items:center;font-size:14px;font-weight:700">&times;</button>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div>
+            <div style="width:44px;height:44px;border-radius:14px;background:var(--soft);color:var(--accent);display:grid;place-items:center;font-size:20px;font-weight:700;margin-bottom:12px">&#8962;</div>
+            <div style="font-size:18px;font-weight:700;letter-spacing:-.01em">V&auml;lkommen! Skapa din f&ouml;rsta grupp</div>
+            <div style="font-size:13px;color:var(--sub);margin-top:4px;line-height:1.5">En grupp &auml;r er delade loggbok &mdash; f&ouml;r de flesta &auml;r det hush&aring;llet. Skapa den och bjud sen in de du bor med.</div>
+          </div>
+          <sc-if value="{{ hasNoHHError }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:12.5px;font-weight:600;color:var(--neg);background:var(--chip);border-radius:10px;padding:9px 12px">{{ noHHError }}</div>
+          </sc-if>
+          <label style="display:flex;flex-direction:column;gap:6px">
+            <span style="font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--sub)">Gruppens namn</span>
+            <input type="text" value="{{ newHH }}" onChange="{{ onNewHH }}" placeholder="t.ex. S&ouml;dergatan 12 eller Fjällresan" style="box-sizing:border-box;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14.5px">
+          </label>
+          <button onClick="{{ onCreateHH }}" style="display:flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;border-radius:14px;padding:13px 0;font-size:14.5px;font-weight:700;min-height:48px" style-hover="filter:brightness(1.06)">Skapa grupp</button>
+          <div style="font-size:12px;color:var(--sub);line-height:1.55;border-top:1px solid var(--line);padding-top:13px">Har n&aring;gon redan skapat er grupp? Be dem bjuda in dig &mdash; du f&aring;r en l&auml;nk via e-post och beh&ouml;ver inte skapa n&aring;got h&auml;r.</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-size:13px;font-weight:600;padding:10px 16px;border-radius:999px;white-space:nowrap;animation:rise .25s ease;z-index:60">{{ toastMsg }}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:480,&quot;height&quot;:820},&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;signin&quot;,&quot;signup&quot;,&quot;invite&quot;,&quot;accept&quot;],&quot;default&quot;:&quot;signin&quot;,&quot;section&quot;:&quot;Vy&quot;},&quot;direction&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;mint&quot;,&quot;paper&quot;,&quot;citrus&quot;],&quot;default&quot;:&quot;mint&quot;,&quot;section&quot;:&quot;Stil&quot;},&quot;darkMode&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;section&quot;:&quot;Stil&quot;}}">
+class Component extends DCLogic {
+  state = { email: '', password: '', busy: false, error: '', view: null, sentTo: '', toastMsg: '',
+    suName: '', suEmail: '', suPassword: '', suHousehold: '',
+    invEmail: '', invited: [], accName: '' };
+  toast(msg) {
+    this.setState({ toastMsg: msg });
+    clearTimeout(this._tt);
+    this._tt = setTimeout(() => this.setState({ toastMsg: '' }), 2600);
+  }
+  renderVals() {
+    const dark = !!this.props.darkMode;
+    const theme = (this.props.direction || 'mint') + (dark ? '-dark' : '');
+    const s = this.state;
+    const propView = { signin: 'form', signup: 'signup', invite: 'invite', accept: 'accept' }[this.props.screen] || 'form';
+    if (s.lastScreen !== this.props.screen) {
+      setTimeout(() => this.setState({ lastScreen: this.props.screen, view: null, error: '', busy: false }), 0);
+    }
+    const view = (s.lastScreen === this.props.screen ? s.view : null) || propView;
+    const hhName = s.suHousehold.trim() || 'S\u00f6dergatan 12';
+    const go = v => this.setState({ view: v, error: '', busy: false });
+    return {
+      theme,
+      showSignup: view === 'signup',
+      showInvite: view === 'invite',
+      showAccept: view === 'accept',
+      goSignup: () => go('signup'),
+      goSignin: () => go('form'),
+      suName: s.suName, suEmail: s.suEmail, suPassword: s.suPassword, suHousehold: s.suHousehold,
+      onSuName: e => this.setState({ suName: e.target.value, error: '' }),
+      onSuEmail: e => this.setState({ suEmail: e.target.value, error: '' }),
+      onSuPassword: e => this.setState({ suPassword: e.target.value, error: '' }),
+      onSuHousehold: e => this.setState({ suHousehold: e.target.value, error: '' }),
+      signupLabel: s.busy ? 'Skapar konto\u2026' : 'Skapa konto',
+      onSignupSubmit: () => {
+        if (s.busy) return;
+        if (!s.suName.trim()) return this.setState({ error: 'Ange ditt namn.' });
+        if (!s.suEmail.includes('@')) return this.setState({ error: 'Ange en giltig e-postadress.' });
+        if (s.suPassword.length < 8) return this.setState({ error: 'L\u00f6senordet beh\u00f6ver minst 8 tecken.' });
+        this.setState({ busy: true, error: '' });
+        setTimeout(() => { this.setState({ busy: false, showNoHH: true, noHHError: '' }); this.toast('Konto skapat \u2014 v\u00e4lkommen till Settl'); }, 1000);
+      },
+      hhName, hhInitial: hhName.trim()[0].toUpperCase(),
+      memberCount: (1 + s.invited.length) + (s.invited.length ? ' pers' : ' medlem'),
+      invEmail: s.invEmail,
+      onInvEmail: e => this.setState({ invEmail: e.target.value, error: '' }),
+      onSendInvite: () => {
+        const em = s.invEmail.trim();
+        if (!em.includes('@')) return this.setState({ error: 'Ange en giltig e-postadress att bjuda in.' });
+        this.setState({ invited: [...s.invited, { email: em, init: em[0].toUpperCase() }], invEmail: '', error: '' });
+        this.toast('Inbjudan skickad till ' + em);
+      },
+      onCopyLink: () => {
+        try { navigator.clipboard.writeText('https://settl.se/inbjudan/k3x9-vr72'); } catch (e) {}
+        this.toast('L\u00e4nk kopierad');
+      },
+      hasInvited: s.invited.length > 0,
+      invited: s.invited,
+      onInviteDone: () => this.toast('H\u00e4r skulle appen \u00f6ppnas'),
+      onInviteSkip: () => this.toast('Du kan bjuda in senare under Grupper'),
+      accName: s.accName, accEmail: s.accEmail || '', accPassword: s.accPassword || '',
+      onAccName: e => this.setState({ accName: e.target.value, error: '' }),
+      onAccEmail: e => this.setState({ accEmail: e.target.value, error: '' }),
+      onAccPassword: e => this.setState({ accPassword: e.target.value, error: '' }),
+      acceptLabel: s.busy ? 'Skapar konto\u2026' : 'Skapa konto & g\u00e5 med',
+      onAccept: () => {
+        if (s.busy) return;
+        if (!s.accName.trim()) return this.setState({ error: 'Ange ditt namn f\u00f6rst.' });
+        if (!(s.accEmail || '').includes('@')) return this.setState({ error: 'Ange en giltig e-postadress.' });
+        if ((s.accPassword || '').length < 8) return this.setState({ error: 'L\u00f6senordet beh\u00f6ver minst 8 tecken.' });
+        this.setState({ busy: true, error: '' });
+        setTimeout(() => { this.setState({ busy: false }); this.toast('V\u00e4lkommen till S\u00f6dergatan 12, ' + s.accName.trim()); }, 1000);
+      },
+      onDecline: () => this.toast('Inbjudan avb\u00f6jd'),
+      showNoHH: !!s.showNoHH,
+      onNoHHClose: () => this.setState({ showNoHH: false, noHHError: '' }),
+      newHH: s.newHH || '',
+      onNewHH: e => this.setState({ newHH: e.target.value, noHHError: '' }),
+      hasNoHHError: !!s.noHHError, noHHError: s.noHHError,
+      onCreateHH: () => {
+        const name = (s.newHH || '').trim();
+        if (!name) return this.setState({ noHHError: 'Ge hush\u00e5llet ett namn f\u00f6rst.' });
+        this.setState({ showNoHH: false, suHousehold: name, view: 'invite', noHHError: '' });
+        this.toast('Hush\u00e5llet ' + name + ' \u00e4r skapat');
+      },
+      email: s.email, password: s.password,
+      onEmail: e => this.setState({ email: e.target.value, error: '' }),
+      onPassword: e => this.setState({ password: e.target.value, error: '' }),
+      showForm: view === 'form',
+      showSent: view === 'sent',
+      sentTo: s.sentTo,
+      hasError: !!s.error, errorMsg: s.error,
+      busy: s.busy,
+      submitLabel: s.busy ? 'Loggar in…' : 'Logga in',
+      onSubmit: () => {
+        if (s.busy) return;
+        if (!s.email.includes('@')) return this.setState({ error: 'Ange en giltig e-postadress.' });
+        if (!s.password) return this.setState({ error: 'Ange ditt l\u00f6senord.' });
+        this.setState({ busy: true, error: '' });
+        setTimeout(() => this.setState({ busy: false, showNoHH: true, noHHError: '' }), 1100);
+      },
+      onMagic: () => {
+        if (!s.email.includes('@')) return this.setState({ error: 'Fyll i din e-post f\u00f6rst, s\u00e5 skickar vi en l\u00e4nk.' });
+        this.setState({ view: 'sent', sentTo: s.email, error: '' });
+      },
+      onBack: () => this.setState({ view: 'form' }),
+      onForgot: () => {
+        if (!s.email.includes('@')) return this.setState({ error: 'Fyll i din e-post s\u00e5 skickar vi en \u00e5terst\u00e4llningsl\u00e4nk.' });
+        this.setState({ view: 'sent', sentTo: s.email, error: '' });
+      },
+      toast: !!s.toastMsg, toastMsg: s.toastMsg
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,12 +1,12 @@
 /**
  * Typed fetch layer over the generated OpenAPI contract (@settl/api-client).
- * Every request carries `X-Settl-User: {currentMemberId}` (the dev acting user,
- * tech-debt 0003). Non-2xx responses are parsed as ProblemDetails and thrown as
- * an Error carrying the Swedish `detail` message so screens can surface it.
+ * Every request carries the ASP.NET Identity auth cookie (ADR-0011); the API
+ * resolves the acting member from it, never from anything the client sends.
+ * Non-2xx responses are parsed as ProblemDetails and thrown as an Error carrying
+ * the Swedish `detail` message so screens can surface it.
  * Response/request DTO types are re-exported here so screens import from one place.
  */
 import type { components, paths } from '@settl/api-client'
-import { currentMemberIdStore } from './stores'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000'
 
@@ -14,10 +14,8 @@ type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
 async function request<T>(method: Method, path: string, body?: unknown): Promise<T> {
   const headers: Record<string, string> = {}
-  const memberId = currentMemberIdStore.get()
-  if (memberId) headers['X-Settl-User'] = memberId
 
-  const init: RequestInit = { method, headers }
+  const init: RequestInit = { method, headers, credentials: 'include' }
   if (body !== undefined) {
     headers['Content-Type'] = 'application/json'
     init.body = JSON.stringify(body)
@@ -72,6 +70,8 @@ export type NudgeDto = Schemas['NudgeDto']
 export type NudgeActionDto = Schemas['NudgeActionDto']
 export type CreateSettlementResponse = Schemas['CreateSettlementResponse']
 export type ProblemDetails = Schemas['ProblemDetails']
+export type InviteDto = Schemas['InviteDto']
+export type InvitePreviewDto = Schemas['InvitePreviewDto']
 
 // Request DTOs
 export type CreateEntryRequest = Schemas['CreateEntryRequest']
@@ -81,6 +81,10 @@ export type CreateRecurringRequest = Schemas['CreateRecurringRequest']
 export type UpdateRecurringRequest = Schemas['UpdateRecurringRequest']
 export type CreateSettlementRequest = Schemas['CreateSettlementRequest']
 export type SplitInput = Schemas['SplitInput']
+export type RegisterRequest = Schemas['RegisterRequest']
+export type LoginRequest = Schemas['LoginRequest']
+export type CreateInviteRequest = Schemas['CreateInviteRequest']
+export type AcceptInviteRequest = Schemas['AcceptInviteRequest']
 
 // Domain string-union helpers (the API serialises these as plain strings)
 export type EntryType = 'expense' | 'iou' | 'recurringPost'

@@ -7,6 +7,9 @@ namespace Settl.Api.Data;
 /// </summary>
 public static class SeedIds
 {
+    /// <summary>Shared password for every seeded member (dev/test login only).</summary>
+    public const string DevPassword = "Settl-Dev-123!";
+
     // Members
     public static readonly Guid Du = new("11111111-1111-1111-1111-111111111111");
     public static readonly Guid Sam = new("22222222-2222-2222-2222-222222222222");

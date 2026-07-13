@@ -9,7 +9,7 @@ import { Card } from '@/components/ui/card'
 import { Money } from '@/components/money'
 import { cn } from '@/lib/utils'
 import { formatKr, shortDate } from '@/lib/format'
-import { useDevUser } from '@/lib/dev-user'
+import { useMe } from '@/lib/queries'
 import type { EntryDto, MemberDto, ViewerStatusKind } from '@/lib/api'
 
 type NameLookup = Pick<MemberDto, 'id' | 'name'>[]
@@ -77,7 +77,8 @@ export function EntryRow({
   onOpen?: (entryId: string) => void
   className?: string
 }) {
-  const { memberId: viewerId } = useDevUser()
+  const { data: me } = useMe()
+  const viewerId = me?.id
 
   const nameOf = (id: string | null | undefined): string => {
     if (!id) return ''

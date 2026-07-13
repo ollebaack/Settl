@@ -1,9 +1,7 @@
 /**
  * Tiny persisted external stores (no deps). Backed by localStorage; usable both
- * outside React (the api.ts header) and inside via `useSyncExternalStore`.
- * These hold client-only selection state:
- *   - currentMemberId → the dev "acting user" (X-Settl-User header, tech-debt 0003)
- *   - activeHouseholdId → the active household (user↔household is many-to-many)
+ * outside React and inside via `useSyncExternalStore`. Holds client-only selection
+ * state — currently just the active household (user↔household is many-to-many).
  */
 
 type Listener = () => void
@@ -43,5 +41,4 @@ function createPersistedStore(key: string): PersistedStore {
   }
 }
 
-export const currentMemberIdStore = createPersistedStore('settl.currentMemberId')
 export const activeHouseholdIdStore = createPersistedStore('settl.activeHouseholdId')

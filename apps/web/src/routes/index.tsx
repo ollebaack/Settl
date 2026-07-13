@@ -6,6 +6,7 @@
  * and calls, never computes (ADR-0006).
  */
 import { Link, createFileRoute } from '@tanstack/react-router'
+import { RequireAuth } from '@/components/require-auth'
 import { Card } from '@/components/ui/card'
 import { Money, type MoneyIntent } from '@/components/money'
 import { MemberAvatar } from '@/components/member-avatar'
@@ -20,7 +21,11 @@ import { inDays, shortDate } from '@/lib/format'
 import type { PersonBalanceDto, UpcomingDto } from '@/lib/api'
 
 export const Route = createFileRoute('/')({
-  component: HomePage,
+  component: () => (
+    <RequireAuth>
+      <HomePage />
+    </RequireAuth>
+  ),
 })
 
 /** Coerce an int64-as-`number | string` (openapi) field to a number. */

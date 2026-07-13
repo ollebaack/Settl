@@ -1,15 +1,22 @@
 /**
- * Shared e2e helpers. The specs run against the REAL stack (seeded e2e.db, live
- * .NET API on :5000, Vite on :5173). The DB is a single shared store across
- * parallel workers + both projects, so every spec either (a) creates its own
- * uniquely-named data, or (b) round-trips a toggle back to its original state.
+ * Shared e2e helpers. The specs run against the REAL stack (seeded e2e Postgres
+ * database, live .NET API on :5000, Vite on :5173). The DB is a single shared
+ * store across parallel workers + both projects, so every spec either (a)
+ * creates its own uniquely-named data, or (b) round-trips a toggle back to its
+ * original state.
  *
- * Test data is seeded/created via direct API calls (the same contract the SPA
- * uses) and the acting user is pinned via localStorage so the UI is deterministic.
+ * Auth is real (ADR-0011): `loginAs` logs a seeded member in via the actual
+ * cookie session, using `page.request` so the cookie lands in the page's own
+ * browser context — subsequent `page.goto()` navigations and `page.request.*`
+ * setup calls are then authenticated as that member. Test data is created via
+ * direct API calls (the same contract the SPA uses).
  */
 import { type APIRequestContext, type Page, expect } from '@playwright/test'
 
 export const API = 'http://localhost:5000'
+
+/** Shared dev password for every seeded member — apps/api/Settl.Api/Data/SeedIds.cs. */
+const DEV_PASSWORD = 'Settl-Dev-123!'
 
 export interface Member {
   id: string
@@ -17,9 +24,8 @@ export interface Member {
   avatarColor: string
 }
 
-/** Auth header for the dev "acting user" (X-Settl-User; tech-debt 0003). */
-export function auth(memberId: string) {
-  return { headers: { 'X-Settl-User': memberId } }
+function emailFor(name: string): string {
+  return `${name.toLowerCase()}@settl.dev`
 }
 
 /** A unique suffix so parallel workers / both projects never collide on data. */
@@ -27,23 +33,22 @@ export function uniqueSuffix(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }
 
-/** Resolve a seeded member id by name (GET /dev/users is unauthenticated). */
-export async function getMemberId(request: APIRequestContext, name: string): Promise<string> {
-  const res = await request.get(`${API}/dev/users`)
-  expect(res.ok(), 'GET /dev/users').toBeTruthy()
-  const users = (await res.json()) as Member[]
-  const found = users.find((u) => u.name === name)
-  if (!found) throw new Error(`Seed member "${name}" not found in ${JSON.stringify(users)}`)
-  return found.id
+/**
+ * Logs in as a seeded member via the real cookie session. Run this before
+ * page.goto and before any page.request.* setup calls that need auth. Returns
+ * the member's id.
+ */
+export async function loginAs(page: Page, name: string): Promise<string> {
+  const res = await page.request.post(`${API}/auth/login`, {
+    data: { email: emailFor(name), password: DEV_PASSWORD },
+  })
+  expect(res.ok(), `login as ${name}`).toBeTruthy()
+  return ((await res.json()) as Member).id
 }
 
-/** Resolve a household id by name for the acting user. */
-export async function getHouseholdId(
-  request: APIRequestContext,
-  memberId: string,
-  name: string,
-): Promise<string> {
-  const res = await request.get(`${API}/households`, auth(memberId))
+/** Resolve a household id by name for the logged-in member (call after loginAs). */
+export async function getHouseholdId(request: APIRequestContext, name: string): Promise<string> {
+  const res = await request.get(`${API}/households`)
   expect(res.ok(), 'GET /households').toBeTruthy()
   const list = (await res.json()) as Array<{ id: string; name: string }>
   const found = list.find((h) => h.name === name)
@@ -53,45 +58,39 @@ export async function getHouseholdId(
 
 export async function getMembers(
   request: APIRequestContext,
-  memberId: string,
   householdId: string,
 ): Promise<Member[]> {
-  const res = await request.get(`${API}/households/${householdId}/members`, auth(memberId))
+  const res = await request.get(`${API}/households/${householdId}/members`)
   expect(res.ok(), 'GET members').toBeTruthy()
   return (await res.json()) as Member[]
 }
 
 /**
- * Pin the dev acting user + active household in localStorage so the app renders
- * deterministic content regardless of default ordering. Must run before goto.
+ * Pins the active household in localStorage so the app renders deterministic
+ * content regardless of default ordering. Must run before goto.
  */
-export async function pin(page: Page, memberId: string, householdId: string): Promise<void> {
-  await page.addInitScript(
-    ([m, h]) => {
-      localStorage.setItem('settl.currentMemberId', m)
-      localStorage.setItem('settl.activeHouseholdId', h)
-    },
-    [memberId, householdId] as [string, string],
-  )
+export async function pinHousehold(page: Page, householdId: string): Promise<void> {
+  await page.addInitScript((h) => {
+    localStorage.setItem('settl.activeHouseholdId', h)
+  }, householdId)
 }
 
 // --- API data factories -----------------------------------------------------
 
 export async function createExpense(
   request: APIRequestContext,
-  memberId: string,
   householdId: string,
   title: string,
   amountMinor: number,
+  paidByMemberId: string,
 ): Promise<{ id: string }> {
   const res = await request.post(`${API}/households/${householdId}/entries`, {
-    ...auth(memberId),
     data: {
       type: 'expense',
       title,
       amountMinor,
       date: null,
-      paidByMemberId: memberId,
+      paidByMemberId,
       fromMemberId: null,
       toMemberId: null,
       split: { mode: 'equal', values: null },
@@ -103,7 +102,6 @@ export async function createExpense(
 
 export async function createIou(
   request: APIRequestContext,
-  actingMemberId: string,
   householdId: string,
   title: string,
   amountMinor: number,
@@ -111,7 +109,6 @@ export async function createIou(
   toMemberId: string,
 ): Promise<{ id: string }> {
   const res = await request.post(`${API}/households/${householdId}/entries`, {
-    ...auth(actingMemberId),
     data: {
       type: 'iou',
       title,
@@ -129,20 +126,19 @@ export async function createIou(
 
 export async function createRecurring(
   request: APIRequestContext,
-  memberId: string,
   householdId: string,
   title: string,
   amountMinor: number,
   nextPostDate: string,
+  paidByMemberId: string,
 ): Promise<{ id: string }> {
   const res = await request.post(`${API}/households/${householdId}/recurring`, {
-    ...auth(memberId),
     data: {
       title,
       amountMinor,
       cadence: 'monthly',
       nextPostDate,
-      paidByMemberId: memberId,
+      paidByMemberId,
       split: { mode: 'equal', values: null },
     },
   })
@@ -152,16 +148,49 @@ export async function createRecurring(
 
 export async function createHousehold(
   request: APIRequestContext,
-  memberId: string,
   name: string,
-  memberIds: string[],
 ): Promise<{ id: string }> {
   const res = await request.post(`${API}/households`, {
-    ...auth(memberId),
-    data: { name, memberIds, currency: 'SEK' },
+    data: { name, currency: 'SEK' },
   })
   expect(res.ok(), `create household: ${await safeText(res)}`).toBeTruthy()
   return (await res.json()) as { id: string }
+}
+
+/** Reads the most recent invite's accept token via the Development-only dev
+ * side channel (the raw token is never persisted or returned any other way —
+ * this is what a real inbox would have given the invitee). */
+export async function latestDevInviteToken(request: APIRequestContext): Promise<string> {
+  const res = await request.get(`${API}/dev/invites/latest`)
+  expect(res.ok(), 'GET /dev/invites/latest').toBeTruthy()
+  const { acceptUrl } = (await res.json()) as { acceptUrl: string }
+  return new URL(acceptUrl).searchParams.get('token')!
+}
+
+/** Sends a household invite and returns its accept token. */
+export async function inviteAndGetToken(
+  request: APIRequestContext,
+  householdId: string,
+  email: string,
+): Promise<string> {
+  const res = await request.post(`${API}/households/${householdId}/invites`, {
+    data: { email },
+  })
+  expect(res.ok(), `create invite: ${await safeText(res)}`).toBeTruthy()
+  return latestDevInviteToken(request)
+}
+
+/** Accepts an invite as whoever `request`'s browser context is currently logged in as
+ * (or creates+signs in a brand-new account when `password` is given for a new email). */
+export async function acceptInvite(
+  request: APIRequestContext,
+  token: string,
+  body: { name?: string | null; password?: string | null } = {},
+): Promise<void> {
+  const res = await request.post(`${API}/invites/${token}/accept`, {
+    data: { name: body.name ?? null, password: body.password ?? null },
+  })
+  expect(res.ok(), `accept invite: ${await safeText(res)}`).toBeTruthy()
 }
 
 async function safeText(res: { text: () => Promise<string> }): Promise<string> {

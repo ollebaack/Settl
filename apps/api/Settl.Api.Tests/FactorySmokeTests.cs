@@ -6,8 +6,9 @@ using Settl.Api.Tests.Infrastructure;
 namespace Settl.Api.Tests;
 
 /// <summary>
-/// Proves the shared test harness works end-to-end: isolated in-memory DB, the X-Settl-User
-/// identity header, and canonical seeding. Per-slice test suites build on <see cref="SettlApiFactory"/>.
+/// Proves the shared test harness works end-to-end: isolated in-memory DB, cookie login via
+/// <see cref="SettlApiFactory.ClientAs"/>, and canonical seeding. Per-slice test suites build
+/// on <see cref="SettlApiFactory"/>.
 /// </summary>
 public class FactorySmokeTests
 {
@@ -24,15 +25,19 @@ public class FactorySmokeTests
         // 2. Seed the canonical fixture into this factory's isolated DB.
         await factory.SeedCanonicalAsync();
 
-        // 3. Default client acts as the seeded member "Du".
-        var meResponse = await anon.GetAsync("/me");
+        // 3. Anonymous requests to a protected endpoint are rejected.
+        var anonMe = await anon.GetAsync("/me");
+        Assert.Equal(HttpStatusCode.Unauthorized, anonMe.StatusCode);
+
+        // 4. Logging in as the seeded member "Du" via ClientAs authenticates /me.
+        var du = factory.ClientAs(SeedIds.Du);
+        var meResponse = await du.GetAsync("/me");
         Assert.Equal(HttpStatusCode.OK, meResponse.StatusCode);
         using var me = JsonDocument.Parse(await meResponse.Content.ReadAsStringAsync());
         Assert.Equal("Du", me.RootElement.GetProperty("name").GetString());
         Assert.Equal(SeedIds.Du, me.RootElement.GetProperty("id").GetGuid());
 
-        // 4. Acting as Du, the Lönnvägen household surfaces at least one nudge.
-        var du = factory.ClientAs(SeedIds.Du);
+        // 5. Acting as Du, the Lönnvägen household surfaces at least one nudge.
         var nudgesResponse = await du.GetAsync($"/households/{SeedIds.Lonnvagen}/nudges");
         Assert.Equal(HttpStatusCode.OK, nudgesResponse.StatusCode);
         using var nudges = JsonDocument.Parse(await nudgesResponse.Content.ReadAsStringAsync());

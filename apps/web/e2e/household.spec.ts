@@ -1,12 +1,12 @@
 import { test, expect } from '@playwright/test'
-import { getHouseholdId, getMemberId, openHouseholdSwitcher, pin } from './helpers'
+import { getHouseholdId, loginAs, openHouseholdSwitcher, pinHousehold } from './helpers'
 
 // HOUSEHOLD SWITCH (Dina hushåll, §2.5): switch to "Familjen" and back. User↔
 // household is many-to-many; "Du" belongs to both seeded books.
-test('switch household to Familjen and back to Lönnvägen 3', async ({ page, request }) => {
-  const du = await getMemberId(request, 'Du')
-  const lonnvagen = await getHouseholdId(request, du, 'Lönnvägen 3')
-  await pin(page, du, lonnvagen)
+test('switch household to Familjen and back to Lönnvägen 3', async ({ page }) => {
+  await loginAs(page, 'Du')
+  const lonnvagen = await getHouseholdId(page.request, 'Lönnvägen 3')
+  await pinHousehold(page, lonnvagen)
   await page.goto('/')
   await expect(page.getByText(/öppna poster i Lönnvägen 3/)).toBeVisible()
 

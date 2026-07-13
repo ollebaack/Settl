@@ -1,14 +1,14 @@
 import { test, expect } from '@playwright/test'
-import { getHouseholdId, getMemberId, pin } from './helpers'
+import { getHouseholdId, loginAs, pinHousehold } from './helpers'
 
 // LEDGER (Loggboken, §2.2): title, filter pills switch the list, day-group headers.
 // Assertions about entry presence are scoped to the main feed, because on the
 // desktop shell the right rail also renders nudges/upcoming that mention entries.
 test.describe('Ledger', () => {
-  test.beforeEach(async ({ page, request }) => {
-    const du = await getMemberId(request, 'Du')
-    const household = await getHouseholdId(request, du, 'Lönnvägen 3')
-    await pin(page, du, household)
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page, 'Du')
+    const household = await getHouseholdId(page.request, 'Lönnvägen 3')
+    await pinHousehold(page, household)
     await page.goto('/ledger')
     await expect(page.getByRole('heading', { name: 'Loggboken' })).toBeVisible()
   })

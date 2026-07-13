@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { ThemeProvider } from 'next-themes'
 import { routeTree } from './routeTree.gen'
-import { DevUserProvider } from '@/lib/dev-user'
 import { ActiveHouseholdProvider } from '@/lib/active-household'
 import './index.css'
 
@@ -26,11 +25,9 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <DevUserProvider>
-          <ActiveHouseholdProvider>
-            <RouterProvider router={router} />
-          </ActiveHouseholdProvider>
-        </DevUserProvider>
+        <ActiveHouseholdProvider>
+          <RouterProvider router={router} />
+        </ActiveHouseholdProvider>
       </ThemeProvider>
     </QueryClientProvider>
   </StrictMode>,

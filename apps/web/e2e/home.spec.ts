@@ -1,12 +1,12 @@
 import { test, expect } from '@playwright/test'
-import { getHouseholdId, getMemberId, pin } from './helpers'
+import { getHouseholdId, loginAs, pinHousehold } from './helpers'
 
 // HOME (Hem, §2.1): net hero, per-person rows, "Senaste", "Visa alla" → ledger.
 test.describe('Home', () => {
-  test.beforeEach(async ({ page, request }) => {
-    const du = await getMemberId(request, 'Du')
-    const household = await getHouseholdId(request, du, 'Lönnvägen 3')
-    await pin(page, du, household)
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page, 'Du')
+    const household = await getHouseholdId(page.request, 'Lönnvägen 3')
+    await pinHousehold(page, household)
     await page.goto('/')
   })
 

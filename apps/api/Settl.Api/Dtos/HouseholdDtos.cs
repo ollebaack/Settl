@@ -9,15 +9,12 @@ public sealed record HouseholdListItemDto(
     string NetLabel);
 
 /// <summary>
-/// The acting user is always a member and never needs to be listed. <c>MemberIds</c>
-/// references existing members; <c>NewMemberNames</c> creates fresh ones inline (no
-/// invite step — auth is deferred, ADR-0005, so a Member is just a name).
+/// Creates a household with the acting user as its sole initial member. Everyone else
+/// joins via invite (ADR-0011) — see <c>POST /households/{id}/invites</c>.
 /// </summary>
 public sealed record CreateHouseholdRequest(
     string Name,
-    string? Currency,
-    Guid[]? MemberIds,
-    string[]? NewMemberNames);
+    string? Currency);
 
 public sealed record HouseholdDto(
     Guid Id,

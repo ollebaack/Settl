@@ -15,8 +15,7 @@ import { MemberAvatar } from '@/components/member-avatar'
 import { ResponsiveSheet } from '@/components/responsive-sheet'
 import { ErrorState, LoadingState } from '@/components/screen-states'
 import { shortDate } from '@/lib/format'
-import { useEntry, useMembers, useReopenEntry, useSettleEntry } from '@/lib/queries'
-import { useDevUser } from '@/lib/dev-user'
+import { useEntry, useMe, useMembers, useReopenEntry, useSettleEntry } from '@/lib/queries'
 import type { EntryDto, EntryType, MemberDto, SplitModeName } from '@/lib/api'
 
 const typeBadge: Record<EntryType, string> = {
@@ -80,7 +79,8 @@ function buildShareRows(entry: EntryDto, members: MemberDto[]): ShareRowData[] {
 }
 
 function EntryDetailBody({ entry }: { entry: EntryDto }) {
-  const { memberId: viewerId } = useDevUser()
+  const { data: me } = useMe()
+  const viewerId = me?.id
   const { data: members } = useMembers(entry.householdId)
   const settle = useSettleEntry(entry.householdId)
   const reopen = useReopenEntry(entry.householdId)

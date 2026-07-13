@@ -1,11 +1,19 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Settl.Api.Domain;
 
 namespace Settl.Api.Data;
 
-public class SettlDbContext(DbContextOptions<SettlDbContext> options) : DbContext(options)
+/// <summary>
+/// <see cref="IdentityUserContext{TUser,TKey}"/> (not the role-aware
+/// <c>IdentityDbContext</c>) — ADR-0011 explicitly has no role concept.
+/// </summary>
+public class SettlDbContext(DbContextOptions<SettlDbContext> options) : IdentityUserContext<Member, Guid>(options)
 {
-    public DbSet<Member> Members => Set<Member>();
+    /// <summary>Alias for the base class's <see cref="IdentityUserContext{TUser,TKey}.Users"/> —
+    /// every call site here predates Identity and says "Members".</summary>
+    public DbSet<Member> Members => Users;
+
     public DbSet<Household> Households => Set<Household>();
     public DbSet<HouseholdMembership> HouseholdMemberships => Set<HouseholdMembership>();
     public DbSet<Entry> Entries => Set<Entry>();
@@ -14,12 +22,15 @@ public class SettlDbContext(DbContextOptions<SettlDbContext> options) : DbContex
     public DbSet<RecurringShare> RecurringShares => Set<RecurringShare>();
     public DbSet<Settlement> Settlements => Set<Settlement>();
     public DbSet<SettlementClosure> SettlementClosures => Set<SettlementClosure>();
+    public DbSet<Invite> Invites => Set<Invite>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
+        base.OnModelCreating(b);
+
         b.Entity<Member>(e =>
         {
-            e.HasKey(x => x.Id);
+            e.ToTable("Members");
             e.Property(x => x.Name).IsRequired();
             e.Property(x => x.AvatarColor).IsRequired();
             e.Ignore(x => x.Initial);
@@ -104,6 +115,16 @@ public class SettlDbContext(DbContextOptions<SettlDbContext> options) : DbContex
             e.HasIndex(x => new { x.EntryId, x.DebtorMemberId, x.CreditorMemberId })
                 .IsUnique()
                 .HasDatabaseName("IX_SettlementClosure_Entry_Debtor_Creditor");
+        });
+
+        b.Entity<Invite>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Email).IsRequired();
+            e.Property(x => x.TokenHash).IsRequired();
+            e.HasOne(x => x.Household).WithMany()
+                .HasForeignKey(x => x.HouseholdId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.TokenHash).IsUnique();
         });
     }
 }

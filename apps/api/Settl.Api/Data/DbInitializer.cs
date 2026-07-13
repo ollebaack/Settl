@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Settl.Api.Domain;
 
@@ -8,6 +9,9 @@ namespace Settl.Api.Data;
 /// docs/design/"Settl App".dc.html (amounts ×100 into öre). All dates are RELATIVE to
 /// DateTime.UtcNow so nudges and cycle progress stay live. Guarantees live data for all
 /// three nudge types (recurring due ≤5 days, ≥1500 kr expense, a pair net ≥750 kr).
+/// Every seeded member can log in locally with their <c>@settl.dev</c> email and
+/// <see cref="SeedIds.DevPassword"/> — this is what backs local dev/e2e login now that
+/// there's no dev user-switcher header (tech-debt/0003, ADR-0011).
 /// </summary>
 public static class DbInitializer
 {
@@ -36,13 +40,13 @@ public static class DbInitializer
         var today = DateOnly.FromDateTime(now.UtcDateTime);
         DateOnly D(int offset) => today.AddDays(offset);
 
-        // Members
+        // Members — each gets real Identity credentials so they can log in locally.
         db.Members.AddRange(
-            new Member { Id = Du, Name = "Du", AvatarColor = "#dfe6cf" },
-            new Member { Id = Sam, Name = "Sam", AvatarColor = "#f0dcc3" },
-            new Member { Id = Priya, Name = "Priya", AvatarColor = "#d9e0ee" },
-            new Member { Id = Mamma, Name = "Mamma", AvatarColor = "#eed9d9" },
-            new Member { Id = Pappa, Name = "Pappa", AvatarColor = "#d9eee4" });
+            SeedMember(Du, "Du", "#dfe6cf"),
+            SeedMember(Sam, "Sam", "#f0dcc3"),
+            SeedMember(Priya, "Priya", "#d9e0ee"),
+            SeedMember(Mamma, "Mamma", "#eed9d9"),
+            SeedMember(Pappa, "Pappa", "#d9eee4"));
 
         // Households + memberships (JoinedAt increasing → membership order matches list order).
         var h1Order = new[] { Du, Sam, Priya };
@@ -107,6 +111,26 @@ public static class DbInitializer
         db.Settlements.Add(settlement);
 
         await db.SaveChangesAsync(ct);
+    }
+
+    private static Member SeedMember(Guid id, string name, string avatarColor)
+    {
+        var email = $"{name.ToLowerInvariant()}@settl.dev";
+        var member = new Member
+        {
+            Id = id,
+            Name = name,
+            AvatarColor = avatarColor,
+            UserName = email,
+            NormalizedUserName = email.ToUpperInvariant(),
+            Email = email,
+            NormalizedEmail = email.ToUpperInvariant(),
+            EmailConfirmed = true,
+            SecurityStamp = Guid.NewGuid().ToString(),
+            ConcurrencyStamp = Guid.NewGuid().ToString()
+        };
+        member.PasswordHash = new PasswordHasher<Member>().HashPassword(member, SeedIds.DevPassword);
+        return member;
     }
 
     private static Entry Expense(Guid hh, string title, long amount, Guid paidBy, SplitMode mode,

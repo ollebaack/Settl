@@ -1,16 +1,16 @@
 import { test, expect } from '@playwright/test'
-import { createExpense, getHouseholdId, getMemberId, pin, uniqueSuffix } from './helpers'
+import { createExpense, getHouseholdId, loginAs, pinHousehold, uniqueSuffix } from './helpers'
 
 // ENTRY DETAIL + settle/reopen (§2.7 + flow §4). Uses a freshly-created,
 // uniquely-titled entry so it is fully isolated, and round-trips settle→reopen
 // so no shared state is left mutated.
-test('entry detail settles and reopens (round-trip)', async ({ page, request }) => {
-  const du = await getMemberId(request, 'Du')
-  const household = await getHouseholdId(request, du, 'Lönnvägen 3')
+test('entry detail settles and reopens (round-trip)', async ({ page }) => {
+  const du = await loginAs(page, 'Du')
+  const household = await getHouseholdId(page.request, 'Lönnvägen 3')
   const title = `E2E detalj ${uniqueSuffix()}`
-  await createExpense(request, du, household, title, 24000) // 240 kr, below nudge thresholds
+  await createExpense(page.request, household, title, 24000, du) // 240 kr, below nudge thresholds
 
-  await pin(page, du, household)
+  await pinHousehold(page, household)
   await page.goto('/ledger')
 
   // Open the entry from its ledger row.

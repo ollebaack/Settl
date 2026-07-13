@@ -1,7 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
 
-// E2E runs against the real stack: the .NET API (isolated e2e.db, freshly seeded)
-// and the Vite dev server. Locally, running servers are reused; in CI both are booted.
+// E2E runs against the real stack: the .NET API (isolated "e2e" Postgres database,
+// freshly seeded) and the Vite dev server. Locally, running servers are reused; in CI
+// both are booted.
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -25,7 +26,8 @@ export default defineConfig({
       timeout: 120_000,
       env: {
         ASPNETCORE_ENVIRONMENT: 'Development',
-        ConnectionStrings__Settl: 'Data Source=e2e.db',
+        ConnectionStrings__Settl:
+          'Host=localhost;Port=5432;Database=e2e;Username=postgres;Password=postgres',
       },
     },
     {

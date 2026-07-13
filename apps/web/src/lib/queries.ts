@@ -16,8 +16,10 @@ import {
   apiPatch,
   apiPost,
   apiPut,
+  type AcceptInviteRequest,
   type CreateEntryRequest,
   type CreateHouseholdRequest,
+  type CreateInviteRequest,
   type CreateRecurringRequest,
   type CreateSettlementRequest,
   type CreateSettlementResponse,
@@ -26,12 +28,16 @@ import {
   type HouseholdDto,
   type HouseholdListItemDto,
   type HouseholdSummaryDto,
+  type InviteDto,
+  type InvitePreviewDto,
+  type LoginRequest,
   type MemberDto,
   type NudgeDto,
   type NudgeTone,
   type RecurringDetailDto,
   type RecurringDto,
   type RecurringListDto,
+  type RegisterRequest,
   type SettlePreviewDto,
   type UpdateEntryRequest,
   type UpdateRecurringRequest,
@@ -46,7 +52,6 @@ export interface EntriesParams {
 
 export const queryKeys = {
   me: ['me'] as const,
-  devUsers: ['dev-users'] as const,
   households: ['households'] as const,
   household: (id: string | undefined) => ['household', id] as const,
   members: (id: string | undefined) => ['household', id, 'members'] as const,
@@ -63,6 +68,8 @@ export const queryKeys = {
   nudgesAll: (id: string | undefined) => ['household', id, 'nudges'] as const,
   nudges: (id: string | undefined, tone: NudgeTone) =>
     ['household', id, 'nudges', tone] as const,
+  householdInvites: (id: string | undefined) => ['household', id, 'invites'] as const,
+  invitePreview: (token: string | undefined) => ['invite', token] as const,
 }
 
 /** Invalidate everything derived from a household's ledger state. */
@@ -86,17 +93,30 @@ function buildQuery(params: Record<string, string | number | undefined>): string
 
 // --- Queries ----------------------------------------------------------------
 
+/** 401 (not logged in) is a normal, expected state here — callers branch on `isError`,
+ * not treat it as a failed fetch. */
 export function useMe() {
   return useQuery({
     queryKey: queryKeys.me,
     queryFn: () => apiGet<MemberDto>('/me'),
+    retry: false,
   })
 }
 
-export function useDevUsers() {
+export function useInvitePreview(token: string | undefined) {
   return useQuery({
-    queryKey: queryKeys.devUsers,
-    queryFn: () => apiGet<MemberDto[]>('/dev/users'),
+    queryKey: queryKeys.invitePreview(token),
+    queryFn: () => apiGet<InvitePreviewDto>(`/invites/${token}`),
+    enabled: !!token,
+    retry: false,
+  })
+}
+
+export function useHouseholdInvites(id: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.householdInvites(id),
+    queryFn: () => apiGet<InviteDto[]>(`/households/${id}/invites`),
+    enabled: !!id,
   })
 }
 
@@ -191,6 +211,70 @@ export function useNudges(id: string | undefined, tone: NudgeTone = 'direct') {
 }
 
 // --- Mutations --------------------------------------------------------------
+
+/**
+ * Every response is viewer-relative, so login/register/logout invalidate the whole
+ * cache — the same rule the old dev user-switcher followed when swapping the acting
+ * user. `me` is also set directly (not just invalidated): invalidation only
+ * schedules a background refetch, leaving a window where RequireAuth would still
+ * see the previous (401) result and bounce straight back to /login before that
+ * refetch resolves.
+ */
+export function useRegister() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: RegisterRequest) => apiPost<MemberDto>('/auth/register', body),
+    onSuccess: (me) => {
+      qc.setQueryData(queryKeys.me, me)
+      qc.invalidateQueries()
+    },
+  })
+}
+
+export function useLogin() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: LoginRequest) => apiPost<MemberDto>('/auth/login', body),
+    onSuccess: (me) => {
+      qc.setQueryData(queryKeys.me, me)
+      qc.invalidateQueries()
+    },
+  })
+}
+
+export function useLogout() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => apiPost<void>('/auth/logout'),
+    onSuccess: () => {
+      qc.setQueryData(queryKeys.me, undefined)
+      qc.invalidateQueries()
+    },
+  })
+}
+
+export function useSendInvite(householdId: string | undefined) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: CreateInviteRequest) =>
+      apiPost<InviteDto>(`/households/${householdId}/invites`, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.householdInvites(householdId) }),
+  })
+}
+
+export function useAcceptInvite(token: string | undefined) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: AcceptInviteRequest) =>
+      apiPost<MemberDto>(`/invites/${token}/accept`, body),
+    onSuccess: (me) => {
+      // Same reasoning as useLogin: set directly so a same-tick navigate to '/'
+      // doesn't see stale (unauthenticated) cache before the invalidation refetch.
+      qc.setQueryData(queryKeys.me, me)
+      qc.invalidateQueries()
+    },
+  })
+}
 
 export function useCreateHousehold() {
   const qc = useQueryClient()

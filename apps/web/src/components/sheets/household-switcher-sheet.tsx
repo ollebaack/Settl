@@ -4,16 +4,19 @@
  * the active book, and switches on tap. Net + label are DERIVED server-side
  * (HouseholdListItemDto) — the sheet never computes balances (ADR-0006).
  */
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { useNavigate } from '@tanstack/react-router'
+import { Loader2Icon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { Money } from '@/components/money'
 import { ResponsiveSheet } from '@/components/responsive-sheet'
 import { ErrorState, LoadingState } from '@/components/screen-states'
 import { cn } from '@/lib/utils'
 import { useActiveHousehold } from '@/lib/active-household'
-import { useHouseholds } from '@/lib/queries'
+import { useHouseholdInvites, useHouseholds, useSendInvite } from '@/lib/queries'
 import { useSheet } from '@/lib/sheet'
 import type { MoneyIntent } from '@/components/money'
 import type { HouseholdListItemDto } from '@/lib/api'
@@ -115,8 +118,71 @@ export function HouseholdSwitcherSheet({
           >
             + Nytt hushåll
           </Button>
+
+          <InviteSection
+            householdId={householdId}
+            householdName={households.find((h) => h.id === householdId)?.name}
+          />
         </div>
       )}
     </ResponsiveSheet>
+  )
+}
+
+/** Invite someone to the active household (ADR-0011: any member can invite). */
+function InviteSection({
+  householdId,
+  householdName,
+}: {
+  householdId: string | undefined
+  householdName: string | undefined
+}) {
+  const [email, setEmail] = useState('')
+  const sendInvite = useSendInvite(householdId)
+  const invites = useHouseholdInvites(householdId)
+
+  if (!householdId) return null
+
+  async function onInvite() {
+    const trimmed = email.trim()
+    if (!trimmed) {
+      toast('Skriv en e-postadress')
+      return
+    }
+    try {
+      await sendInvite.mutateAsync({ email: trimmed })
+      toast(`Inbjudan skickad till ${trimmed}`)
+      setEmail('')
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Något gick fel. Försök igen.')
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2 border-t border-border pt-3">
+      <p className="text-xs font-semibold uppercase tracking-[0.09em] text-muted-foreground">
+        Bjud in till {householdName ?? 'hushållet'}
+      </p>
+      <div className="flex gap-2">
+        <Input
+          aria-label="E-post"
+          placeholder="namn@exempel.se"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="h-9"
+        />
+        <Button type="button" size="sm" onClick={onInvite} disabled={sendInvite.isPending}>
+          {sendInvite.isPending && <Loader2Icon className="animate-spin" />}
+          Skicka
+        </Button>
+      </div>
+      {invites.data && invites.data.length > 0 && (
+        <ul className="flex flex-col gap-1 text-xs text-muted-foreground">
+          {invites.data.map((i) => (
+            <li key={i.id}>{i.email} — väntar på svar</li>
+          ))}
+        </ul>
+      )}
+    </div>
   )
 }

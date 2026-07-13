@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Identity;
+
 namespace Settl.Api.Domain;
 
-/// <summary>A person; global identity stub (auth deferred, ADR-0005).</summary>
-public class Member
+/// <summary>A person. Also the ASP.NET Identity user (ADR-0011) — login credentials
+/// (Email, PasswordHash, ...) come from <see cref="IdentityUser{TKey}"/>.</summary>
+public class Member : IdentityUser<Guid>
 {
-    public Guid Id { get; set; }
     public string Name { get; set; } = "";
 
     /// <summary>Hex avatar colour — member data, NOT a UI token (e.g. <c>#dfe6cf</c>).</summary>
@@ -129,4 +131,28 @@ public class SettlementClosure
     /// <summary>The debt: Debtor owes Creditor. Stored in the real direction.</summary>
     public Guid DebtorMemberId { get; set; }
     public Guid CreditorMemberId { get; set; }
+}
+
+/// <summary>
+/// A household invite (ADR-0011). No Member/HouseholdMembership row exists for the
+/// invitee until <see cref="AcceptedAt"/> is set — activation happens entirely through
+/// the emailed link. Only <see cref="TokenHash"/> is persisted; the raw token lives in
+/// the link and is never stored.
+/// </summary>
+public class Invite
+{
+    public Guid Id { get; set; }
+    public Guid HouseholdId { get; set; }
+    public Household Household { get; set; } = null!;
+
+    /// <summary>Normalized (lowercase, trimmed) invitee email.</summary>
+    public string Email { get; set; } = "";
+
+    /// <summary>SHA-256 hash of the raw token embedded in the accept link.</summary>
+    public string TokenHash { get; set; } = "";
+
+    public Guid InvitedByMemberId { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset ExpiresAt { get; set; }
+    public DateTimeOffset? AcceptedAt { get; set; }
 }

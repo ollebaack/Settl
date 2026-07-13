@@ -7,6 +7,7 @@
  */
 import { createFileRoute } from '@tanstack/react-router'
 import { toast } from 'sonner'
+import { RequireAuth } from '@/components/require-auth'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -22,7 +23,11 @@ import { useSheet } from '@/lib/sheet'
 import type { MemberDto, RecurringDto } from '@/lib/api'
 
 export const Route = createFileRoute('/recurring')({
-  component: RecurringPage,
+  component: () => (
+    <RequireAuth>
+      <RecurringPage />
+    </RequireAuth>
+  ),
 })
 
 const CADENCE_LABEL: Record<string, string> = {

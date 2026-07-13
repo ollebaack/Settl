@@ -1,43 +1,24 @@
-using Microsoft.EntityFrameworkCore;
-using Settl.Api.Data;
+using System.Security.Claims;
 
 namespace Settl.Api.Services;
 
 /// <summary>
-/// Resolves the acting member. Auth is deferred (ADR-0005); this is the ONLY place
-/// "who am I" is decided. Reads header <c>X-Settl-User: {memberId}</c> when present and
-/// valid, else falls back to a configured default (the first seeded member, "Du").
-/// Tech-debt: replace with real auth (docs/tech-debt/0003).
+/// Resolves the acting member from the authenticated principal (ADR-0011). This is the
+/// ONLY place "who am I" is decided — every endpoint file calls this instead of reading
+/// auth state itself.
 /// </summary>
 public interface ICurrentUserAccessor
 {
-    /// <summary>The acting member's id, resolving header → default. Null only before any member exists.</summary>
+    /// <summary>The acting member's id. Null if unauthenticated (the fallback authorization
+    /// policy means this only happens for AllowAnonymous endpoints).</summary>
     Task<Guid?> GetMemberIdAsync(CancellationToken ct = default);
 }
 
-public sealed class CurrentUserAccessor(IHttpContextAccessor http, SettlDbContext db) : ICurrentUserAccessor
+public sealed class CurrentUserAccessor(IHttpContextAccessor http) : ICurrentUserAccessor
 {
-    public const string HeaderName = "X-Settl-User";
-
-    public async Task<Guid?> GetMemberIdAsync(CancellationToken ct = default)
+    public Task<Guid?> GetMemberIdAsync(CancellationToken ct = default)
     {
-        var header = http.HttpContext?.Request.Headers[HeaderName].ToString();
-        if (!string.IsNullOrWhiteSpace(header) && Guid.TryParse(header, out var id))
-        {
-            if (await db.Members.AnyAsync(m => m.Id == id, ct))
-                return id;
-        }
-
-        // Default = seeded member "Du", else earliest member by id (deterministic).
-        var du = await db.Members
-            .Where(m => m.Name == "Du")
-            .Select(m => (Guid?)m.Id)
-            .FirstOrDefaultAsync(ct);
-        if (du is not null) return du;
-
-        return await db.Members
-            .OrderBy(m => m.Id)
-            .Select(m => (Guid?)m.Id)
-            .FirstOrDefaultAsync(ct);
+        var id = http.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return Task.FromResult(Guid.TryParse(id, out var memberId) ? memberId : (Guid?)null);
     }
 }

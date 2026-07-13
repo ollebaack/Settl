@@ -1,13 +1,14 @@
 import { test, expect } from '@playwright/test'
-import { getHouseholdId, getMemberId, getMembers, openHouseholdSwitcher, pin, uniqueSuffix } from './helpers'
+import { getHouseholdId, getMembers, loginAs, openHouseholdSwitcher, pinHousehold, uniqueSuffix } from './helpers'
 
-// NEW HOUSEHOLD (Nytt hushåll, §2.5b): create a household by name with a typed
-// member added inline — no invite step. The acting user is always included and
-// the app switches straight into the fresh, empty book.
-test('creates a household with a new member and switches into it', async ({ page, request }) => {
-  const du = await getMemberId(request, 'Du')
-  const lonnvagen = await getHouseholdId(request, du, 'Lönnvägen 3')
-  await pin(page, du, lonnvagen)
+// NEW HOUSEHOLD (Nytt hushåll, §2.5b): create a household by name only — every
+// other member joins via invite (ADR-0011), not typed in here. The acting user
+// is its sole initial member and the app switches straight into the fresh,
+// empty book.
+test('creates a household and switches into it', async ({ page }) => {
+  const du = await loginAs(page, 'Du')
+  const lonnvagen = await getHouseholdId(page.request, 'Lönnvägen 3')
+  await pinHousehold(page, lonnvagen)
   await page.goto('/')
 
   const name = `E2E Sommarstugan ${uniqueSuffix()}`
@@ -17,25 +18,23 @@ test('creates a household with a new member and switches into it', async ({ page
   await expect(page.getByRole('heading', { name: 'Nytt hushåll' })).toBeVisible()
 
   await page.getByLabel('Namn').fill(name)
-  await page.getByRole('button', { name: '+ Lägg till medlem' }).click()
-  await page.getByLabel('Medlemsnamn').fill('Alex')
   await page.getByRole('button', { name: 'Skapa hushåll' }).click()
 
   // Success toast, sheet closes, and the app switched to the new (now active) household.
-  await expect(page.getByText(`${name} skapat — tomt blad`)).toBeVisible()
+  await expect(page.getByText(`${name} skapat`)).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Nytt hushåll' })).toBeHidden()
   await expect(page.getByText(`öppna poster i ${name}`)).toBeVisible()
 
-  // The household was created with Du + Alex as members, in that order.
-  const created = await getHouseholdId(request, du, name)
-  const members = await getMembers(request, du, created)
-  expect(members.map((m) => m.name)).toEqual(['Du', 'Alex'])
+  // The household was created with Du as its sole member.
+  const created = await getHouseholdId(page.request, name)
+  const members = await getMembers(page.request, created)
+  expect(members.map((m) => m.id)).toEqual([du])
 })
 
-test('blocks save when the name is empty', async ({ page, request }) => {
-  const du = await getMemberId(request, 'Du')
-  const lonnvagen = await getHouseholdId(request, du, 'Lönnvägen 3')
-  await pin(page, du, lonnvagen)
+test('blocks save when the name is empty', async ({ page }) => {
+  await loginAs(page, 'Du')
+  const lonnvagen = await getHouseholdId(page.request, 'Lönnvägen 3')
+  await pinHousehold(page, lonnvagen)
   await page.goto('/')
 
   await openHouseholdSwitcher(page, 'Lönnvägen 3')

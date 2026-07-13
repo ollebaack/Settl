@@ -1,19 +1,19 @@
 import { test, expect } from '@playwright/test'
-import { createRecurring, getHouseholdId, getMemberId, pin, uniqueSuffix } from './helpers'
+import { createRecurring, getHouseholdId, loginAs, pinHousehold, uniqueSuffix } from './helpers'
 
 // RECURRING (På repeat, §2.3 + flow §4): the screen lists templates with cycle
 // progress; pause then resume a template (round-trip restores state). Uses a
 // freshly-created, uniquely-titled template scheduled far out (so it adds no
 // due-nudge) to stay isolated from the other specs.
-test('pause and resume a recurring template (round-trip)', async ({ page, request }) => {
-  const du = await getMemberId(request, 'Du')
-  const household = await getHouseholdId(request, du, 'Lönnvägen 3')
+test('pause and resume a recurring template (round-trip)', async ({ page }) => {
+  const du = await loginAs(page, 'Du')
+  const household = await getHouseholdId(page.request, 'Lönnvägen 3')
 
   const title = `E2E repeat ${uniqueSuffix()}`
   const far = new Date(Date.now() + 40 * 86_400_000).toISOString().slice(0, 10)
-  await createRecurring(request, du, household, title, 30000, far)
+  await createRecurring(page.request, household, title, 30000, far, du)
 
-  await pin(page, du, household)
+  await pinHousehold(page, household)
   await page.goto('/recurring')
   await expect(page.getByRole('heading', { name: 'På repeat' })).toBeVisible()
   // Screen shows cycle progress for templates.
