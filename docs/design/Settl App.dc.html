@@ -619,18 +619,42 @@ class Component extends DCLogic {
     return split.mode === 'equal' ? 'Delas lika' : split.mode === 'percent' ? 'Egna procent' : 'Egna belopp';
   }
 
+  svgIcon(parts) {
+    return React.createElement('svg', { width: 17, height: 17, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' },
+      parts.map((p, i) => typeof p === 'string' ? React.createElement('path', { key: i, d: p }) : React.createElement('circle', { key: i, cx: p[0], cy: p[1], r: p[2] })));
+  }
+
+  catIcon(title) {
+    const t = (title || '').toLowerCase();
+    const has = (...ws) => ws.some(w => t.includes(w));
+    if (has('st\u00e4d', 'reng\u00f6r', 'tv\u00e4tt')) return this.svgIcon(['M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z', 'M20 3v4', 'M22 5h-4']);
+    if (has('takeaway', 'thai', 'pizza', 'sushi', 'restaurang', 'lunch', 'middag', 'k\u00e4k')) return this.svgIcon(['M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2', 'M7 2v20', 'M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7']);
+    if (has('konsert', 'biljett', 'bio', 'match', 'event')) return this.svgIcon(['M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z', 'M13 5v2', 'M13 17v2', 'M13 11v2']);
+    if (has('soffa', 'm\u00f6bel', 'stol', 'bord', 's\u00e4ng', 'f\u00e5t\u00f6lj')) return this.svgIcon(['M19 9V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v3', 'M3 16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v2H7v-2a2 2 0 0 0-4 0Z', 'M5 18v2', 'M19 18v2']);
+    if (has('mat', 'handl', 'ica', 'coop', 'willys', 'lidl', 'hemk\u00f6p')) return this.svgIcon([[8, 21, 1], [19, 21, 1], 'M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12']);
+    if (has('taxi', 'buss', 't\u00e5g', 'resa', 'bensin', 'parkering')) return this.svgIcon(['M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2', [7, 17, 2], 'M9 17h6', [17, 17, 2]]);
+    if (has('internet', 'wifi', 'bredband')) return this.svgIcon(['M12 20h.01', 'M2 8.82a15 15 0 0 1 20 0', 'M5 12.859a10 10 0 0 1 14 0', 'M8.5 16.429a5 5 0 0 1 7 0']);
+    if (has('hyra')) return this.svgIcon(['M3 10l9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z', 'M9 22V12h6v10']);
+    if (has('spotify', 'musik')) return this.svgIcon(['M9 18V5l12-2v13', [6, 18, 3], [18, 16, 3]]);
+    if (has('netflix', 'hbo', 'stream', 'film', 'tv')) return this.svgIcon(['M17 2l-5 5-5-5', 'M4 7h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z']);
+    if (has('el ', 'elr\u00e4kning', 'str\u00f6m')) return this.svgIcon(['M13 2 3 14h9l-1 8 10-12h-9l1-8z']);
+    if (has('blommor', 'present', 'g\u00e5va', '\u00e5rsdag')) return this.svgIcon(['M3 8h18v4H3z', 'M12 8v13', 'M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7', 'M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5']);
+    return null;
+  }
+
   row(e) {
     const payerIsYou = e.paidBy === 'u1';
     const payer = e.paidBy ? this.mem(e.paidBy).name : '';
+    const cat = this.catIcon(e.title);
     let meta, glyph, iconBg = 'var(--chip)', iconColor = 'var(--sub)';
     if (e.type === 'iou') {
-      glyph = '\u21c4';
+      glyph = cat || '\u21c4';
       meta = (e.from === 'u1' ? 'L\u00e5n fr\u00e5n ' + this.mem(e.to).name : 'L\u00e5n till ' + this.mem(e.from).name) + ' \u00b7 ' + this.short(e.date);
     } else if (e.type === 'recurring') {
-      glyph = '\u21bb'; iconBg = 'var(--soft)'; iconColor = 'var(--accent)';
+      glyph = cat || '\u21bb'; iconBg = 'var(--soft)'; iconColor = 'var(--accent)';
       meta = 'Autobokf\u00f6rd \u00b7 ' + (payerIsYou ? 'du betalar' : payer + ' betalar') + ' \u00b7 ' + this.short(e.date);
     } else {
-      glyph = e.title.charAt(0).toUpperCase();
+      glyph = cat || this.svgIcon(['M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z', 'M14 8H8', 'M16 12H8', 'M13 16H8']);
       meta = (payerIsYou ? 'Du betalade' : payer + ' betalade') + ' \u00b7 ' + this.short(e.date);
     }
     let sub = '', subColor = 'var(--sub)';
