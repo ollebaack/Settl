@@ -2,12 +2,14 @@
   "name": "settl",
   "private": true,
   "scripts": {
+    "dev": "dotnet run --project apps/api/Settl.AppHost",
     "dev:web": "pnpm --filter web dev",
     "dev:api": "dotnet run --project apps/api/Settl.Api",
     "verify": "pnpm verify:api && pnpm verify:web",
     "e2e": "pnpm --filter web e2e",
     "verify:api": "dotnet build && dotnet test --no-build",
-    "verify:web": "pnpm --filter web lint && pnpm --filter web build"
+    "verify:web": "pnpm --filter web lint && pnpm --filter web build",
+    "publish:docker": "aspire publish --apphost apps/api/Settl.AppHost -o apps/api/Settl.AppHost/aspire-output"
   },
   "packageManager": "pnpm@10.18.3"
 }

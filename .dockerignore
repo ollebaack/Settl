@@ -1,16 +1,12 @@
 # Node
-node_modules/
-dist/
+**/node_modules/
+apps/web/dist/
 
 # .NET
-bin/
-obj/
+**/bin/
+**/obj/
 *.user
 .vs/
-
-# Generated
-apps/web/src/routeTree.gen.ts
-apps/api/Settl.AppHost/aspire-output/
 
 # Local databases (SQLite dev)
 *.db
@@ -21,11 +17,13 @@ apps/api/Settl.AppHost/aspire-output/
 .env
 .env.local
 
+# Aspire publish output
+apps/api/Settl.AppHost/aspire-output/
+
 # OS / editor
 .DS_Store
 Thumbs.db
-
-# Claude workflow worktrees
+.git/
 .claude/worktrees/
 
 # Playwright

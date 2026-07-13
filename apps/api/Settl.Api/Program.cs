@@ -32,15 +32,31 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+}
 
+// Migrations run at container startup (ADR-0009) — not at build/release time, since a
+// release-phase step wouldn't have access to the mounted SQLite volume. Seeding stays
+// dev-only. The "Testing" environment (WebApplicationFactory-based integration tests,
+// see SettlApiFactory) builds its schema via EnsureCreated against an isolated in-memory
+// DB instead, so it's excluded here to avoid re-applying migrations onto that schema.
+if (!app.Environment.IsEnvironment("Testing"))
+{
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<SettlDbContext>();
     db.Database.Migrate();
-    await DbInitializer.SeedAsync(db);
+    if (app.Environment.IsDevelopment())
+    {
+        await DbInitializer.SeedAsync(db);
+    }
 }
 
 app.UseHttpsRedirection();
 app.UseCors(WebCorsPolicy);
+
+// Serves the built web SPA (apps/web's Vite build output, copied to wwwroot in the
+// Dockerfile's runtime stage) alongside the API. No-op in local dev, where wwwroot
+// doesn't exist and the Vite dev server (:5173) serves the SPA instead (ADR-0008).
+app.UseStaticFiles();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
     .WithName("GetHealth");
@@ -51,6 +67,9 @@ app.MapEntriesEndpoints();
 app.MapRecurringEndpoints();
 app.MapSettlementsEndpoints();
 app.MapNudgesEndpoints();
+
+// SPA client-side routing fallback — must come after all API route mappings above.
+app.MapFallbackToFile("index.html");
 
 app.Run();
 

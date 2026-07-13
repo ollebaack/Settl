@@ -1,0 +1,20 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.4.6">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>369f138e-a975-4467-add4-96b6a78affb2</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Settl.Api\Settl.Api.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Docker" Version="13.4.6" />
+    <PackageReference Include="Aspire.Hosting.JavaScript" Version="13.4.6" />
+  </ItemGroup>
+
+</Project>

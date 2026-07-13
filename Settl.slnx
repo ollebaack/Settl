@@ -3,5 +3,6 @@
   <Folder Name="/apps/api/">
     <Project Path="apps/api/Settl.Api.Tests/Settl.Api.Tests.csproj" />
     <Project Path="apps/api/Settl.Api/Settl.Api.csproj" />
+    <Project Path="apps/api/Settl.AppHost/Settl.AppHost.csproj" />
   </Folder>
 </Solution>
