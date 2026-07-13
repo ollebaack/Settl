@@ -1,5 +1,6 @@
 import { createRootRoute, Outlet, useLocation } from '@tanstack/react-router'
 import { AppShell } from '@/components/app-shell'
+import { DevBar } from '@/components/dev-bar'
 import { SheetRouter } from '@/components/sheet-router'
 import { Toaster } from '@/components/toaster'
 import { validateSheetSearch, type SheetSearch } from '@/lib/sheet'
@@ -23,6 +24,9 @@ function RootLayout() {
       <>
         <Outlet />
         <Toaster />
+        <div className="fixed inset-x-0 bottom-0 z-40">
+          <DevBar />
+        </div>
       </>
     )
   }
