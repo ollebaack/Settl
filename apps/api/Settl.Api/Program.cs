@@ -34,6 +34,9 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
+    // wwwroot (and thus the SPA fallback below) doesn't exist in dev, so the dashboard's
+    // link to the api resource's root would otherwise just 404.
+    app.MapGet("/", () => Results.Redirect("/scalar/v1"));
 }
 
 // Migrations run at container startup (ADR-0009) — not at build/release time, since a
@@ -52,7 +55,16 @@ if (!app.Environment.IsEnvironment("Testing"))
     }
 }
 
-app.UseHttpsRedirection();
+// Dev is intentionally all-HTTP (the Vite dev server has no HTTPS support either,
+// ADR-0008), and the API's https launch profile exposing :7026 alongside :5000 meant a
+// plain http:5000 request — including the browser's CORS preflight OPTIONS — got
+// redirected before UseCors ever ran, which browsers reject (redirecting a preflight
+// is illegal per the CORS spec). Skipping the redirect in Development avoids that.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseCors(WebCorsPolicy);
 
 // Serves the built web SPA (apps/web's Vite build output, copied to wwwroot in the
