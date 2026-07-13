@@ -14,6 +14,7 @@ import { ErrorState, LoadingState } from '@/components/screen-states'
 import { cn } from '@/lib/utils'
 import { useActiveHousehold } from '@/lib/active-household'
 import { useHouseholds } from '@/lib/queries'
+import { useSheet } from '@/lib/sheet'
 import type { MoneyIntent } from '@/components/money'
 import type { HouseholdListItemDto } from '@/lib/api'
 
@@ -39,6 +40,7 @@ export function HouseholdSwitcherSheet({
 }) {
   const navigate = useNavigate()
   const { householdId, setHouseholdId } = useActiveHousehold()
+  const { openSheet } = useSheet()
   const query = useHouseholds()
   const households = query.data ?? []
 
@@ -108,7 +110,7 @@ export function HouseholdSwitcherSheet({
 
           <Button
             variant="outline"
-            onClick={() => toast('Inte i den här prototypen — än')}
+            onClick={() => openSheet('newHousehold')}
             className="w-full border-dashed"
           >
             + Nytt hushåll

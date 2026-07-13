@@ -6,7 +6,7 @@
 import { useCallback } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 
-export type SheetKind = 'add' | 'entry' | 'settle' | 'households' | 'recurring'
+export type SheetKind = 'add' | 'entry' | 'settle' | 'households' | 'newHousehold' | 'recurring'
 
 export interface SheetSearch {
   sheet?: SheetKind
@@ -16,7 +16,14 @@ export interface SheetSearch {
   person?: string
 }
 
-const SHEET_KINDS: readonly SheetKind[] = ['add', 'entry', 'settle', 'households', 'recurring']
+const SHEET_KINDS: readonly SheetKind[] = [
+  'add',
+  'entry',
+  'settle',
+  'households',
+  'newHousehold',
+  'recurring',
+]
 
 /** Validate/normalise the sheet search params (used by the root route). */
 export function validateSheetSearch(search: Record<string, unknown>): SheetSearch {

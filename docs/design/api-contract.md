@@ -249,7 +249,10 @@ Money fields are `long` minor units, suffixed `Minor` where ambiguous.
   let the client hold it — **Decision:** client holds active household id; `active`
   reflects a `?active={id}` echo or is omitted. Keep it simple: omit `active`, client
   tracks selection.)
-- `POST /households` `CreateHousehold` `{ name, currency?, memberIds: Guid[] }` → 201 household.
+- `POST /households` `CreateHousehold` `{ name, currency?, memberIds?: Guid[], newMemberNames?: string[] }`
+  → 201 household. The acting user is always a member (added server-side, never
+  listed); `memberIds` references existing members, `newMemberNames` creates fresh
+  ones inline with a generated avatar colour — no invite step (auth deferred, ADR-0005).
 - `GET /households/{id}` `GetHousehold` → `{ id, name, currency, members: [{id,name,avatarColor}] }`.
 - `GET /households/{id}/members` `GetHouseholdMembers` → `[{ id, name, avatarColor }]`.
 - `GET /households/{id}/summary` `GetHouseholdSummary` →

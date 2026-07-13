@@ -8,10 +8,16 @@ public sealed record HouseholdListItemDto(
     long NetMinor,
     string NetLabel);
 
+/// <summary>
+/// The acting user is always a member and never needs to be listed. <c>MemberIds</c>
+/// references existing members; <c>NewMemberNames</c> creates fresh ones inline (no
+/// invite step — auth is deferred, ADR-0005, so a Member is just a name).
+/// </summary>
 public sealed record CreateHouseholdRequest(
     string Name,
     string? Currency,
-    Guid[] MemberIds);
+    Guid[]? MemberIds,
+    string[]? NewMemberNames);
 
 public sealed record HouseholdDto(
     Guid Id,

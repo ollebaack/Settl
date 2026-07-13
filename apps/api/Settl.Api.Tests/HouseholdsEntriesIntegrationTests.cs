@@ -183,6 +183,86 @@ public class HouseholdsEntriesIntegrationTests
         Assert.Equal(2_400_000, soonest.AmountMinor);
     }
 
+    // ---------- Households: create ----------
+
+    [Fact]
+    public async Task CreateHousehold_always_includes_acting_user_first_even_when_unlisted()
+    {
+        using var factory = await SeededAsync();
+        var du = factory.ClientAs(SeedIds.Du);
+
+        var req = new CreateHouseholdRequest("Sommarstugan", null, null, null);
+        var post = await du.PostAsJsonAsync("/households", req, Web);
+        Assert.Equal(HttpStatusCode.Created, post.StatusCode);
+
+        var created = await post.Content.ReadFromJsonAsync<HouseholdDto>(Web);
+        Assert.NotNull(created);
+        Assert.Equal("Sommarstugan", created!.Name);
+        Assert.Equal("SEK", created.Currency);
+        Assert.Single(created.Members);
+        Assert.Equal(SeedIds.Du, created.Members[0].Id);
+    }
+
+    [Fact]
+    public async Task CreateHousehold_creates_new_members_by_name_with_generated_colors()
+    {
+        using var factory = await SeededAsync();
+        var du = factory.ClientAs(SeedIds.Du);
+
+        var req = new CreateHouseholdRequest("Kollektivet", null, null, ["Alex", "  Robin  ", "", "   "]);
+        var post = await du.PostAsJsonAsync("/households", req, Web);
+        Assert.Equal(HttpStatusCode.Created, post.StatusCode);
+
+        var created = await post.Content.ReadFromJsonAsync<HouseholdDto>(Web);
+        Assert.NotNull(created);
+        // Blank/whitespace-only names are dropped; "Robin" is trimmed.
+        Assert.Equal(new[] { "Du", "Alex", "Robin" }, created!.Members.Select(m => m.Name).ToArray());
+        Assert.Equal(SeedIds.Du, created.Members[0].Id);
+        Assert.All(created.Members.Skip(1), m => Assert.False(string.IsNullOrWhiteSpace(m.AvatarColor)));
+
+        // The household is now visible to the acting user via the list endpoint.
+        var list = await du.GetFromJsonAsync<List<HouseholdListItemDto>>("/households", Web);
+        Assert.Contains(list!, h => h.Id == created.Id && h.Name == "Kollektivet");
+    }
+
+    [Fact]
+    public async Task CreateHousehold_combines_existing_and_new_members_in_order()
+    {
+        using var factory = await SeededAsync();
+        var du = factory.ClientAs(SeedIds.Du);
+
+        var req = new CreateHouseholdRequest("Resgänget", null, [SeedIds.Sam], ["Nyanländ"]);
+        var post = await du.PostAsJsonAsync("/households", req, Web);
+        Assert.Equal(HttpStatusCode.Created, post.StatusCode);
+
+        var created = await post.Content.ReadFromJsonAsync<HouseholdDto>(Web);
+        Assert.Equal(new[] { "Du", "Sam", "Nyanländ" }, created!.Members.Select(m => m.Name).ToArray());
+    }
+
+    [Fact]
+    public async Task CreateHousehold_blank_name_returns_400()
+    {
+        using var factory = await SeededAsync();
+        var du = factory.ClientAs(SeedIds.Du);
+
+        var req = new CreateHouseholdRequest("   ", null, null, null);
+        var res = await du.PostAsJsonAsync("/households", req, Web);
+        Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+        Assert.Equal("Namn krävs", await DetailAsync(res));
+    }
+
+    [Fact]
+    public async Task CreateHousehold_unknown_member_id_returns_400()
+    {
+        using var factory = await SeededAsync();
+        var du = factory.ClientAs(SeedIds.Du);
+
+        var req = new CreateHouseholdRequest("Spökhuset", null, [Guid.NewGuid()], null);
+        var res = await du.PostAsJsonAsync("/households", req, Web);
+        Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+        Assert.Equal("Okänd medlem", await DetailAsync(res));
+    }
+
     // ---------- Entries: reads ----------
 
     [Fact]

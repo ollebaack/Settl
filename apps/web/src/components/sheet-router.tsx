@@ -9,6 +9,7 @@ import { AddEntrySheet } from '@/components/sheets/add-entry-sheet'
 import { EntryDetailSheet } from '@/components/sheets/entry-detail-sheet'
 import { SettleUpSheet } from '@/components/sheets/settle-up-sheet'
 import { HouseholdSwitcherSheet } from '@/components/sheets/household-switcher-sheet'
+import { NewHouseholdSheet } from '@/components/sheets/new-household-sheet'
 import { RecurringDetailSheet } from '@/components/sheets/recurring-detail-sheet'
 
 export function SheetRouter() {
@@ -20,6 +21,7 @@ export function SheetRouter() {
       <EntryDetailSheet open={sheet === 'entry'} onClose={closeSheet} entryId={id} />
       <SettleUpSheet open={sheet === 'settle'} onClose={closeSheet} person={person} />
       <HouseholdSwitcherSheet open={sheet === 'households'} onClose={closeSheet} />
+      <NewHouseholdSheet open={sheet === 'newHousehold'} onClose={closeSheet} />
       <RecurringDetailSheet open={sheet === 'recurring'} onClose={closeSheet} recId={id} />
     </>
   )

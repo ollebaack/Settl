@@ -301,8 +301,35 @@ input::placeholder{color:var(--sub);opacity:.55}
               <span style="text-align:right"><span style="display:block;font-family:'Spline Sans Mono',monospace;font-size:12.5px;font-weight:600;color:{{ h.netColor }}">{{ h.net }}</span><span style="display:block;font-size:10.5px;color:var(--sub)">{{ h.netSub }}</span></span>
             </button>
           </sc-for>
-          <button onClick="{{ toastSoon }}" style="border:1.5px dashed var(--line);border-radius:16px;padding:13px;text-align:center;font-size:13px;font-weight:600;color:var(--sub)">+ Nytt hush&aring;ll</button>
+          <button onClick="{{ openNewHH }}" style="border:1.5px dashed var(--line);border-radius:16px;padding:13px;text-align:center;font-size:13px;font-weight:600;color:var(--sub)">+ Nytt hush&aring;ll</button>
         </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ shNewHH }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Nytt hush&aring;ll">
+        <div style="font-size:17px;font-weight:700">Nytt hush&aring;ll</div>
+        <div style="font-size:12.5px;color:var(--sub);margin-top:2px">En egen bok f&ouml;r st&auml;llet eller g&auml;nget &mdash; bjud in vilka som helst.</div>
+        <div style="font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--sub);margin:16px 0 8px">Namn</div>
+        <input value="{{ nhName }}" onInput="{{ onNhName }}" placeholder="Sommarstugan, Kollektivet, Resg&auml;nget&hellip;" style="width:100%;box-sizing:border-box;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:14px">
+        <div style="font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--sub);margin:18px 0 8px">Medlemmar</div>
+        <div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:4px 14px">
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)">
+            <span style="{{ nhYouAv }}">D</span>
+            <span style="flex:1;font-size:13.5px;font-weight:600">Du</span>
+            <span style="font-size:11px;color:var(--sub)">alltid med</span>
+          </div>
+          <sc-for list="{{ nhRows }}" as="r" hint-placeholder-count="1">
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)">
+              <span style="{{ r.avStyle }}">{{ r.init }}</span>
+              <input value="{{ r.val }}" onInput="{{ r.onVal }}" placeholder="Namn" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13.5px">
+              <button onClick="{{ r.onRemove }}" style="width:28px;height:28px;flex:none;border-radius:50%;background:var(--chip);color:var(--sub);display:grid;place-items:center;font-size:14px">&times;</button>
+            </div>
+          </sc-for>
+          <button onClick="{{ addNhMember }}" style="width:100%;padding:11px 0;font-size:12.5px;font-weight:600;color:var(--accent)">+ L&auml;gg till medlem</button>
+        </div>
+        <div style="font-size:11.5px;color:var(--sub);margin-top:10px;line-height:1.5">I riktiga appen f&aring;r medlemmarna en inbjudan &mdash; h&auml;r l&auml;ggs de till direkt.</div>
+        <button onClick="{{ createHH }}" style="{{ nhSaveStyle }}">Skapa hush&aring;ll</button>
       </div>
       </sc-if>
 
@@ -466,8 +493,10 @@ class Component extends DCLogic {
     tab: 'home', hhId: 'h1', filter: 'all',
     sheet: null, toast: '',
     wide: typeof window !== 'undefined' ? window.innerWidth >= 980 : true,
-    af: { type: 'expense', title: '', amount: '', paidBy: 'u1', iouDir: 'iowe', iouWith: null, mode: 'equal', vals: {}, cadence: 'monthly', date: '2026-08-01' }
+    af: { type: 'expense', title: '', amount: '', paidBy: 'u1', iouDir: 'iowe', iouWith: null, mode: 'equal', vals: {}, cadence: 'monthly', date: '2026-08-01' },
+    nh: { name: '', members: [''] }
   };
+  NH_BGS = ['#f0dcc3', '#d9e0ee', '#eed9d9', '#d9eee4', '#e8ddf0'];
   nextId = 100;
   db = {
     households: [
@@ -660,6 +689,22 @@ class Component extends DCLogic {
   }
 
   setAf(patch) { this.setState({ af: { ...this.state.af, ...patch } }); }
+
+  createHH() {
+    const nh = this.state.nh;
+    const name = nh.name.trim();
+    if (!name) { this.setToast('Ge hush\u00e5llet ett namn f\u00f6rst'); return; }
+    const memberIds = ['u1'];
+    nh.members.map(n => n.trim()).filter(Boolean).forEach((n, i) => {
+      const id = 'u' + (this.nextId++);
+      this.db.members[id] = { name: n, init: n.charAt(0).toUpperCase(), bg: this.NH_BGS[i % this.NH_BGS.length] };
+      memberIds.push(id);
+    });
+    const id = 'h' + (this.nextId++);
+    this.db.households.push({ id, name, members: memberIds });
+    this.setState({ hhId: id, sheet: null, tab: 'home', filter: 'all', nh: { name: '', members: [''] } });
+    this.setToast(name + ' skapat \u2014 tomt blad');
+  }
 
   renderVals() {
     const dark = this.props.darkMode !== undefined ? !!this.props.darkMode : false;
@@ -948,7 +993,22 @@ class Component extends DCLogic {
       shEntry: sheet && sheet.kind === 'entry' && !!vals.ed,
       shSettle: sheet && sheet.kind === 'settle' && !!vals.ss,
       shRec: sheet && sheet.kind === 'rec' && !!vals.rd,
-      hhRows, toastSoon: () => this.setToast('Inte i den h\u00e4r prototypen \u2014 \u00e4n'),
+      hhRows,
+      openNewHH: () => this.setState({ sheet: { kind: 'newhh' }, nh: { name: '', members: [''] } }),
+      shNewHH: sheet && sheet.kind === 'newhh',
+      nhName: this.state.nh.name,
+      onNhName: (e) => this.setState({ nh: { ...this.state.nh, name: e.target.value } }),
+      nhYouAv: this.avStyle(this.mem('u1'), 28).replace('margin-left:-6px', ''),
+      nhRows: this.state.nh.members.map((val, i) => ({
+        val,
+        init: val.trim() ? val.trim().charAt(0).toUpperCase() : '?',
+        avStyle: this.avStyle({ bg: this.NH_BGS[i % this.NH_BGS.length] }, 28).replace('margin-left:-6px', ''),
+        onVal: (e) => { const ms = [...this.state.nh.members]; ms[i] = e.target.value; this.setState({ nh: { ...this.state.nh, members: ms } }); },
+        onRemove: () => this.setState({ nh: { ...this.state.nh, members: this.state.nh.members.filter((_, j) => j !== i) } })
+      })),
+      addNhMember: () => this.setState({ nh: { ...this.state.nh, members: [...this.state.nh.members, ''] } }),
+      createHH: () => this.createHH(),
+      nhSaveStyle: 'width:100%;margin-top:18px;background:var(--accent);color:#fff;border-radius:16px;padding:14px 0;text-align:center;font-size:14.5px;font-weight:700;opacity:' + (this.state.nh.name.trim() ? '1' : '.45'),
       afTypes, afIouDirs, afIouPeople, afPayers, afModes, afCadences, afRows, afHint, afHintColor,
       afAmount: af.amount, onAfAmount: (e) => this.setAf({ amount: e.target.value }),
       afTitle: af.title, onAfTitle: (e) => this.setAf({ title: e.target.value }),

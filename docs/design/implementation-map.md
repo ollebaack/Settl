@@ -119,13 +119,23 @@ Shared row conventions used by Home "Senaste" and all Ledger rows (build once as
 
 ### 2.5 Dina hushåll (overlay `?sheet=households`)
 
-**Components** — responsive sheet (Drawer mobile / Dialog desktop) titled **"Dina hushåll"** + subtitle `En bok per hushåll — du kan vara med i flera.`. Household rows = `Card` buttons: initial square, name, member names comma-joined, right net amount + sub (`du ska få` / `du är skyldig` / `kvitt`); active household outlined in accent. Bottom **"+ Nytt hushåll"** dashed outline `Button`.
+**Components** — responsive sheet (Drawer mobile / Dialog desktop) titled **"Dina hushåll"** + subtitle `En bok per hushåll — du kan vara med i flera.`. Household rows = `Card` buttons: initial square, name, member names comma-joined, right net amount + sub (`du ska få` / `du är skyldig` / `kvitt`); active household outlined in accent. Bottom **"+ Nytt hushåll"** dashed outline `Button` opens the create-household sheet below.
 
-**Data** — `GET /users/me/households` → `{ id, name, memberNames[], net, active }`.
+**Data** — `GET /households` → `{ id, name, memberNames[], net, active }`.
 
 **Copy** — `Dina hushåll` ("Your households"); `En bok per hushåll — du kan vara med i flera.` ("One book per household — you can be in several."); row sub `du ska få / du är skyldig / kvitt`; `+ Nytt hushåll`.
 
-**States** — Selecting a household: `PUT /users/me/active-household`, reset to `/` + filter `all`, close sheet, toast `Bytte till {namn}`. `+ Nytt hushåll` → toast `Inte i den här prototypen — än` (stub). Loading: row skeletons.
+**States** — Selecting a household: switches the active household, reset to `/` + filter `all`, close sheet, toast `Bytte till {namn}`. Loading: row skeletons.
+
+### 2.5b Nytt hushåll (overlay `?sheet=newHousehold`)
+
+**Components** — responsive sheet titled **"Nytt hushåll"** + subtitle `En egen bok för stället eller gänget — bjud in vilka som helst.`. Name `Input`. "Medlemmar" card: fixed row for the acting user (`Du`, "alltid med"), then one row per typed member name with a remove `×` button, then **"+ Lägg till medlem"**. Helper text `I riktiga appen får medlemmarna en inbjudan — här läggs de till direkt.` (no invite flow yet — deferred, tech-debt 0001/0003). Save button **"Skapa hushåll"**, disabled until the name is non-empty.
+
+**Data** — `POST /households` `CreateHousehold` `{ name, newMemberNames: string[] }` (see §7); the acting user is always included server-side. → 201 household.
+
+**Copy** — `Nytt hushåll`; `En egen bok för stället eller gänget — bjud in vilka som helst.`; `Medlemmar`; `alltid med`; `+ Lägg till medlem`; `I riktiga appen får medlemmarna en inbjudan — här läggs de till direkt.`; `Skapa hushåll`; validation toast `Ge hushållet ett namn först`; success toast `{namn} skapat — tomt blad`.
+
+**States** — On save: create, switch active household to the new one, reset to `/` + filter `all`, close sheet, toast. Blank member name rows are dropped silently on save.
 
 ### 2.6 Ny post (overlay `?sheet=add`)
 

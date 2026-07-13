@@ -17,6 +17,7 @@ import {
   apiPost,
   apiPut,
   type CreateEntryRequest,
+  type CreateHouseholdRequest,
   type CreateRecurringRequest,
   type CreateSettlementRequest,
   type CreateSettlementResponse,
@@ -190,6 +191,14 @@ export function useNudges(id: string | undefined, tone: NudgeTone = 'direct') {
 }
 
 // --- Mutations --------------------------------------------------------------
+
+export function useCreateHousehold() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: CreateHouseholdRequest) => apiPost<HouseholdDto>('/households', body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.households }),
+  })
+}
 
 export function useCreateEntry(householdId: string | undefined) {
   const qc = useQueryClient()

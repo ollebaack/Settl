@@ -43,16 +43,23 @@ public static class HouseholdsEndpoints
             .Produces<List<HouseholdListItemDto>>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
-        app.MapPost("/households", async (CreateHouseholdRequest req, SettlDbContext db, CancellationToken ct) =>
+        app.MapPost("/households", async (
+            CreateHouseholdRequest req, ICurrentUserAccessor cu, SettlDbContext db, CancellationToken ct) =>
         {
+            var me = await cu.GetMemberIdAsync(ct);
+            if (me is null) return Results.Problem("Ingen användare", statusCode: 404);
             if (string.IsNullOrWhiteSpace(req.Name))
                 return Results.Problem("Namn krävs", statusCode: 400);
-            if (req.MemberIds is null || req.MemberIds.Length == 0)
-                return Results.Problem("Minst en medlem krävs", statusCode: 400);
 
-            var validMembers = await db.Members.Where(m => req.MemberIds.Contains(m.Id)).Select(m => m.Id).ToListAsync(ct);
-            if (validMembers.Count != req.MemberIds.Distinct().Count())
+            var existingIds = (req.MemberIds ?? []).Where(id => id != me.Value).Distinct().ToList();
+            var validExisting = await db.Members.Where(m => existingIds.Contains(m.Id)).Select(m => m.Id).ToListAsync(ct);
+            if (validExisting.Count != existingIds.Count)
                 return Results.Problem("Okänd medlem", statusCode: 400);
+
+            var newNames = (req.NewMemberNames ?? [])
+                .Select(n => n.Trim())
+                .Where(n => n.Length > 0)
+                .ToList();
 
             var now = DateTimeOffset.UtcNow;
             var household = new Household
@@ -64,20 +71,33 @@ public static class HouseholdsEndpoints
             };
             db.Households.Add(household);
 
-            var i = 0;
-            foreach (var mid in req.MemberIds.Distinct())
+            var newMembers = newNames.Select((name, i) => new Member
+            {
+                Id = Guid.NewGuid(),
+                Name = name,
+                AvatarColor = NewMemberAvatarPalette[i % NewMemberAvatarPalette.Length]
+            }).ToList();
+            if (newMembers.Count > 0) db.Members.AddRange(newMembers);
+
+            var orderedMemberIds = new List<Guid> { me.Value };
+            orderedMemberIds.AddRange(existingIds);
+            orderedMemberIds.AddRange(newMembers.Select(m => m.Id));
+
+            var i2 = 0;
+            foreach (var mid in orderedMemberIds)
                 db.HouseholdMemberships.Add(new HouseholdMembership
-                { HouseholdId = household.Id, MemberId = mid, JoinedAt = now.AddSeconds(i++) });
+                { HouseholdId = household.Id, MemberId = mid, JoinedAt = now.AddSeconds(i2++) });
 
             await db.SaveChangesAsync(ct);
 
-            var members = await db.Members.Where(m => req.MemberIds.Contains(m.Id)).ToListAsync(ct);
+            var data = await Loaders.LoadHousehold(db, household.Id, ct);
             var dto = new HouseholdDto(household.Id, household.Name, household.Currency,
-                members.Select(m => new MemberDto(m.Id, m.Name, m.AvatarColor)).ToList());
+                data!.OrderedMembers.Select(m => new MemberDto(m.Id, m.Name, m.AvatarColor)).ToList());
             return Results.Created($"/households/{household.Id}", dto);
         }).WithName("CreateHousehold")
             .Produces<HouseholdDto>(StatusCodes.Status201Created)
-            .ProducesProblem(StatusCodes.Status400BadRequest);
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         app.MapGet("/households/{id:guid}", async (Guid id, SettlDbContext db, CancellationToken ct) =>
         {
@@ -153,4 +173,8 @@ public static class HouseholdsEndpoints
     private static long OverallNet(Guid me, HouseholdData data, IReadOnlyList<Entry> entries, ClosureLookup closures) =>
         data.OrderedMemberIds.Where(m => m != me)
             .Sum(x => BalanceCalculator.NetWith(me, x, entries, closures));
+
+    /// <summary>Cycled for members created inline via `NewMemberNames` (skips the seeded "Du" tone, #dfe6cf).</summary>
+    private static readonly string[] NewMemberAvatarPalette =
+        ["#f0dcc3", "#d9e0ee", "#eed9d9", "#d9eee4", "#e8ddf0"];
 }
