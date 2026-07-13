@@ -6,8 +6,8 @@ nudges, or settled state (ADR-0006).
 
 **Money:** integer **minor units** (öre) everywhere, type `long`. Never floats in
 storage or math. **Timestamps:** UTC (`DateTimeOffset`/`DateTime` UTC). **Currency:**
-per household, ISO string, default `SEK`. **EF Core:** provider-portable — no
-SQLite-specific SQL/types (ADR-0004). Every endpoint has `.WithName(...)`; errors are
+per household, ISO string, default `SEK`. **EF Core:** Postgres (ADR-0010),
+provider-portable model. Every endpoint has `.WithName(...)`; errors are
 `ProblemDetails`.
 
 Dates that are conceptually calendar dates (entry `date`, recurring `nextPostDate`) are
@@ -353,7 +353,7 @@ A `DbInitializer` seeds when the DB is empty (dev only), matching the canonical 
   `Nudges`, `Meta`) as `MapXxxEndpoints(this IEndpointRouteBuilder)` extensions.
 - `Services/` — `ICurrentUserAccessor`, `RecurringPostingService`.
 - `Dtos/` — request/response records.
-- Packages: `Microsoft.EntityFrameworkCore.Sqlite`, `Microsoft.EntityFrameworkCore.Design`.
-  Keep the model provider-portable (no SQLite-isms) so Postgres is a provider swap.
+- Packages: `Npgsql.EntityFrameworkCore.PostgreSQL`, `Microsoft.EntityFrameworkCore.Design`
+  (ADR-0010). Keep the model provider-portable regardless.
 - Migrations under `Migrations/`. Bump the `dotnet-ef` tool to 10.x (local manifest).
 ```

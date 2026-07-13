@@ -15,10 +15,10 @@ namespace Settl.Api.Migrations
                 name: "Households",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Name = table.Column<string>(type: "TEXT", nullable: false),
-                    Currency = table.Column<string>(type: "TEXT", nullable: false, defaultValue: "SEK"),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Currency = table.Column<string>(type: "text", nullable: false, defaultValue: "SEK"),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -29,9 +29,9 @@ namespace Settl.Api.Migrations
                 name: "Members",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Name = table.Column<string>(type: "TEXT", nullable: false),
-                    AvatarColor = table.Column<string>(type: "TEXT", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    AvatarColor = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -42,16 +42,16 @@ namespace Settl.Api.Migrations
                 name: "RecurringTemplates",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    HouseholdId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Title = table.Column<string>(type: "TEXT", nullable: false),
-                    AmountMinor = table.Column<long>(type: "INTEGER", nullable: false),
-                    Cadence = table.Column<string>(type: "TEXT", nullable: false),
-                    NextPostDate = table.Column<DateOnly>(type: "TEXT", nullable: false),
-                    PaidByMemberId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    SplitMode = table.Column<string>(type: "TEXT", nullable: false),
-                    Active = table.Column<bool>(type: "INTEGER", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    HouseholdId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Title = table.Column<string>(type: "text", nullable: false),
+                    AmountMinor = table.Column<long>(type: "bigint", nullable: false),
+                    Cadence = table.Column<string>(type: "text", nullable: false),
+                    NextPostDate = table.Column<DateOnly>(type: "date", nullable: false),
+                    PaidByMemberId = table.Column<Guid>(type: "uuid", nullable: false),
+                    SplitMode = table.Column<string>(type: "text", nullable: false),
+                    Active = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -68,10 +68,10 @@ namespace Settl.Api.Migrations
                 name: "Settlements",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    HouseholdId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    SettledAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
-                    InitiatedByMemberId = table.Column<Guid>(type: "TEXT", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    HouseholdId = table.Column<Guid>(type: "uuid", nullable: false),
+                    SettledAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    InitiatedByMemberId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -88,9 +88,9 @@ namespace Settl.Api.Migrations
                 name: "HouseholdMemberships",
                 columns: table => new
                 {
-                    HouseholdId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    MemberId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    JoinedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false)
+                    HouseholdId = table.Column<Guid>(type: "uuid", nullable: false),
+                    MemberId = table.Column<Guid>(type: "uuid", nullable: false),
+                    JoinedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -113,18 +113,18 @@ namespace Settl.Api.Migrations
                 name: "Entries",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    HouseholdId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Type = table.Column<string>(type: "TEXT", nullable: false),
-                    Title = table.Column<string>(type: "TEXT", nullable: false),
-                    AmountMinor = table.Column<long>(type: "INTEGER", nullable: false),
-                    Date = table.Column<DateOnly>(type: "TEXT", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
-                    PaidByMemberId = table.Column<Guid>(type: "TEXT", nullable: true),
-                    FromMemberId = table.Column<Guid>(type: "TEXT", nullable: true),
-                    ToMemberId = table.Column<Guid>(type: "TEXT", nullable: true),
-                    SplitMode = table.Column<string>(type: "TEXT", nullable: false),
-                    RecurringTemplateId = table.Column<Guid>(type: "TEXT", nullable: true)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    HouseholdId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Type = table.Column<string>(type: "text", nullable: false),
+                    Title = table.Column<string>(type: "text", nullable: false),
+                    AmountMinor = table.Column<long>(type: "bigint", nullable: false),
+                    Date = table.Column<DateOnly>(type: "date", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    PaidByMemberId = table.Column<Guid>(type: "uuid", nullable: true),
+                    FromMemberId = table.Column<Guid>(type: "uuid", nullable: true),
+                    ToMemberId = table.Column<Guid>(type: "uuid", nullable: true),
+                    SplitMode = table.Column<string>(type: "text", nullable: false),
+                    RecurringTemplateId = table.Column<Guid>(type: "uuid", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -147,9 +147,9 @@ namespace Settl.Api.Migrations
                 name: "RecurringShares",
                 columns: table => new
                 {
-                    RecurringTemplateId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    MemberId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    FormulaValue = table.Column<decimal>(type: "TEXT", nullable: true)
+                    RecurringTemplateId = table.Column<Guid>(type: "uuid", nullable: false),
+                    MemberId = table.Column<Guid>(type: "uuid", nullable: false),
+                    FormulaValue = table.Column<decimal>(type: "numeric", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -172,10 +172,10 @@ namespace Settl.Api.Migrations
                 name: "EntryShares",
                 columns: table => new
                 {
-                    EntryId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    MemberId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    ShareMinor = table.Column<long>(type: "INTEGER", nullable: false),
-                    FormulaValue = table.Column<decimal>(type: "TEXT", nullable: true)
+                    EntryId = table.Column<Guid>(type: "uuid", nullable: false),
+                    MemberId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ShareMinor = table.Column<long>(type: "bigint", nullable: false),
+                    FormulaValue = table.Column<decimal>(type: "numeric", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -198,11 +198,11 @@ namespace Settl.Api.Migrations
                 name: "SettlementClosures",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    SettlementId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    EntryId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    DebtorMemberId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    CreditorMemberId = table.Column<Guid>(type: "TEXT", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    SettlementId = table.Column<Guid>(type: "uuid", nullable: false),
+                    EntryId = table.Column<Guid>(type: "uuid", nullable: false),
+                    DebtorMemberId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreditorMemberId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {

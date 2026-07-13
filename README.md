@@ -8,7 +8,7 @@ who owes whom, without the fintech energy. Pure ledger, no in-app payments.
 | Part | Tech |
 | --- | --- |
 | `apps/web` | React 19 + Vite SPA, TanStack Router/Query, Tailwind v4, shadcn (Luma style, Base UI) |
-| `apps/api` | ASP.NET Core Minimal API (.NET 10), SQLite for now |
+| `apps/api` | ASP.NET Core Minimal API (.NET 10), Postgres via EF Core |
 | `packages/api-client` | TypeScript types generated from the API's OpenAPI spec |
 | `docs/` | ADRs, specs, tech debt — see [docs/README.md](docs/README.md) |
 

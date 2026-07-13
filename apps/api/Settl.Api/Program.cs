@@ -8,10 +8,16 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
 
-// SQLite now, provider-portable model → Postgres later is a provider + connection string swap.
-// A local SQLite Data Source path is not a secret, so a default in config is fine.
-var connectionString = builder.Configuration.GetConnectionString("Settl") ?? "Data Source=settl.db";
-builder.Services.AddDbContext<SettlDbContext>(options => options.UseSqlite(connectionString));
+// Postgres (ADR-0010), provider-portable model — the fallback below is a local-only
+// default for running outside the AppHost (e.g. `dotnet ef`); it's not a secret.
+// Skipped in "Testing": SettlApiFactory registers its own (SQLite, isolated per test run)
+// DbContext, and registering both providers' services in one container throws at runtime.
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    var connectionString = builder.Configuration.GetConnectionString("Settl")
+        ?? "Host=localhost;Port=5432;Database=settl;Username=postgres;Password=postgres";
+    builder.Services.AddDbContext<SettlDbContext>(options => options.UseNpgsql(connectionString));
+}
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
@@ -40,7 +46,7 @@ if (app.Environment.IsDevelopment())
 }
 
 // Migrations run at container startup (ADR-0009) — not at build/release time, since a
-// release-phase step wouldn't have access to the mounted SQLite volume. Seeding stays
+// release-phase step wouldn't have access to the mounted Postgres volume. Seeding stays
 // dev-only. The "Testing" environment (WebApplicationFactory-based integration tests,
 // see SettlApiFactory) builds its schema via EnsureCreated against an isolated in-memory
 // DB instead, so it's excluded here to avoid re-applying migrations onto that schema.

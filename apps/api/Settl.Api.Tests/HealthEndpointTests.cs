@@ -1,13 +1,16 @@
 using System.Net;
-using Microsoft.AspNetCore.Mvc.Testing;
+using Settl.Api.Tests.Infrastructure;
 
 namespace Settl.Api.Tests;
 
-public class HealthEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+// Uses SettlApiFactory (isolated in-memory DB, Testing environment) rather than a bare
+// WebApplicationFactory<Program> — Program.cs always migrates a real Postgres connection
+// at startup (ADR-0010), which a bare factory has no way to provide.
+public class HealthEndpointTests : IClassFixture<SettlApiFactory>
 {
-    private readonly WebApplicationFactory<Program> _factory;
+    private readonly SettlApiFactory _factory;
 
-    public HealthEndpointTests(WebApplicationFactory<Program> factory)
+    public HealthEndpointTests(SettlApiFactory factory)
     {
         _factory = factory;
     }
