@@ -47,6 +47,7 @@ public class Entry
     public Household Household { get; set; } = null!;
     public EntryType Type { get; set; }
     public string Title { get; set; } = "";
+    public EntryCategory Category { get; set; } = EntryCategory.Other;
     public long AmountMinor { get; set; }
     public DateOnly Date { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
@@ -83,6 +84,7 @@ public class RecurringTemplate
     public Guid HouseholdId { get; set; }
     public Household Household { get; set; } = null!;
     public string Title { get; set; } = "";
+    public EntryCategory Category { get; set; } = EntryCategory.Other;
     public long AmountMinor { get; set; }
     public Cadence Cadence { get; set; }
     public DateOnly NextPostDate { get; set; }

@@ -14,6 +14,7 @@ public sealed record EntryDto(
     Guid HouseholdId,
     string Type,
     string Title,
+    string Category,
     long AmountMinor,
     DateOnly Date,
     DateTimeOffset CreatedAt,
@@ -49,4 +50,5 @@ public sealed record UpdateEntryRequest(
     Guid? PaidByMemberId,
     Guid? FromMemberId,
     Guid? ToMemberId,
-    SplitInput? Split);
+    SplitInput? Split,
+    string? Category);

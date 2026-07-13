@@ -65,11 +65,13 @@ public static class RecurringEndpoints
                 // Validate formula up front (throws on tolerance breach).
                 ShareFreezer.Freeze(mode, data.OrderedMemberIds, req.AmountMinor, formula);
 
+                var templateTitle = string.IsNullOrWhiteSpace(req.Title) ? "Utan titel" : req.Title!.Trim();
                 var template = new RecurringTemplate
                 {
                     Id = Guid.NewGuid(),
                     HouseholdId = id,
-                    Title = string.IsNullOrWhiteSpace(req.Title) ? "Utan titel" : req.Title!.Trim(),
+                    Title = templateTitle,
+                    Category = CategoryClassifier.Classify(templateTitle),
                     AmountMinor = req.AmountMinor,
                     Cadence = Contract.ParseCadence(req.Cadence),
                     NextPostDate = req.NextPostDate,
@@ -156,7 +158,11 @@ public static class RecurringEndpoints
             {
                 var wasActive = template.Active;
                 if (req.Active is not null) template.Active = req.Active.Value;
-                if (!string.IsNullOrWhiteSpace(req.Title)) template.Title = req.Title!.Trim();
+                if (!string.IsNullOrWhiteSpace(req.Title))
+                {
+                    template.Title = req.Title!.Trim();
+                    template.Category = CategoryClassifier.Classify(template.Title);
+                }
                 if (req.AmountMinor is { } amt)
                 {
                     if (amt <= 0) return Results.Problem("Ange ett belopp först", statusCode: 400);

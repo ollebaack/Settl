@@ -64,7 +64,8 @@ public static class EntriesEndpoints
             try
             {
                 var entry = BuildEntryFromRequest(req.Type, req.Title, req.AmountMinor, req.Date, req.PaidByMemberId,
-                    req.FromMemberId, req.ToMemberId, req.Split, data, id, today, now, Guid.NewGuid());
+                    req.FromMemberId, req.ToMemberId, req.Split, data, id, today, now, Guid.NewGuid(),
+                    categoryOverride: null, existingEntry: null);
                 db.Entries.Add(entry);
                 await db.SaveChangesAsync(ct);
 
@@ -114,10 +115,12 @@ public static class EntriesEndpoints
             try
             {
                 var rebuilt = BuildEntryFromRequest(req.Type, req.Title, req.AmountMinor, req.Date, req.PaidByMemberId,
-                    req.FromMemberId, req.ToMemberId, req.Split, data, entry.HouseholdId, today, entry.CreatedAt, entry.Id);
+                    req.FromMemberId, req.ToMemberId, req.Split, data, entry.HouseholdId, today, entry.CreatedAt, entry.Id,
+                    categoryOverride: req.Category, existingEntry: entry);
 
                 entry.Type = rebuilt.Type;
                 entry.Title = rebuilt.Title;
+                entry.Category = rebuilt.Category;
                 entry.AmountMinor = rebuilt.AmountMinor;
                 entry.Date = rebuilt.Date;
                 entry.PaidByMemberId = rebuilt.PaidByMemberId;
@@ -251,7 +254,8 @@ public static class EntriesEndpoints
     private static Entry BuildEntryFromRequest(
         string type, string? title, long amountMinor, DateOnly? date,
         Guid? paidByMemberId, Guid? fromMemberId, Guid? toMemberId, SplitInput? split,
-        HouseholdData data, Guid householdId, DateOnly today, DateTimeOffset createdAt, Guid entryId)
+        HouseholdData data, Guid householdId, DateOnly today, DateTimeOffset createdAt, Guid entryId,
+        string? categoryOverride, Entry? existingEntry)
     {
         if (amountMinor <= 0)
             throw new SplitValidationException("Ange ett belopp först");
@@ -268,12 +272,14 @@ public static class EntriesEndpoints
             if (!data.MembersById.ContainsKey(fromMemberId.Value) || !data.MembersById.ContainsKey(toMemberId.Value))
                 throw new SplitValidationException("Okänd medlem");
 
+            var iouTitle = string.IsNullOrWhiteSpace(title) ? "Lån" : title!.Trim();
             return new Entry
             {
                 Id = entryId,
                 HouseholdId = householdId,
                 Type = EntryType.Iou,
-                Title = string.IsNullOrWhiteSpace(title) ? "Lån" : title!.Trim(),
+                Title = iouTitle,
+                Category = ResolveCategory(iouTitle, categoryOverride, existingEntry?.Category),
                 AmountMinor = amountMinor,
                 Date = effectiveDate,
                 CreatedAt = createdAt,
@@ -289,18 +295,35 @@ public static class EntriesEndpoints
         if (paidByMemberId is null || !data.MembersById.ContainsKey(paidByMemberId.Value))
             throw new SplitValidationException("Okänd betalare");
 
-        var mode = split is null ? SplitMode.Equal : Contract.ParseSplitMode(split.Mode);
-        if (mode == SplitMode.None) mode = SplitMode.Equal;
+        SplitMode mode;
+        IReadOnlyList<ShareFreezer.FrozenShare> frozen;
+        if (split is null && existingEntry is not null && existingEntry.AmountMinor == amountMinor)
+        {
+            // No split info supplied on an update that keeps the same amount (e.g. a
+            // category-only edit) — keep the frozen shares as-is instead of defaulting
+            // to Equal, which would silently blow away a Percent/Amount split.
+            mode = existingEntry.SplitMode;
+            frozen = existingEntry.Shares
+                .Select(s => new ShareFreezer.FrozenShare(s.MemberId, s.ShareMinor, s.FormulaValue))
+                .ToList();
+        }
+        else
+        {
+            mode = split is null ? SplitMode.Equal : Contract.ParseSplitMode(split.Mode);
+            if (mode == SplitMode.None) mode = SplitMode.Equal;
 
-        var formula = split?.Values ?? new Dictionary<Guid, decimal>();
-        var frozen = ShareFreezer.Freeze(mode, data.OrderedMemberIds, amountMinor, formula);
+            var formula = split?.Values ?? new Dictionary<Guid, decimal>();
+            frozen = ShareFreezer.Freeze(mode, data.OrderedMemberIds, amountMinor, formula);
+        }
 
+        var expenseTitle = string.IsNullOrWhiteSpace(title) ? "Utan titel" : title!.Trim();
         var entry = new Entry
         {
             Id = entryId,
             HouseholdId = householdId,
             Type = EntryType.Expense,
-            Title = string.IsNullOrWhiteSpace(title) ? "Utan titel" : title!.Trim(),
+            Title = expenseTitle,
+            Category = ResolveCategory(expenseTitle, categoryOverride, existingEntry?.Category),
             AmountMinor = amountMinor,
             Date = effectiveDate,
             CreatedAt = createdAt,
@@ -311,5 +334,15 @@ public static class EntriesEndpoints
             entry.Shares.Add(new EntryShare
             { EntryId = entry.Id, MemberId = s.MemberId, ShareMinor = s.ShareMinor, FormulaValue = s.FormulaValue });
         return entry;
+    }
+
+    /// <summary>An explicit override (user edit) wins; otherwise keep whatever's already
+    /// stored (no reclassifying on unrelated field edits); only a brand-new entry falls
+    /// through to keyword classification.</summary>
+    private static EntryCategory ResolveCategory(string title, string? categoryOverride, EntryCategory? existingCategory)
+    {
+        if (categoryOverride is not null) return Contract.ParseEntryCategory(categoryOverride);
+        if (existingCategory is not null) return existingCategory.Value;
+        return CategoryClassifier.Classify(title);
     }
 }

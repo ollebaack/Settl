@@ -530,6 +530,7 @@ export interface components {
             householdId: string;
             type: string;
             title: string;
+            category: string;
             /** Format: int64 */
             amountMinor: number | string;
             /** Format: date */
@@ -760,6 +761,7 @@ export interface components {
             /** Format: uuid */
             toMemberId: null | string;
             split: null | components["schemas"]["SplitInput"];
+            category: null | string;
         };
         UpdateRecurringRequest: {
             active: null | boolean;

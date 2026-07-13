@@ -39,6 +39,7 @@ public static class Mapping
             entry.HouseholdId,
             Contract.EntryType(entry.Type),
             entry.Title,
+            Contract.EntryCategory(entry.Category),
             entry.AmountMinor,
             entry.Date,
             entry.CreatedAt,

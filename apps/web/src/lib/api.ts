@@ -107,6 +107,20 @@ export type ResetPasswordRequest = Schemas['ResetPasswordRequest']
 
 // Domain string-union helpers (the API serialises these as plain strings)
 export type EntryType = 'expense' | 'iou' | 'recurringPost'
+export type EntryCategory =
+  | 'cleaning'
+  | 'restaurant'
+  | 'event'
+  | 'furniture'
+  | 'groceries'
+  | 'transport'
+  | 'internet'
+  | 'rent'
+  | 'music'
+  | 'streaming'
+  | 'electricity'
+  | 'gift'
+  | 'other'
 export type SplitModeName = 'equal' | 'percent' | 'amount' | 'none'
 export type ViewerStatusKind =
   | 'settled'

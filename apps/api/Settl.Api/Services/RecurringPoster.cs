@@ -24,6 +24,7 @@ public static class RecurringPoster
             HouseholdId = template.HouseholdId,
             Type = EntryType.RecurringPost,
             Title = $"{template.Title} — {SwedishDates.FullMonth(postDate)}",
+            Category = template.Category,
             AmountMinor = template.AmountMinor,
             Date = postDate,
             CreatedAt = now,

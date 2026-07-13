@@ -57,6 +57,7 @@ public class SettlDbContext(DbContextOptions<SettlDbContext> options) : Identity
             e.HasKey(x => x.Id);
             e.Property(x => x.Type).HasConversion<string>().IsRequired();
             e.Property(x => x.SplitMode).HasConversion<string>().IsRequired();
+            e.Property(x => x.Category).HasConversion<string>().IsRequired();
             e.Property(x => x.Title).IsRequired();
             e.HasOne(x => x.Household).WithMany(h => h.Entries)
                 .HasForeignKey(x => x.HouseholdId).OnDelete(DeleteBehavior.Cascade);
@@ -83,6 +84,7 @@ public class SettlDbContext(DbContextOptions<SettlDbContext> options) : Identity
             e.HasKey(x => x.Id);
             e.Property(x => x.Cadence).HasConversion<string>().IsRequired();
             e.Property(x => x.SplitMode).HasConversion<string>().IsRequired();
+            e.Property(x => x.Category).HasConversion<string>().IsRequired();
             e.Property(x => x.Title).IsRequired();
             e.HasOne(x => x.Household).WithMany(h => h.RecurringTemplates)
                 .HasForeignKey(x => x.HouseholdId).OnDelete(DeleteBehavior.Cascade);

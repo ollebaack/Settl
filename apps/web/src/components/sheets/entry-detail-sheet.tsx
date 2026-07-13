@@ -10,13 +10,20 @@ import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Money } from '@/components/money'
 import { MemberAvatar } from '@/components/member-avatar'
 import { ResponsiveSheet } from '@/components/responsive-sheet'
 import { ErrorState, LoadingState } from '@/components/screen-states'
 import { shortDate } from '@/lib/format'
-import { useEntry, useMe, useMembers, useReopenEntry, useSettleEntry } from '@/lib/queries'
-import type { EntryDto, EntryType, MemberDto, SplitModeName } from '@/lib/api'
+import { CATEGORY_ICON, CATEGORY_LABEL, CATEGORY_ORDER } from '@/lib/categories'
+import { useEntry, useMe, useMembers, useReopenEntry, useSettleEntry, useUpdateEntry } from '@/lib/queries'
+import type { EntryCategory, EntryDto, EntryType, MemberDto, SplitModeName } from '@/lib/api'
 
 const typeBadge: Record<EntryType, string> = {
   expense: 'Utgift',
@@ -78,6 +85,62 @@ function buildShareRows(entry: EntryDto, members: MemberDto[]): ShareRowData[] {
   }))
 }
 
+/** Tap-to-change category affordance for expense entries only (ADR-0012). */
+function CategoryPicker({ entry }: { entry: EntryDto }) {
+  const update = useUpdateEntry(entry.householdId)
+  const category = entry.category as EntryCategory
+  const Icon = CATEGORY_ICON[category]
+
+  const handleSelect = (next: EntryCategory) => {
+    if (next === category || update.isPending) return
+    update.mutate(
+      {
+        entryId: entry.id,
+        body: {
+          type: entry.type,
+          title: entry.title,
+          amountMinor: entry.amountMinor,
+          date: entry.date,
+          paidByMemberId: entry.paidByMemberId,
+          fromMemberId: entry.fromMemberId,
+          toMemberId: entry.toMemberId,
+          split: null,
+          category: next,
+        },
+      },
+      { onError: (err) => toast.error(err instanceof Error ? err.message : 'Kunde inte ändra kategori') },
+    )
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <button
+            type="button"
+            aria-label={`Kategori: ${CATEGORY_LABEL[category]} — tryck för att ändra`}
+            className="flex items-center gap-1.5 rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/70"
+          />
+        }
+      >
+        <Icon className="size-3.5" strokeWidth={1.8} />
+        {CATEGORY_LABEL[category]}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        {CATEGORY_ORDER.map((c) => {
+          const ItemIcon = CATEGORY_ICON[c]
+          return (
+            <DropdownMenuItem key={c} onClick={() => handleSelect(c)}>
+              <ItemIcon className="size-4" strokeWidth={1.8} />
+              {CATEGORY_LABEL[c]}
+            </DropdownMenuItem>
+          )
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 function EntryDetailBody({ entry }: { entry: EntryDto }) {
   const { data: me } = useMe()
   const viewerId = me?.id
@@ -124,6 +187,7 @@ function EntryDetailBody({ entry }: { entry: EntryDto }) {
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <Badge variant="secondary">{typeBadge[entry.type as EntryType]}</Badge>
+        {entry.type === 'expense' && <CategoryPicker entry={entry} />}
         <span>{shortDate(entry.date)}</span>
       </div>
 

@@ -10,7 +10,8 @@ import { Money } from '@/components/money'
 import { cn } from '@/lib/utils'
 import { formatKr, shortDate } from '@/lib/format'
 import { useMe } from '@/lib/queries'
-import type { EntryDto, MemberDto, ViewerStatusKind } from '@/lib/api'
+import { CATEGORY_ICON } from '@/lib/categories'
+import type { EntryCategory, EntryDto, MemberDto, ViewerStatusKind } from '@/lib/api'
 
 type NameLookup = Pick<MemberDto, 'id' | 'name'>[]
 
@@ -33,16 +34,23 @@ const statusClass: Record<ViewerStatusKind, string> = {
 function Glyph({ entry }: { entry: EntryDto }) {
   const isIou = entry.type === 'iou'
   const isRecurring = entry.type === 'recurringPost'
-  const glyph = isIou ? '⇄' : isRecurring ? '↻' : entry.title.trim()[0]?.toUpperCase() || '·'
+  const tileClass = cn(
+    'flex size-9 shrink-0 items-center justify-center rounded-xl',
+    isRecurring ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground',
+  )
+
+  if (isIou || isRecurring) {
+    return (
+      <span aria-hidden="true" className={cn(tileClass, 'text-sm font-medium')}>
+        {isIou ? '⇄' : '↻'}
+      </span>
+    )
+  }
+
+  const Icon = CATEGORY_ICON[entry.category as EntryCategory]
   return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        'flex size-9 shrink-0 items-center justify-center rounded-xl text-sm font-medium',
-        isRecurring ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground',
-      )}
-    >
-      {glyph}
+    <span aria-hidden="true" className={tileClass}>
+      <Icon className="size-4" strokeWidth={1.8} />
     </span>
   )
 }

@@ -47,6 +47,42 @@ public static class Contract
         _ => throw new SplitValidationException("Ogiltig kadens")
     };
 
+    public static string EntryCategory(EntryCategory c) => c switch
+    {
+        Domain.EntryCategory.Cleaning => "cleaning",
+        Domain.EntryCategory.Restaurant => "restaurant",
+        Domain.EntryCategory.Event => "event",
+        Domain.EntryCategory.Furniture => "furniture",
+        Domain.EntryCategory.Groceries => "groceries",
+        Domain.EntryCategory.Transport => "transport",
+        Domain.EntryCategory.Internet => "internet",
+        Domain.EntryCategory.Rent => "rent",
+        Domain.EntryCategory.Music => "music",
+        Domain.EntryCategory.Streaming => "streaming",
+        Domain.EntryCategory.Electricity => "electricity",
+        Domain.EntryCategory.Gift => "gift",
+        Domain.EntryCategory.Other => "other",
+        _ => throw new ArgumentOutOfRangeException(nameof(c))
+    };
+
+    public static EntryCategory ParseEntryCategory(string? category) => category?.Trim().ToLowerInvariant() switch
+    {
+        "cleaning" => Domain.EntryCategory.Cleaning,
+        "restaurant" => Domain.EntryCategory.Restaurant,
+        "event" => Domain.EntryCategory.Event,
+        "furniture" => Domain.EntryCategory.Furniture,
+        "groceries" => Domain.EntryCategory.Groceries,
+        "transport" => Domain.EntryCategory.Transport,
+        "internet" => Domain.EntryCategory.Internet,
+        "rent" => Domain.EntryCategory.Rent,
+        "music" => Domain.EntryCategory.Music,
+        "streaming" => Domain.EntryCategory.Streaming,
+        "electricity" => Domain.EntryCategory.Electricity,
+        "gift" => Domain.EntryCategory.Gift,
+        "other" => Domain.EntryCategory.Other,
+        _ => throw new SplitValidationException("Ogiltig kategori")
+    };
+
     public static string ViewerStatusKind(ViewerStatusKind k) => k switch
     {
         Domain.ViewerStatusKind.Settled => "settled",

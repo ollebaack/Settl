@@ -399,6 +399,94 @@ public class HouseholdsEntriesIntegrationTests
         Assert.Equal($"Delningen måste bli {Money.FormatKr(10_000)}", await DetailAsync(res));
     }
 
+    // ---------- Entries: category ----------
+
+    [Fact]
+    public async Task PostExpense_infers_category_from_title_keyword()
+    {
+        using var factory = await SeededAsync();
+        var du = factory.ClientAs(SeedIds.Du);
+
+        var req = new CreateEntryRequest("expense", "ICA storhandling", 5_000, null, SeedIds.Du, null, null, null);
+        var post = await du.PostAsJsonAsync($"/households/{SeedIds.Lonnvagen}/entries", req, Web);
+        var created = await post.Content.ReadFromJsonAsync<EntryDto>(Web);
+        Assert.Equal("groceries", created!.Category);
+    }
+
+    [Fact]
+    public async Task PostExpense_prefers_cleaning_over_groceries_when_both_keywords_present()
+    {
+        using var factory = await SeededAsync();
+        var du = factory.ClientAs(SeedIds.Du);
+
+        // "Städmaterial" contains "städ" (Cleaning) — must not match "mat" (Groceries) first.
+        var req = new CreateEntryRequest("expense", "Städmaterial", 500, null, SeedIds.Du, null, null, null);
+        var post = await du.PostAsJsonAsync($"/households/{SeedIds.Lonnvagen}/entries", req, Web);
+        var created = await post.Content.ReadFromJsonAsync<EntryDto>(Web);
+        Assert.Equal("cleaning", created!.Category);
+    }
+
+    [Fact]
+    public async Task PostExpense_with_no_keyword_match_defaults_to_other()
+    {
+        using var factory = await SeededAsync();
+        var du = factory.ClientAs(SeedIds.Du);
+
+        var req = new CreateEntryRequest("expense", "Blaha blaha", 500, null, SeedIds.Du, null, null, null);
+        var post = await du.PostAsJsonAsync($"/households/{SeedIds.Lonnvagen}/entries", req, Web);
+        var created = await post.Content.ReadFromJsonAsync<EntryDto>(Web);
+        Assert.Equal("other", created!.Category);
+    }
+
+    [Fact]
+    public async Task PutEntry_can_override_category_without_touching_frozen_percent_shares()
+    {
+        using var factory = await SeededAsync();
+        var du = factory.ClientAs(SeedIds.Du);
+
+        var split = new SplitInput("percent",
+            new Dictionary<Guid, decimal> { [SeedIds.Du] = 50m, [SeedIds.Sam] = 30m, [SeedIds.Priya] = 20m });
+        var createReq = new CreateEntryRequest("expense", "Middag", 10_000, null, SeedIds.Sam, null, null, split);
+        var post = await du.PostAsJsonAsync($"/households/{SeedIds.Lonnvagen}/entries", createReq, Web);
+        var created = await post.Content.ReadFromJsonAsync<EntryDto>(Web);
+        Assert.Equal("restaurant", created!.Category); // "middag" keyword
+
+        // Category-only edit: same fields, no split supplied, explicit category override.
+        var updateReq = new UpdateEntryRequest(
+            "expense", "Middag", 10_000, null, SeedIds.Sam, null, null, null, "gift");
+        var put = await du.PutAsJsonAsync($"/entries/{created.Id}", updateReq, Web);
+        Assert.Equal(HttpStatusCode.OK, put.StatusCode);
+
+        var entry = await du.GetFromJsonAsync<EntryDto>($"/entries/{created.Id}", Web);
+        Assert.Equal("gift", entry!.Category);
+        Assert.Equal("percent", entry.SplitMode);       // untouched — not reset to equal
+        Assert.Equal(5000, entry.Shares.Single(s => s.MemberId == SeedIds.Du).ShareMinor);
+        Assert.Equal(3000, entry.Shares.Single(s => s.MemberId == SeedIds.Sam).ShareMinor);
+        Assert.Equal(2000, entry.Shares.Single(s => s.MemberId == SeedIds.Priya).ShareMinor);
+    }
+
+    [Fact]
+    public async Task PutEntry_without_category_override_keeps_stored_category_even_if_title_changes()
+    {
+        using var factory = await SeededAsync();
+        var du = factory.ClientAs(SeedIds.Du);
+
+        var createReq = new CreateEntryRequest("expense", "Hyra", 5_000, null, SeedIds.Du, null, null, null);
+        var post = await du.PostAsJsonAsync($"/households/{SeedIds.Lonnvagen}/entries", createReq, Web);
+        var created = await post.Content.ReadFromJsonAsync<EntryDto>(Web);
+        Assert.Equal("rent", created!.Category);
+
+        // Title now matches "mat" (Groceries) — but with no category override, the stored
+        // category should NOT silently reclassify (no retroactive keyword matching).
+        var updateReq = new UpdateEntryRequest(
+            "expense", "Matinköp", 5_000, null, SeedIds.Du, null, null, null, null);
+        var put = await du.PutAsJsonAsync($"/entries/{created.Id}", updateReq, Web);
+        Assert.Equal(HttpStatusCode.OK, put.StatusCode);
+
+        var entry = await du.GetFromJsonAsync<EntryDto>($"/entries/{created.Id}", Web);
+        Assert.Equal("rent", entry!.Category);
+    }
+
     // ---------- Entries: settle / lock / reopen ----------
 
     [Fact]
@@ -424,7 +512,7 @@ public class HouseholdsEntriesIntegrationTests
         Assert.Equal("settled", settled.ViewerStatus.Kind);
 
         // PUT while locked → 409.
-        var updateReq = new UpdateEntryRequest("expense", "Ändrad", 9_000, null, SeedIds.Du, null, null, null);
+        var updateReq = new UpdateEntryRequest("expense", "Ändrad", 9_000, null, SeedIds.Du, null, null, null, null);
         var putLocked = await du.PutAsJsonAsync($"/entries/{id}", updateReq, Web);
         Assert.Equal(HttpStatusCode.Conflict, putLocked.StatusCode);
         Assert.Contains("låst", await DetailAsync(putLocked));
