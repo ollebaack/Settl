@@ -1,6 +1,6 @@
 # ADR-0013: Cloudflare as DNS + edge proxy in front of the production VPS
 
-- **Status:** accepted
+- **Status:** superseded by ADR-0014
 - **Date:** 2026-07-14
 
 ## Context
