@@ -6,13 +6,14 @@
  * and calls, never computes (ADR-0006).
  */
 import { Link, createFileRoute } from '@tanstack/react-router'
+import { useEffect } from 'react'
 import { RequireAuth } from '@/components/require-auth'
 import { Card } from '@/components/ui/card'
 import { Money, type MoneyIntent } from '@/components/money'
 import { MemberAvatar } from '@/components/member-avatar'
 import { GhostCard } from '@/components/ghost-card'
 import { EntryRow } from '@/components/entry-row'
-import { EmptyState, ErrorState, LoadingState } from '@/components/screen-states'
+import { EmptyState, ErrorState, LoadingState, NoHouseholdState } from '@/components/screen-states'
 import { useEntries, useMembers, useSummary } from '@/lib/queries'
 import { useActiveHousehold } from '@/lib/active-household'
 import { useSheet } from '@/lib/sheet'
@@ -37,13 +38,33 @@ const SECTION_LABEL =
   'text-xs font-semibold uppercase tracking-[0.09em] text-muted-foreground'
 
 function HomePage() {
-  const { householdId, household } = useActiveHousehold()
+  const { householdId, household, households, isLoading: householdsLoading } = useActiveHousehold()
   const wide = useIsWide()
-  const { openSheet } = useSheet()
+  const { sheet, openSheet } = useSheet()
 
   const summary = useSummary(householdId)
   const members = useMembers(householdId)
   const recent = useEntries(householdId, { limit: 4 })
+
+  const hasNoHousehold = !householdsLoading && households.length === 0
+
+  // First-run guidance: a brand-new user has no household yet, so there's
+  // nothing for the home screen to show — open the create-household sheet
+  // for them instead of leaving them on a screen that loads forever.
+  useEffect(() => {
+    if (hasNoHousehold && !sheet) {
+      openSheet('newHousehold')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasNoHousehold])
+
+  if (householdsLoading) {
+    return <LoadingState hero rows={3} />
+  }
+
+  if (hasNoHousehold) {
+    return <NoHouseholdState onCreate={() => openSheet('newHousehold')} className="mt-6" />
+  }
 
   // Guard while the active household id is being established / summary loads.
   if (!householdId || summary.isPending) {

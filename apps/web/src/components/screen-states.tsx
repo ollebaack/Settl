@@ -53,6 +53,25 @@ export function EmptyState({
   )
 }
 
+/** Shown instead of a screen's content when the user belongs to no household yet. */
+export function NoHouseholdState({
+  onCreate,
+  className,
+}: {
+  onCreate: () => void
+  className?: string
+}) {
+  return (
+    <Card className={cn('flex flex-col items-center gap-3 p-8 text-center', className)}>
+      <p className="text-sm font-semibold">Inget hushåll än</p>
+      <p className="text-sm text-muted-foreground text-balance">
+        Skapa ett hushåll för att börja dela utgifter, lån och återkommande kostnader.
+      </p>
+      <Button onClick={onCreate}>Skapa hushåll</Button>
+    </Card>
+  )
+}
+
 /** Inline error card with a retry action. */
 export function ErrorState({
   error,

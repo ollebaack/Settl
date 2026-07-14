@@ -12,6 +12,8 @@ interface ActiveHouseholdContextValue {
   householdId: string | undefined
   household: HouseholdListItemDto | undefined
   households: HouseholdListItemDto[]
+  /** True until GET /households has resolved at least once. */
+  isLoading: boolean
   setHouseholdId: (id: string) => void
 }
 
@@ -19,7 +21,7 @@ const ActiveHouseholdContext = createContext<ActiveHouseholdContextValue | null>
 
 export function ActiveHouseholdProvider({ children }: { children: ReactNode }) {
   const stored = useSyncExternalStore(activeHouseholdIdStore.subscribe, activeHouseholdIdStore.get)
-  const { data: households } = useHouseholds()
+  const { data: households, isPending } = useHouseholds()
 
   // Default to (or fall back to) the first household the user belongs to.
   useEffect(() => {
@@ -40,9 +42,10 @@ export function ActiveHouseholdProvider({ children }: { children: ReactNode }) {
       householdId,
       household: households?.find((h) => h.id === householdId),
       households: households ?? [],
+      isLoading: isPending,
       setHouseholdId,
     }),
-    [householdId, households, setHouseholdId],
+    [householdId, households, isPending, setHouseholdId],
   )
 
   return (

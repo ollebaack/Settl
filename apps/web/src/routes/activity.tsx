@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { RequireAuth } from '@/components/require-auth'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { EmptyState, ErrorState, LoadingState } from '@/components/screen-states'
+import { EmptyState, ErrorState, LoadingState, NoHouseholdState } from '@/components/screen-states'
 import { useActiveHousehold } from '@/lib/active-household'
 import { useNudges } from '@/lib/queries'
 import { useSheet } from '@/lib/sheet'
@@ -27,10 +27,14 @@ const FOOTER_COPY =
   'Inget dagligt tjat — knuffar skickas vid händelser: en stor utgift, ett saldo som passerar en gräns eller en återkommande kostnad som snart bokförs.'
 
 function ActivityPage() {
-  const { householdId } = useActiveHousehold()
+  const { householdId, households, isLoading: householdsLoading } = useActiveHousehold()
   const { openSheet } = useSheet()
   const navigate = useNavigate()
   const nudgesQuery = useNudges(householdId, TONE)
+
+  if (!householdsLoading && households.length === 0) {
+    return <NoHouseholdState onCreate={() => openSheet('newHousehold')} className="mt-6" />
+  }
 
   // Dispatch a nudge action to its overlay (implementation-map §2.4 / §4).
   function runAction(action: NudgeActionDto) {

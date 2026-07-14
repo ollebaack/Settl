@@ -14,7 +14,7 @@ import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Money } from '@/components/money'
 import { MemberAvatarStack } from '@/components/member-avatar'
-import { EmptyState, ErrorState } from '@/components/screen-states'
+import { EmptyState, ErrorState, NoHouseholdState } from '@/components/screen-states'
 import { cn } from '@/lib/utils'
 import { inDays } from '@/lib/format'
 import { useActiveHousehold } from '@/lib/active-household'
@@ -52,9 +52,14 @@ function perLabel(cadence: string): string {
 }
 
 function RecurringPage() {
-  const { householdId } = useActiveHousehold()
+  const { householdId, households, isLoading: householdsLoading } = useActiveHousehold()
   const recurring = useRecurringList(householdId)
   const { data: members } = useMembers(householdId)
+  const { openSheet } = useSheet()
+
+  if (!householdsLoading && households.length === 0) {
+    return <NoHouseholdState onCreate={() => openSheet('newHousehold')} className="mt-6" />
+  }
 
   return (
     <div className="space-y-4">

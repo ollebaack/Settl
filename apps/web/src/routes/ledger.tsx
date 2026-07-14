@@ -14,7 +14,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { EntryRow } from '@/components/entry-row'
 import { GhostCard } from '@/components/ghost-card'
 import { Money } from '@/components/money'
-import { LoadingState, EmptyState, ErrorState } from '@/components/screen-states'
+import { LoadingState, EmptyState, ErrorState, NoHouseholdState } from '@/components/screen-states'
 import { cn } from '@/lib/utils'
 import { dayGroupLabel, inDays, shortDate } from '@/lib/format'
 import { useActiveHousehold } from '@/lib/active-household'
@@ -73,13 +73,17 @@ function groupByDay(entries: EntryDto[]): DayGroup[] {
 
 function LedgerPage() {
   const [filter, setFilter] = useState<EntryFilter>('all')
-  const { householdId } = useActiveHousehold()
+  const { householdId, households, isLoading: householdsLoading } = useActiveHousehold()
   const { openSheet } = useSheet()
   const isWide = useIsWide()
 
   const entriesQuery = useEntries(householdId, { type: filter })
   const summaryQuery = useSummary(householdId)
   const { data: members } = useMembers(householdId)
+
+  if (!householdsLoading && households.length === 0) {
+    return <NoHouseholdState onCreate={() => openSheet('newHousehold')} className="mt-6" />
+  }
 
   // Upcoming (mobile only) — hidden for the IOU/Expense filters and on desktop.
   const showUpcoming = !isWide && filter !== 'iou' && filter !== 'expense'
