@@ -13,6 +13,10 @@ var settlDb = postgres.AddDatabase("Settl");
 // a required parameter prompts/blocks `dotnet run` when unset, and this key is meant to
 // stay unset in local dev, where the API falls back to its logging-only DevEmailSender.
 var resendApiKey = builder.Configuration["Resend:ApiKey"];
+// Optional: overrides the API's default from-address ("Settl <no-reply@settl.dev>").
+// Needed whenever the sending domain isn't verified in Resend — e.g. Resend's shared
+// "onboarding@resend.dev" sender, which only delivers to the account owner's own inbox.
+var resendFromAddress = builder.Configuration["Resend:FromAddress"];
 
 var api = builder.AddProject<Projects.Settl_Api>("api")
     .WithReference(settlDb)
@@ -21,6 +25,10 @@ var api = builder.AddProject<Projects.Settl_Api>("api")
 if (!string.IsNullOrWhiteSpace(resendApiKey))
 {
     api.WithEnvironment("Resend__ApiKey", resendApiKey);
+}
+if (!string.IsNullOrWhiteSpace(resendFromAddress))
+{
+    api.WithEnvironment("Resend__FromAddress", resendFromAddress);
 }
 
 if (builder.ExecutionContext.IsPublishMode)
