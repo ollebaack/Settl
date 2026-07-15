@@ -151,15 +151,19 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
+// Serves the built web SPA (apps/web's Vite build output, copied to wwwroot in the
+// Dockerfile's runtime stage) alongside the API. No-op in local dev, where wwwroot
+// doesn't exist and the Vite dev server (:5173) serves the SPA instead (ADR-0008).
+// Must run before auth: MapFallbackToFile's default route excludes paths with a file
+// extension (e.g. /assets/foo.js), so those never match an endpoint and would otherwise
+// fall through to the global FallbackPolicy and get rejected with 401 before UseStaticFiles
+// ever got a chance to serve them.
+app.UseStaticFiles();
+
 app.UseCors(WebCorsPolicy);
 
 app.UseAuthentication();
 app.UseAuthorization();
-
-// Serves the built web SPA (apps/web's Vite build output, copied to wwwroot in the
-// Dockerfile's runtime stage) alongside the API. No-op in local dev, where wwwroot
-// doesn't exist and the Vite dev server (:5173) serves the SPA instead (ADR-0008).
-app.UseStaticFiles();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
     .WithName("GetHealth")
