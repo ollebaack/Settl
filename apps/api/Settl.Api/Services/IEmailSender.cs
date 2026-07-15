@@ -39,7 +39,7 @@ public sealed class ResendEmailSender(HttpClient http, IConfiguration config, IL
 
     private async Task SendAsync(string toEmail, string subject, string html, string failureMessage, CancellationToken ct)
     {
-        var from = config["Resend:FromAddress"] ?? "Settl <no-reply@settl.dev>";
+        var from = config["Resend:FromAddress"] ?? "Settl <no-reply@settlapp.se>";
         var body = new { from, to = new[] { toEmail }, subject, html };
 
         var response = await http.PostAsJsonAsync("emails", body, ct);
