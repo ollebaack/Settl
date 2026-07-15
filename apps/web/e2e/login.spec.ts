@@ -33,9 +33,10 @@ test('signs up, verifies email, logs out, and logs back in', async ({ page, requ
   await expect(page.getByText('E-post bekräftad')).toBeVisible()
 
   // Now lands in the app shell (no household yet, so home auto-opens the create-household
-  // sheet, but the shell chrome — including the account menu — renders underneath it).
+  // sheet). Dismiss it to get back to the shell chrome, including the account menu.
   await page.goto('/')
   await expect(page).toHaveURL('http://localhost:5173/?sheet=newHousehold')
+  await page.keyboard.press('Escape')
   await expect(page.getByRole('button', { name: `Konto: ${name}` })).toBeVisible()
 
   // Log out via the account menu.
