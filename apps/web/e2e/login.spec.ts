@@ -32,10 +32,10 @@ test('signs up, verifies email, logs out, and logs back in', async ({ page, requ
   await page.goto(relativePath(confirmUrl))
   await expect(page.getByText('E-post bekräftad')).toBeVisible()
 
-  // Now lands in the app shell (no household yet, so home shows its loading state, but the
-  // shell chrome — including the account menu — renders).
+  // Now lands in the app shell (no household yet, so home auto-opens the create-household
+  // sheet, but the shell chrome — including the account menu — renders underneath it).
   await page.goto('/')
-  await expect(page).toHaveURL('http://localhost:5173/')
+  await expect(page).toHaveURL('http://localhost:5173/?sheet=newHousehold')
   await expect(page.getByRole('button', { name: `Konto: ${name}` })).toBeVisible()
 
   // Log out via the account menu.
@@ -47,7 +47,7 @@ test('signs up, verifies email, logs out, and logs back in', async ({ page, requ
   await page.getByLabel('E-post').fill(email)
   await page.getByLabel('Lösenord').fill(password)
   await page.getByRole('button', { name: 'Logga in' }).click()
-  await expect(page).toHaveURL('http://localhost:5173/')
+  await expect(page).toHaveURL('http://localhost:5173/?sheet=newHousehold')
 })
 
 test('shows an inline error for the wrong password', async ({ page }) => {
