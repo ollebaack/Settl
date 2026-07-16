@@ -19,6 +19,18 @@ if (builder.Environment.IsDevelopment())
     builder.Logging.AddProvider(new FileLoggerProvider(logPath));
 }
 
+// Fail fast in production if the public origin used to build email/invite links is unset.
+// AuthEndpoints/InvitesEndpoints fall back to http://localhost:5173 when Web:BaseUrl is
+// missing (a dev convenience), which in prod ships confirmation/reset/invite emails whose
+// links point at the recipient's own machine — a silent footgun, so surface it at startup.
+if (builder.Environment.IsProduction() && string.IsNullOrWhiteSpace(builder.Configuration["Web:BaseUrl"]))
+{
+    throw new InvalidOperationException(
+        "Web:BaseUrl must be set in production (e.g. Web__BaseUrl=https://settlapp.se). "
+        + "Without it, email confirmation, password-reset, and invite links fall back to "
+        + "http://localhost:5173 and point at the recipient's own machine.");
+}
+
 builder.Services.AddOpenApi();
 
 // Postgres (ADR-0010), provider-portable model — the fallback below is a local-only
