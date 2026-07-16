@@ -8,6 +8,8 @@ import { useNavigate, useSearch } from '@tanstack/react-router'
 
 export type SheetKind =
   | 'add'
+  | 'edit'
+  | 'editRecurring'
   | 'entry'
   | 'settle'
   | 'households'
@@ -19,7 +21,7 @@ export type SheetKind =
 
 export interface SheetSearch {
   sheet?: SheetKind
-  /** entry id (entry sheet) or recurring id (recurring sheet). */
+  /** entry id (entry / edit sheet) or recurring id (recurring / editRecurring sheet). */
   id?: string
   /** member id (settle sheet). */
   person?: string
@@ -27,6 +29,8 @@ export interface SheetSearch {
 
 const SHEET_KINDS: readonly SheetKind[] = [
   'add',
+  'edit',
+  'editRecurring',
   'entry',
   'settle',
   'households',

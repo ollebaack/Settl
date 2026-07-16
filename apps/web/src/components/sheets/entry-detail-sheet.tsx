@@ -6,6 +6,8 @@
  * server-side (EntryDto.settled) — never computed here (ADR-0006). All server
  * state comes from the shared TanStack Query hooks.
  */
+import { useState } from 'react'
+import { MoreHorizontalIcon, PencilIcon, Trash2Icon } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -16,12 +18,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { ConfirmDialog, WarnBox } from '@/components/confirm-dialog'
 import { Money } from '@/components/money'
 import { MemberAvatar } from '@/components/member-avatar'
 import { ResponsiveSheet } from '@/components/responsive-sheet'
 import { ErrorState, LoadingState } from '@/components/screen-states'
-import { shortDate } from '@/lib/format'
+import { formatKr, shortDate } from '@/lib/format'
 import { CATEGORY_ICON, CATEGORY_LABEL, CATEGORY_ORDER } from '@/lib/categories'
+import { useSheet } from '@/lib/sheet'
+import { useDeferredDeleteEntry } from '@/lib/use-entry-delete'
 import { useEntry, useMe, useMembers, useReopenEntry, useSettleEntry, useUpdateEntry } from '@/lib/queries'
 import type { EntryCategory, EntryDto, EntryType, MemberDto, SplitModeName } from '@/lib/api'
 
@@ -145,12 +150,21 @@ function CategoryPicker({ entry }: { entry: EntryDto }) {
   )
 }
 
-function EntryDetailBody({ entry }: { entry: EntryDto }) {
+function EntryDetailBody({ entry, onClose }: { entry: EntryDto; onClose: () => void }) {
   const { data: me } = useMe()
   const viewerId = me?.id
   const { data: members } = useMembers(entry.householdId)
   const settle = useSettleEntry(entry.householdId)
   const reopen = useReopenEntry(entry.householdId)
+  const { openSheet } = useSheet()
+  const deferredDelete = useDeferredDeleteEntry(entry.householdId)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+
+  const handleDelete = () => {
+    setConfirmOpen(false)
+    onClose()
+    deferredDelete({ id: entry.id })
+  }
 
   const nameOf = (id: string | null | undefined): string => {
     if (!id) return ''
@@ -193,6 +207,42 @@ function EntryDetailBody({ entry }: { entry: EntryDto }) {
         <Badge variant="secondary">{typeBadge[entry.type as EntryType]}</Badge>
         {entry.type === 'expense' && <CategoryPicker entry={entry} />}
         <span>{shortDate(entry.date)}</span>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <button
+                type="button"
+                aria-label="Fler åtgärder"
+                className="ml-auto grid size-8 place-items-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-muted/70"
+              />
+            }
+          >
+            <MoreHorizontalIcon className="size-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              disabled={entry.locked}
+              onClick={() => openSheet('edit', { id: entry.id })}
+            >
+              <PencilIcon />
+              Redigera
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              variant="destructive"
+              disabled={entry.locked}
+              onClick={() => setConfirmOpen(true)}
+            >
+              <Trash2Icon />
+              Ta bort
+            </DropdownMenuItem>
+            {entry.locked && (
+              <p className="px-3 pt-1 pb-1.5 text-xs text-muted-foreground">
+                Låst — öppna igen för att ändra eller ta bort.
+              </p>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="flex flex-col gap-1">
@@ -221,6 +271,13 @@ function EntryDetailBody({ entry }: { entry: EntryDto }) {
         </div>
       )}
 
+      {entry.locked && (
+        <WarnBox
+          heading="Posten är låst"
+          body="En uppgörelse rör den här posten. Öppna igen innan du ändrar eller tar bort — då rörs bara den här posten."
+        />
+      )}
+
       <Button
         onClick={handleToggle}
         disabled={busy}
@@ -233,6 +290,28 @@ function EntryDetailBody({ entry }: { entry: EntryDto }) {
       <p className="text-center text-xs text-muted-foreground">
         Betala varandra hur ni vill — markera sen som reglerad här.
       </p>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Ta bort posten?"
+        confirmLabel="Ta bort"
+        destructive
+        onConfirm={handleDelete}
+      >
+        <WarnBox
+          heading="Det här ändrar saldot för alla som var med"
+          body={
+            <>
+              ”{entry.title}” · {formatKr(entry.amountMinor)} tas bort ur loggboken. Du kan
+              ångra direkt efteråt.
+            </>
+          }
+        />
+        <p className="text-xs text-muted-foreground">
+          Borttagningen görs efter några sekunder — hinner du ångra händer inget.
+        </p>
+      </ConfirmDialog>
     </div>
   )
 }
@@ -262,7 +341,7 @@ export function EntryDetailSheet({
       ) : query.isError ? (
         <ErrorState error={query.error} onRetry={() => query.refetch()} />
       ) : entry ? (
-        <EntryDetailBody entry={entry} />
+        <EntryDetailBody entry={entry} onClose={onClose} />
       ) : null}
     </ResponsiveSheet>
   )

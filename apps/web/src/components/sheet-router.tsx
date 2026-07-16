@@ -20,7 +20,12 @@ export function SheetRouter() {
 
   return (
     <>
-      <AddEntrySheet open={sheet === 'add'} onClose={closeSheet} />
+      <AddEntrySheet
+        open={sheet === 'add' || sheet === 'edit' || sheet === 'editRecurring'}
+        onClose={closeSheet}
+        editEntryId={sheet === 'edit' ? id : undefined}
+        editRecurringId={sheet === 'editRecurring' ? id : undefined}
+      />
       <EntryDetailSheet open={sheet === 'entry'} onClose={closeSheet} entryId={id} />
       <SettleUpSheet open={sheet === 'settle'} onClose={closeSheet} person={person} />
       <HouseholdSwitcherSheet open={sheet === 'households'} onClose={closeSheet} />
