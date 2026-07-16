@@ -8,6 +8,7 @@ How knowledge is organized in this repo:
 | [specs/](specs/) | Feature and product specs | What we're building and why. A spec precedes non-trivial features. |
 | [tech-debt/](tech-debt/) | Known, deliberate shortcuts | Every entry says what the debt is, why we took it, and what triggers paying it down. |
 | [design/](design/) | Claude design exports (self-contained HTML) | The visual reference for implementation. Read these before building UI. |
+| [ops/](ops/) | Production reference | Where things actually live (domain, hosting, deploy flow) and a debugging quick-reference. Kept up to date as production changes — not an ADR (it's facts, not a decision) and not tech-debt (it's not a shortcut). |
 
 ## The workflow
 
