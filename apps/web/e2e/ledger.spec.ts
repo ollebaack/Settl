@@ -14,23 +14,13 @@ test.describe('Ledger', () => {
   })
 
   test('renders the title, filter pills and day-group headers', async ({ page }) => {
-    for (const label of ['Alla', 'Utgifter', 'Lån', 'Repeat']) {
+    for (const label of ['Alla', 'Utgifter', 'Repeat']) {
       await expect(page.getByRole('button', { name: label, exact: true })).toBeVisible()
     }
     const feed = page.getByRole('main')
     await expect(feed.getByText('Begagnad soffa')).toBeVisible()
     // Day-group headers are level-2 headings (Idag / Igår / "{d} {mån}").
     await expect(feed.getByRole('heading', { level: 2 }).first()).toBeVisible()
-  })
-
-  test('the "Lån" filter shows IOU entries and hides expenses', async ({ page }) => {
-    const feed = page.getByRole('main')
-    await expect(feed.getByText('Begagnad soffa')).toBeVisible()
-
-    await page.getByRole('button', { name: 'Lån', exact: true }).click()
-
-    await expect(feed.getByText('Konsertbiljett')).toBeVisible()
-    await expect(feed.getByText('Begagnad soffa')).toHaveCount(0)
   })
 
   test('the "Utgifter" filter hides IOU entries', async ({ page }) => {

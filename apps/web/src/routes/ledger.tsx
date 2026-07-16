@@ -39,7 +39,6 @@ interface FilterOption {
 const FILTERS: FilterOption[] = [
   { value: 'all', label: 'Alla' },
   { value: 'expense', label: 'Utgifter' },
-  { value: 'iou', label: 'Lån' },
   { value: 'recurring', label: 'Repeat' },
 ]
 

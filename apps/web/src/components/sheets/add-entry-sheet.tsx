@@ -323,8 +323,11 @@ function EntryForm({
   const otherMembers = memberList.filter((m) => m.id !== currentMemberId)
   const payer = paidBy ?? currentMemberId ?? memberList[0]?.id
   const iouOther = iouWith ?? otherMembers[0]?.id
-  // The member who owes the whole amount ("Allt på en"); always resolves so the split balances.
-  const wholeMember = wholeMemberId ?? memberList[0]?.id
+  // "Allt på en": you can't owe yourself, so the picker excludes the payer and defaults to
+  // the first non-payer — makes the balance-neutral payer==ower entry unreachable.
+  const wholeCandidates = memberList.filter((m) => m.id !== payer)
+  const wholeMember =
+    wholeMemberId && wholeMemberId !== payer ? wholeMemberId : (wholeCandidates[0]?.id ?? null)
   const wholeName = memberList.find((m) => m.id === wholeMember)?.name ?? ''
 
   // --- live split derivations ------------------------------------------------
@@ -478,7 +481,6 @@ function EntryForm({
         <Tabs value={type} onValueChange={(v) => setType(v as EntryTab)} className="w-full">
           <TabsList className="w-full">
             <TabsTrigger value="expense">Utgift</TabsTrigger>
-            <TabsTrigger value="iou">Lån</TabsTrigger>
             <TabsTrigger value="recurring">Återkommande</TabsTrigger>
           </TabsList>
         </Tabs>
@@ -576,14 +578,14 @@ function EntryForm({
               <ToggleGroupItem value="equal" className="flex-1">
                 Lika
               </ToggleGroupItem>
+              <ToggleGroupItem value="whole" className="flex-1">
+                Allt på en
+              </ToggleGroupItem>
               <ToggleGroupItem value="percent" className="flex-1">
                 %
               </ToggleGroupItem>
               <ToggleGroupItem value="amount" className="flex-1">
                 kr
-              </ToggleGroupItem>
-              <ToggleGroupItem value="whole" className="flex-1">
-                Allt på en
               </ToggleGroupItem>
             </ToggleGroup>
 
@@ -596,7 +598,7 @@ function EntryForm({
                   variant="outline"
                   className="flex-wrap"
                 >
-                  {memberList.map((m) => (
+                  {wholeCandidates.map((m) => (
                     <ToggleGroupItem key={m.id} value={m.id} className="gap-2">
                       <MemberAvatar name={m.name} avatarColor={m.avatarColor} avatarEmoji={m.avatarEmoji} size="sm" />
                       {m.name}
