@@ -97,6 +97,13 @@ public static class BalanceCalculator
         return net;
     }
 
+    /// <summary>
+    /// Total of every open debt across a household's entries — the household-wide "still owed"
+    /// figure shown on the archive warning (ADR-0016). Not viewer-relative.
+    /// </summary>
+    public static long HouseholdOpenTotalMinor(IEnumerable<Entry> householdEntries, ClosureLookup closures) =>
+        householdEntries.Sum(e => OpenDebts(e, closures).Sum(d => d.AmountMinor));
+
     /// <summary>Viewer-relative status for a single entry (§2.4).</summary>
     public static ViewerStatus StatusFor(Entry entry, Guid me, ClosureLookup closures)
     {

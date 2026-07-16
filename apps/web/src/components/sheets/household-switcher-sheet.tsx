@@ -15,8 +15,14 @@ import { Money } from '@/components/money'
 import { ResponsiveSheet } from '@/components/responsive-sheet'
 import { ErrorState, LoadingState } from '@/components/screen-states'
 import { cn } from '@/lib/utils'
+import { shortDate } from '@/lib/format'
 import { useActiveHousehold } from '@/lib/active-household'
-import { useHouseholdInvites, useHouseholds, useSendInvite } from '@/lib/queries'
+import {
+  useHouseholdInvites,
+  useHouseholdsWithArchived,
+  useRestoreHousehold,
+  useSendInvite,
+} from '@/lib/queries'
 import { useSheet } from '@/lib/sheet'
 import type { MoneyIntent } from '@/components/money'
 import type { HouseholdListItemDto } from '@/lib/api'
@@ -44,8 +50,10 @@ export function HouseholdSwitcherSheet({
   const navigate = useNavigate()
   const { householdId, setHouseholdId } = useActiveHousehold()
   const { openSheet } = useSheet()
-  const query = useHouseholds()
-  const households = query.data ?? []
+  const query = useHouseholdsWithArchived()
+  const all = query.data ?? []
+  const households = all.filter((h) => !h.archivedAt)
+  const archived = all.filter((h) => h.archivedAt)
 
   const select = (h: HouseholdListItemDto) => {
     setHouseholdId(h.id)
@@ -119,6 +127,8 @@ export function HouseholdSwitcherSheet({
             + Nytt hushåll
           </Button>
 
+          {archived.length > 0 && <ArchivedSection households={archived} />}
+
           <InviteSection
             householdId={householdId}
             householdName={households.find((h) => h.id === householdId)?.name}
@@ -126,6 +136,67 @@ export function HouseholdSwitcherSheet({
         </div>
       )}
     </ResponsiveSheet>
+  )
+}
+
+/**
+ * "Arkiverade" — soft-archived households (ADR-0016, design frame 7). Shown greyed and
+ * non-switchable; only the owner sees the "Återställ" button.
+ */
+function ArchivedSection({ households }: { households: HouseholdListItemDto[] }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-xs font-semibold uppercase tracking-[0.09em] text-muted-foreground">
+        Arkiverade
+      </p>
+      {households.map((h) => (
+        <ArchivedRow key={h.id} household={h} />
+      ))}
+      <p className="text-xs text-muted-foreground">Bara ägaren ser återställ-knappen.</p>
+    </div>
+  )
+}
+
+function ArchivedRow({ household: h }: { household: HouseholdListItemDto }) {
+  const restore = useRestoreHousehold(h.id)
+  const onRestore = () => {
+    if (restore.isPending) return
+    restore.mutate(undefined, {
+      onSuccess: () => toast(`${h.name} återställd`),
+      onError: (err) =>
+        toast.error(err instanceof Error ? err.message : 'Kunde inte återställa hushållet'),
+    })
+  }
+  return (
+    <Card
+      size="sm"
+      className="flex flex-row items-center gap-3 p-3 opacity-60"
+    >
+      <span
+        aria-hidden="true"
+        className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent text-sm font-medium text-accent-foreground grayscale"
+      >
+        {(h.name.trim()[0] ?? '?').toUpperCase()}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{h.name}</p>
+        <p className="truncate text-xs text-muted-foreground">
+          Arkiverad {h.archivedAt ? shortDate(h.archivedAt) : ''}
+        </p>
+      </div>
+      {h.isOwner && (
+        <Button
+          variant="secondary"
+          size="sm"
+          className="rounded-full text-primary"
+          onClick={onRestore}
+          disabled={restore.isPending}
+        >
+          {restore.isPending && <Loader2Icon className="animate-spin" />}
+          Återställ
+        </Button>
+      )}
+    </Card>
   )
 }
 
