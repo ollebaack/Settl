@@ -1,8 +1,8 @@
 /**
  * Loggboken (implementation-map §2.2) — the full chronological ledger.
- * Type-filter pills (Alla / Utgifter / Lån / Repeat) drive useEntries(id,{type});
+ * Type-filter pills (Alla / Utgifter / Repeat) drive useEntries(id,{type});
  * mobile upcoming dashed rows come from useSummary().upcoming and only show when
- * the filter isn't IOU/Expense; entries are grouped client-side by day and
+ * the filter isn't Expense; entries are grouped client-side by day and
  * rendered as <EntryRow> lists. Loading / empty (per filter) / error states are
  * all handled. Server state comes only from the shared TanStack Query hooks;
  * this screen renders and calls, never computes (ADR-0006).
@@ -46,7 +46,6 @@ const FILTERS: FilterOption[] = [
 const EMPTY_COPY: Record<EntryFilter, string> = {
   all: 'Inga poster än',
   expense: 'Inga utgifter än',
-  iou: 'Inga lån än',
   recurring: 'Inga repeat-poster än',
 }
 
@@ -85,7 +84,7 @@ function LedgerPage() {
   }
 
   // Upcoming (mobile only) — hidden for the IOU/Expense filters and on desktop.
-  const showUpcoming = !isWide && filter !== 'iou' && filter !== 'expense'
+  const showUpcoming = !isWide && filter !== 'expense'
   const upcoming = showUpcoming ? (summaryQuery.data?.upcoming ?? []) : []
 
   const entries = entriesQuery.data ?? []

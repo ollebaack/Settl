@@ -69,11 +69,15 @@ public static class DbInitializer
         var e8 = Expense(Lonnvagen, "Begagnad soffa", 240_000, Sam, SplitMode.Percent, h1Order,
             new() { [Du] = 40m, [Sam] = 40m, [Priya] = 20m }, D(-1), now);
         var e1 = Expense(Lonnvagen, "Matinköp — storhandling", 86_400, Sam, SplitMode.Equal, h1Order, new(), D(-2), now);
-        var e2 = Iou(Lonnvagen, "Konsertbiljett", 20_000, Du, Priya, D(-3), now);
+        // "Allt på en": Priya betalade, Du står för hela beloppet (was an IOU Du→Priya).
+        var e2 = Expense(Lonnvagen, "Konsertbiljett", 20_000, Priya, SplitMode.Amount, h1Order,
+            new() { [Du] = 20_000m }, D(-3), now);
         var e5 = Expense(Lonnvagen, "Thai takeaway", 54_000, Priya, SplitMode.Equal, h1Order, new(), D(-6), now);
         var e6 = Expense(Lonnvagen, "Städmaterial", 24_900, Du, SplitMode.Equal, h1Order, new(), D(-10), now);
         var e4 = RecurringPost(Lonnvagen, "Internet — juli", 44_900, Du, SplitMode.Equal, h1Order, new(), D(-11), now, Internet);
-        var e10 = Iou(Lonnvagen, "Taxi hem", 12_000, Sam, Du, D(-12), now);
+        // "Allt på en": Du betalade, Sam står för hela beloppet (was an IOU Sam→Du).
+        var e10 = Expense(Lonnvagen, "Taxi hem", 12_000, Du, SplitMode.Amount, h1Order,
+            new() { [Sam] = 12_000m }, D(-12), now);
         var e9 = RecurringPost(Lonnvagen, "Spotify Family — juni", 16_900, Sam, SplitMode.Equal, h1Order, new(), D(-14), now, Spotify);
         var e3 = RecurringPost(Lonnvagen, "Hyra — juli", 2_400_000, Du, SplitMode.Amount, h1Order,
             new() { [Du] = 900_000m, [Sam] = 800_000m, [Priya] = 700_000m }, D(-27), now, Rent);
@@ -164,21 +168,6 @@ public static class DbInitializer
             { EntryId = entry.Id, MemberId = s.MemberId, ShareMinor = s.ShareMinor, FormulaValue = s.FormulaValue });
         return entry;
     }
-
-    private static Entry Iou(Guid hh, string title, long amount, Guid from, Guid to, DateOnly date, DateTimeOffset now) =>
-        new()
-        {
-            Id = Guid.NewGuid(),
-            HouseholdId = hh,
-            Type = EntryType.Iou,
-            Title = title,
-            AmountMinor = amount,
-            Date = date,
-            CreatedAt = now,
-            FromMemberId = from,
-            ToMemberId = to,
-            SplitMode = SplitMode.None
-        };
 
     private static RecurringTemplate Template(Guid id, Guid hh, string title, long amount, Cadence cadence,
         DateOnly next, Guid paidBy, SplitMode mode, IReadOnlyList<Guid> order, Dictionary<Guid, decimal> formula, DateTimeOffset now)

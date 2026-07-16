@@ -38,7 +38,7 @@ public static class NudgesEndpoints
                 .ToList();
 
             var expenses = entries
-                .Where(e => e.Type != EntryType.Iou && e.PaidByMemberId is not null)
+                .Where(e => e.PaidByMemberId is not null)
                 .OrderByDescending(e => e.Date)
                 .Select(e =>
                 {

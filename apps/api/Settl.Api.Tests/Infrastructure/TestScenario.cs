@@ -96,26 +96,6 @@ public sealed class TestScenario
         return entry;
     }
 
-    /// <summary>A direct IOU: <paramref name="from"/> owes <paramref name="to"/>.</summary>
-    public Entry AddIou(string title, long amountMinor, Guid from, Guid to, int dateOffset = -1)
-    {
-        var entry = new Entry
-        {
-            Id = Guid.NewGuid(),
-            HouseholdId = HouseholdId,
-            Type = EntryType.Iou,
-            Title = title,
-            AmountMinor = amountMinor,
-            Date = Day(dateOffset),
-            CreatedAt = _now,
-            FromMemberId = from,
-            ToMemberId = to,
-            SplitMode = SplitMode.None
-        };
-        _entries.Add(entry);
-        return entry;
-    }
-
     /// <summary>An active recurring template with the given cadence and next-post date offset.</summary>
     public RecurringTemplate AddRecurring(string title, long amountMinor, Guid paidBy,
         Cadence cadence, int nextPostOffset, SplitMode mode = SplitMode.Equal,

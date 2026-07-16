@@ -32,17 +32,16 @@ const statusClass: Record<ViewerStatusKind, string> = {
 }
 
 function Glyph({ entry }: { entry: EntryDto }) {
-  const isIou = entry.type === 'iou'
   const isRecurring = entry.type === 'recurringPost'
   const tileClass = cn(
     'flex size-9 shrink-0 items-center justify-center rounded-xl',
     isRecurring ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground',
   )
 
-  if (isIou || isRecurring) {
+  if (isRecurring) {
     return (
       <span aria-hidden="true" className={cn(tileClass, 'text-sm font-medium')}>
-        {isIou ? '⇄' : '↻'}
+        ↻
       </span>
     )
   }
@@ -60,11 +59,6 @@ function buildMeta(
   viewerId: string | undefined,
   nameOf: (id: string | null | undefined) => string,
 ): string {
-  if (entry.type === 'iou') {
-    if (viewerId && entry.toMemberId === viewerId) return `Lån till ${nameOf(entry.fromMemberId)}`
-    if (viewerId && entry.fromMemberId === viewerId) return `Lån från ${nameOf(entry.toMemberId)}`
-    return 'Lån'
-  }
   const paidByViewer = viewerId != null && entry.paidByMemberId === viewerId
   if (entry.type === 'recurringPost') {
     const payer = paidByViewer ? 'du betalar' : `${nameOf(entry.paidByMemberId)} betalar`

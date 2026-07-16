@@ -103,27 +103,30 @@ export async function createExpense(
   return (await res.json()) as { id: string }
 }
 
-export async function createIou(
+/**
+ * One person owes the whole amount (the "Allt på en" split; ADR-0020 removed the
+ * separate IOU type). `owerMemberId` owes `payerMemberId` the full amount — the payer
+ * fronted it and takes a zero share.
+ */
+export async function createOneOwesAll(
   request: APIRequestContext,
   householdId: string,
   title: string,
   amountMinor: number,
-  fromMemberId: string,
-  toMemberId: string,
+  owerMemberId: string,
+  payerMemberId: string,
 ): Promise<{ id: string }> {
   const res = await request.post(`${API}/households/${householdId}/entries`, {
     data: {
-      type: 'iou',
+      type: 'expense',
       title,
       amountMinor,
       date: null,
-      paidByMemberId: null,
-      fromMemberId,
-      toMemberId,
-      split: null,
+      paidByMemberId: payerMemberId,
+      split: { mode: 'amount', values: { [owerMemberId]: amountMinor } },
     },
   })
-  expect(res.ok(), `create iou: ${await safeText(res)}`).toBeTruthy()
+  expect(res.ok(), `create one-owes-all: ${await safeText(res)}`).toBeTruthy()
   return (await res.json()) as { id: string }
 }
 

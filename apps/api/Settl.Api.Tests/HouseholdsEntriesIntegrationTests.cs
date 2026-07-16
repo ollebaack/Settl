@@ -228,13 +228,9 @@ public class HouseholdsEntriesIntegrationTests
 
         var expenses = await du.GetFromJsonAsync<List<EntryDto>>(
             $"/households/{SeedIds.Lonnvagen}/entries?type=expense", Web);
-        Assert.Equal(4, expenses!.Count);
+        // 4 plain expenses + the 2 former IOUs, now "Allt på en" amount-split expenses (ADR-0020).
+        Assert.Equal(6, expenses!.Count);
         Assert.All(expenses, e => Assert.Equal("expense", e.Type));
-
-        var ious = await du.GetFromJsonAsync<List<EntryDto>>(
-            $"/households/{SeedIds.Lonnvagen}/entries?type=iou", Web);
-        Assert.Equal(2, ious!.Count);
-        Assert.All(ious, e => Assert.Equal("iou", e.Type));
 
         var recurring = await du.GetFromJsonAsync<List<EntryDto>>(
             $"/households/{SeedIds.Lonnvagen}/entries?type=recurring", Web);
@@ -265,7 +261,7 @@ public class HouseholdsEntriesIntegrationTests
         var du = factory.ClientAs(SeedIds.Du);
 
         // 10000 öre split 3 ways → [3334, 3333, 3333] in membership order (Du first).
-        var req = new CreateEntryRequest("expense", null, 10_000, null, SeedIds.Du, null, null, null);
+        var req = new CreateEntryRequest("expense", null, 10_000, null, SeedIds.Du, null);
         var post = await du.PostAsJsonAsync($"/households/{SeedIds.Lonnvagen}/entries", req, Web);
         Assert.Equal(HttpStatusCode.Created, post.StatusCode);
         var created = await post.Content.ReadFromJsonAsync<EntryDto>(Web);
@@ -298,7 +294,7 @@ public class HouseholdsEntriesIntegrationTests
 
         var split = new SplitInput("percent",
             new Dictionary<Guid, decimal> { [SeedIds.Du] = 50m, [SeedIds.Sam] = 30m, [SeedIds.Priya] = 20m });
-        var req = new CreateEntryRequest("expense", "Delad middag", 10_000, null, SeedIds.Sam, null, null, split);
+        var req = new CreateEntryRequest("expense", "Delad middag", 10_000, null, SeedIds.Sam, split);
 
         var post = await du.PostAsJsonAsync($"/households/{SeedIds.Lonnvagen}/entries", req, Web);
         Assert.Equal(HttpStatusCode.Created, post.StatusCode);
@@ -320,7 +316,7 @@ public class HouseholdsEntriesIntegrationTests
 
         var split = new SplitInput("amount",
             new Dictionary<Guid, decimal> { [SeedIds.Du] = 4000m, [SeedIds.Sam] = 3000m, [SeedIds.Priya] = 3000m });
-        var req = new CreateEntryRequest("expense", "Delat kvitto", 10_000, null, SeedIds.Du, null, null, split);
+        var req = new CreateEntryRequest("expense", "Delat kvitto", 10_000, null, SeedIds.Du, split);
 
         var post = await du.PostAsJsonAsync($"/households/{SeedIds.Lonnvagen}/entries", req, Web);
         Assert.Equal(HttpStatusCode.Created, post.StatusCode);
@@ -334,26 +330,15 @@ public class HouseholdsEntriesIntegrationTests
     }
 
     [Fact]
-    public async Task PostIou_uses_default_title_and_stores_no_shares()
+    public async Task PostEntry_rejects_the_removed_iou_type()
     {
         using var factory = await SeededAsync();
         var du = factory.ClientAs(SeedIds.Du);
 
-        var req = new CreateEntryRequest("iou", null, 5_000, null, null, SeedIds.Du, SeedIds.Sam, null);
+        // "iou" was removed (ADR-0020): one-owes-all is now the "Allt på en" amount split.
+        var req = new CreateEntryRequest("iou", null, 5_000, null, SeedIds.Du, null);
         var post = await du.PostAsJsonAsync($"/households/{SeedIds.Lonnvagen}/entries", req, Web);
-        Assert.Equal(HttpStatusCode.Created, post.StatusCode);
-        var created = await post.Content.ReadFromJsonAsync<EntryDto>(Web);
-
-        var entry = await du.GetFromJsonAsync<EntryDto>($"/entries/{created!.Id}", Web);
-        Assert.Equal("iou", entry!.Type);
-        Assert.Equal("Lån", entry.Title);              // default iou title
-        Assert.Equal("none", entry.SplitMode);
-        Assert.Empty(entry.Shares);
-        Assert.Equal(SeedIds.Du, entry.FromMemberId);
-        Assert.Equal(SeedIds.Sam, entry.ToMemberId);
-        // Du is the debtor (From) → viewer owes.
-        Assert.Equal("youOwe", entry.ViewerStatus.Kind);
-        Assert.Equal(5_000, entry.ViewerStatus.AmountMinor);
+        Assert.Equal(HttpStatusCode.BadRequest, post.StatusCode);
     }
 
     [Fact]
@@ -362,7 +347,7 @@ public class HouseholdsEntriesIntegrationTests
         using var factory = await SeededAsync();
         var du = factory.ClientAs(SeedIds.Du);
 
-        var req = new CreateEntryRequest("expense", "Noll", 0, null, SeedIds.Du, null, null, null);
+        var req = new CreateEntryRequest("expense", "Noll", 0, null, SeedIds.Du, null);
         var res = await du.PostAsJsonAsync($"/households/{SeedIds.Lonnvagen}/entries", req, Web);
         Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
         Assert.Equal("Ange ett belopp först", await DetailAsync(res));
@@ -376,7 +361,7 @@ public class HouseholdsEntriesIntegrationTests
 
         var split = new SplitInput("percent",
             new Dictionary<Guid, decimal> { [SeedIds.Du] = 50m, [SeedIds.Sam] = 30m, [SeedIds.Priya] = 10m }); // 90
-        var req = new CreateEntryRequest("expense", "Fel procent", 10_000, null, SeedIds.Sam, null, null, split);
+        var req = new CreateEntryRequest("expense", "Fel procent", 10_000, null, SeedIds.Sam, split);
 
         var res = await du.PostAsJsonAsync($"/households/{SeedIds.Lonnvagen}/entries", req, Web);
         Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
@@ -392,7 +377,7 @@ public class HouseholdsEntriesIntegrationTests
         // Values sum to 9000 but amount is 10000 → off by 1000 öre (> 5 öre tolerance).
         var split = new SplitInput("amount",
             new Dictionary<Guid, decimal> { [SeedIds.Du] = 4000m, [SeedIds.Sam] = 3000m, [SeedIds.Priya] = 2000m });
-        var req = new CreateEntryRequest("expense", "Fel summa", 10_000, null, SeedIds.Du, null, null, split);
+        var req = new CreateEntryRequest("expense", "Fel summa", 10_000, null, SeedIds.Du, split);
 
         var res = await du.PostAsJsonAsync($"/households/{SeedIds.Lonnvagen}/entries", req, Web);
         Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
@@ -407,7 +392,7 @@ public class HouseholdsEntriesIntegrationTests
         using var factory = await SeededAsync();
         var du = factory.ClientAs(SeedIds.Du);
 
-        var req = new CreateEntryRequest("expense", "ICA storhandling", 5_000, null, SeedIds.Du, null, null, null);
+        var req = new CreateEntryRequest("expense", "ICA storhandling", 5_000, null, SeedIds.Du, null);
         var post = await du.PostAsJsonAsync($"/households/{SeedIds.Lonnvagen}/entries", req, Web);
         var created = await post.Content.ReadFromJsonAsync<EntryDto>(Web);
         Assert.Equal("groceries", created!.Category);
@@ -420,7 +405,7 @@ public class HouseholdsEntriesIntegrationTests
         var du = factory.ClientAs(SeedIds.Du);
 
         // "Städmaterial" contains "städ" (Cleaning) — must not match "mat" (Groceries) first.
-        var req = new CreateEntryRequest("expense", "Städmaterial", 500, null, SeedIds.Du, null, null, null);
+        var req = new CreateEntryRequest("expense", "Städmaterial", 500, null, SeedIds.Du, null);
         var post = await du.PostAsJsonAsync($"/households/{SeedIds.Lonnvagen}/entries", req, Web);
         var created = await post.Content.ReadFromJsonAsync<EntryDto>(Web);
         Assert.Equal("cleaning", created!.Category);
@@ -432,7 +417,7 @@ public class HouseholdsEntriesIntegrationTests
         using var factory = await SeededAsync();
         var du = factory.ClientAs(SeedIds.Du);
 
-        var req = new CreateEntryRequest("expense", "Blaha blaha", 500, null, SeedIds.Du, null, null, null);
+        var req = new CreateEntryRequest("expense", "Blaha blaha", 500, null, SeedIds.Du, null);
         var post = await du.PostAsJsonAsync($"/households/{SeedIds.Lonnvagen}/entries", req, Web);
         var created = await post.Content.ReadFromJsonAsync<EntryDto>(Web);
         Assert.Equal("other", created!.Category);
@@ -446,14 +431,14 @@ public class HouseholdsEntriesIntegrationTests
 
         var split = new SplitInput("percent",
             new Dictionary<Guid, decimal> { [SeedIds.Du] = 50m, [SeedIds.Sam] = 30m, [SeedIds.Priya] = 20m });
-        var createReq = new CreateEntryRequest("expense", "Middag", 10_000, null, SeedIds.Sam, null, null, split);
+        var createReq = new CreateEntryRequest("expense", "Middag", 10_000, null, SeedIds.Sam, split);
         var post = await du.PostAsJsonAsync($"/households/{SeedIds.Lonnvagen}/entries", createReq, Web);
         var created = await post.Content.ReadFromJsonAsync<EntryDto>(Web);
         Assert.Equal("restaurant", created!.Category); // "middag" keyword
 
         // Category-only edit: same fields, no split supplied, explicit category override.
         var updateReq = new UpdateEntryRequest(
-            "expense", "Middag", 10_000, null, SeedIds.Sam, null, null, null, "gift");
+            "expense", "Middag", 10_000, null, SeedIds.Sam, null, "gift");
         var put = await du.PutAsJsonAsync($"/entries/{created.Id}", updateReq, Web);
         Assert.Equal(HttpStatusCode.OK, put.StatusCode);
 
@@ -471,7 +456,7 @@ public class HouseholdsEntriesIntegrationTests
         using var factory = await SeededAsync();
         var du = factory.ClientAs(SeedIds.Du);
 
-        var createReq = new CreateEntryRequest("expense", "Hyra", 5_000, null, SeedIds.Du, null, null, null);
+        var createReq = new CreateEntryRequest("expense", "Hyra", 5_000, null, SeedIds.Du, null);
         var post = await du.PostAsJsonAsync($"/households/{SeedIds.Lonnvagen}/entries", createReq, Web);
         var created = await post.Content.ReadFromJsonAsync<EntryDto>(Web);
         Assert.Equal("rent", created!.Category);
@@ -479,7 +464,7 @@ public class HouseholdsEntriesIntegrationTests
         // Title now matches "mat" (Groceries) — but with no category override, the stored
         // category should NOT silently reclassify (no retroactive keyword matching).
         var updateReq = new UpdateEntryRequest(
-            "expense", "Matinköp", 5_000, null, SeedIds.Du, null, null, null, null);
+            "expense", "Matinköp", 5_000, null, SeedIds.Du, null, null);
         var put = await du.PutAsJsonAsync($"/entries/{created.Id}", updateReq, Web);
         Assert.Equal(HttpStatusCode.OK, put.StatusCode);
 
@@ -496,7 +481,7 @@ public class HouseholdsEntriesIntegrationTests
         var du = factory.ClientAs(SeedIds.Du);
 
         // Fresh equal expense paid by Du: Sam & Priya each owe Du 3000.
-        var createReq = new CreateEntryRequest("expense", "Gemensam pizza", 9_000, null, SeedIds.Du, null, null, null);
+        var createReq = new CreateEntryRequest("expense", "Gemensam pizza", 9_000, null, SeedIds.Du, null);
         var post = await du.PostAsJsonAsync($"/households/{SeedIds.Lonnvagen}/entries", createReq, Web);
         var created = await post.Content.ReadFromJsonAsync<EntryDto>(Web);
         var id = created!.Id;
@@ -512,7 +497,7 @@ public class HouseholdsEntriesIntegrationTests
         Assert.Equal("settled", settled.ViewerStatus.Kind);
 
         // PUT while locked → 409.
-        var updateReq = new UpdateEntryRequest("expense", "Ändrad", 9_000, null, SeedIds.Du, null, null, null, null);
+        var updateReq = new UpdateEntryRequest("expense", "Ändrad", 9_000, null, SeedIds.Du, null, null);
         var putLocked = await du.PutAsJsonAsync($"/entries/{id}", updateReq, Web);
         Assert.Equal(HttpStatusCode.Conflict, putLocked.StatusCode);
         Assert.Contains("låst", await DetailAsync(putLocked));

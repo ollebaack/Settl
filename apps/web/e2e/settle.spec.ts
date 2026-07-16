@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 import {
   acceptInvite,
   createHousehold,
-  createIou,
+  createOneOwesAll,
   getMembers,
   inviteAndGetToken,
   loginAs,
@@ -31,7 +31,7 @@ test('settle up with a person closes the pair', async ({ page }) => {
   const samMember = members.find((m) => m.id === sam)!
 
   // Sam owes Du 500 kr → on Home this shows as a non-square person row.
-  await createIou(page.request, household.id, 'E2E skuld', 50000, sam, du)
+  await createOneOwesAll(page.request, household.id, 'E2E skuld', 50000, sam, du)
 
   await pinHousehold(page, household.id)
   // "Du" has several books, so `/` is the overview; the person rows live on the

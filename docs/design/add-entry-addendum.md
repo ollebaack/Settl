@@ -85,10 +85,10 @@ there is always a real payer); `Allt på en` picker `Vem står för hela beloppe
 1. **Model teardown — decided in [ADR-0020](../adr/0020-remove-iou-entry-type.md).**
    Remove the `iou` `EntryType`, `FromMemberId`/`ToMemberId`, and the `BalanceCalculator`
    IOU branch ([BalanceCalculator.cs:54](../../apps/api/Settl.Api/Domain/BalanceCalculator.cs#L54));
-   enum ints stay fixed (`Expense=0`, `RecurringPost=2`, `1` retired). Seed-only rewrite of
-   the two `DbInitializer` `Iou(...)` calls, plus a one-line defensive backfill
-   (`UPDATE Entries … WHERE Type = 1`) in the column-dropping migration. Touches ~18 files
-   + a new EF migration + `packages/api-client` regen.
+   `EntryType`/`SplitMode` persist as strings, so the enum member just drops. Seed-only
+   rewrite of the two `DbInitializer` `Iou(...)` calls, plus a defensive backfill
+   (`UPDATE "Entries" … WHERE "Type" = 'Iou'`) in the column-dropping migration. Touches
+   ~18 files + a new EF migration + `packages/api-client` regen.
 2. **Regenerate `packages/api-client`** in the implementing PR if the `iou` shape leaves
    the contract (root rule).
 3. **Money-math tests** — the teardown must keep `BalanceCalculator` / settle behaviour

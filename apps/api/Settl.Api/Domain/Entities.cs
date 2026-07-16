@@ -67,8 +67,6 @@ public class Entry
     public DateTimeOffset CreatedAt { get; set; }
 
     public Guid? PaidByMemberId { get; set; }
-    public Guid? FromMemberId { get; set; }
-    public Guid? ToMemberId { get; set; }
 
     public SplitMode SplitMode { get; set; }
     public Guid? RecurringTemplateId { get; set; }

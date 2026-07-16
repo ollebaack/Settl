@@ -18,11 +18,9 @@ public static class Mapping
         var locked = BalanceCalculator.IsLocked(entry, closures);
         var status = BalanceCalculator.StatusFor(entry, me, closures);
 
-        IReadOnlyList<ShareDto> shares = entry.Type == EntryType.Iou
-            ? []
-            : entry.Shares
-                .OrderBy(s => IndexOf(orderedMemberIds, s.MemberId))
-                .Select(s => new ShareDto(
+        IReadOnlyList<ShareDto> shares = entry.Shares
+            .OrderBy(s => IndexOf(orderedMemberIds, s.MemberId))
+            .Select(s => new ShareDto(
                     s.MemberId,
                     Name(membersById, s.MemberId),
                     Color(membersById, s.MemberId),
@@ -45,8 +43,6 @@ public static class Mapping
             entry.Date,
             entry.CreatedAt,
             entry.PaidByMemberId,
-            entry.FromMemberId,
-            entry.ToMemberId,
             Contract.SplitMode(entry.SplitMode),
             shares,
             entry.RecurringTemplateId,

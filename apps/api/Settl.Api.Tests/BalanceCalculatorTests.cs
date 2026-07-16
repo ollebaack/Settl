@@ -28,15 +28,6 @@ public class BalanceCalculatorTests
             .ToList(),
     };
 
-    private static Entry Iou(Guid? from, Guid? to, long amount) => new()
-    {
-        Id = Guid.NewGuid(),
-        Type = EntryType.Iou,
-        AmountMinor = amount,
-        FromMemberId = from,
-        ToMemberId = to,
-    };
-
     private static SettlementClosure Close(Guid entryId, Guid debtor, Guid creditor) => new()
     {
         Id = Guid.NewGuid(),
@@ -91,38 +82,6 @@ public class BalanceCalculatorTests
         e.PaidByMemberId = null;
 
         Assert.Empty(BalanceCalculator.Debts(e));
-    }
-
-    // ---- Debts: iou ------------------------------------------------------
-
-    [Fact]
-    public void Debts_iou_is_a_single_from_to_debt()
-    {
-        var e = Iou(B, A, 750);
-
-        var debts = BalanceCalculator.Debts(e);
-
-        Assert.Single(debts);
-        Assert.Equal(new Debt(B, A, 750), debts[0]);
-    }
-
-    [Fact]
-    public void Debts_iou_ignores_any_shares_on_the_entry()
-    {
-        var e = Iou(B, A, 750);
-        e.Shares = new List<EntryShare> { new() { MemberId = C, ShareMinor = 500 } };
-
-        var debts = BalanceCalculator.Debts(e);
-
-        Assert.Single(debts);
-        Assert.Equal(new Debt(B, A, 750), debts[0]);
-    }
-
-    [Fact]
-    public void Debts_iou_with_missing_endpoint_is_empty()
-    {
-        Assert.Empty(BalanceCalculator.Debts(Iou(null, A, 750)));
-        Assert.Empty(BalanceCalculator.Debts(Iou(B, null, 750)));
     }
 
     // ---- ClosureLookup direction normalization ---------------------------
@@ -233,13 +192,13 @@ public class BalanceCalculatorTests
     public void NetWith_partial_closure_changes_the_net()
     {
         var expense = Expense(A, (A, 100), (B, 100), (C, 100)); // B→A 100, C→A 100
-        var iou = Iou(A, B, 30);                                // A owes B 30
-        var entries = new Entry[] { expense, iou };
+        var loan = Expense(B, (A, 30));                         // "Allt på en": B paid, A owes B 30
+        var entries = new Entry[] { expense, loan };
 
         // Open: A is owed 100 by B, owes 30 to B → +70.
         Assert.Equal(70, BalanceCalculator.NetWith(A, B, entries, None));
 
-        // Close B→A on the expense: only the IOU remains → A owes B 30 → -30.
+        // Close B→A on the expense: only the one-owes-all entry remains → A owes B 30 → -30.
         var closed = Lookup(Close(expense.Id, B, A));
         Assert.Equal(-30, BalanceCalculator.NetWith(A, B, entries, closed));
     }
@@ -249,7 +208,7 @@ public class BalanceCalculatorTests
     {
         var e1 = Expense(A, (A, 100), (B, 100), (C, 100)); // B→A 100
         var e2 = Expense(A, (A, 50), (B, 50));             // B→A 50
-        var e3 = Iou(A, B, 30);                            // A→B 30
+        var e3 = Expense(B, (A, 30));                      // "Allt på en": B paid, A owes B 30
         var entries = new[] { e1, e2, e3 };
 
         // A: +100 +50 -30 = +120 relative to B.

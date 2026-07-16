@@ -28,11 +28,10 @@ import { CATEGORY_ICON, CATEGORY_LABEL, CATEGORY_ORDER } from '@/lib/categories'
 import { useSheet } from '@/lib/sheet'
 import { useDeferredDeleteEntry } from '@/lib/use-entry-delete'
 import { useEntry, useMe, useMembers, useReopenEntry, useSettleEntry, useUpdateEntry } from '@/lib/queries'
-import type { EntryCategory, EntryDto, EntryType, MemberDto, SplitModeName } from '@/lib/api'
+import type { EntryCategory, EntryDto, EntryType, SplitModeName } from '@/lib/api'
 
 const typeBadge: Record<EntryType, string> = {
   expense: 'Utgift',
-  iou: 'Lån',
   recurringPost: 'På repeat',
 }
 
@@ -52,38 +51,8 @@ interface ShareRowData {
   minor: number | string
 }
 
-/** Rows for the share list: two-row from/to for IOUs, per-member otherwise. */
-function buildShareRows(entry: EntryDto, members: MemberDto[]): ShareRowData[] {
-  const memberById = (id: string | null | undefined): MemberDto | undefined =>
-    id ? members.find((m) => m.id === id) : undefined
-
-  if (entry.type === 'iou') {
-    const from = memberById(entry.fromMemberId)
-    const to = memberById(entry.toMemberId)
-    const rows: ShareRowData[] = []
-    if (from) {
-      rows.push({
-        key: `from-${from.id}`,
-        name: from.name,
-        avatarColor: from.avatarColor,
-        avatarEmoji: from.avatarEmoji,
-        tag: '· skyldig',
-        minor: entry.amountMinor,
-      })
-    }
-    if (to) {
-      rows.push({
-        key: `to-${to.id}`,
-        name: to.name,
-        avatarColor: to.avatarColor,
-        avatarEmoji: to.avatarEmoji,
-        tag: '· ska få',
-        minor: entry.amountMinor,
-      })
-    }
-    return rows
-  }
-
+/** Rows for the share list: one row per member's frozen share. */
+function buildShareRows(entry: EntryDto): ShareRowData[] {
   return entry.shares.map((s) => ({
     key: s.memberId,
     name: s.name,
@@ -111,8 +80,6 @@ function CategoryPicker({ entry }: { entry: EntryDto }) {
           amountMinor: entry.amountMinor,
           date: entry.date,
           paidByMemberId: entry.paidByMemberId,
-          fromMemberId: entry.fromMemberId,
-          toMemberId: entry.toMemberId,
           split: null,
           category: next,
         },
@@ -175,15 +142,12 @@ function EntryDetailBody({ entry, onClose }: { entry: EntryDto; onClose: () => v
     )
   }
 
-  const isIou = entry.type === 'iou'
   const paidByViewer = viewerId != null && entry.paidByMemberId === viewerId
   const payerMeta = paidByViewer ? 'Du betalade' : `${nameOf(entry.paidByMemberId)} betalade`
   const split = splitLabel[entry.splitMode as SplitModeName] ?? ''
-  const meta = isIou
-    ? 'Informellt lån — inget kvitto behövs'
-    : [payerMeta, split].filter(Boolean).join(' · ')
+  const meta = [payerMeta, split].filter(Boolean).join(' · ')
 
-  const rows = buildShareRows(entry, members ?? [])
+  const rows = buildShareRows(entry)
   const busy = settle.isPending || reopen.isPending
 
   const handleToggle = () => {
