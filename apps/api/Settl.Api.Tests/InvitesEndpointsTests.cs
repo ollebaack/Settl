@@ -102,7 +102,7 @@ public class InvitesEndpointsTests
 
         var anon = factory.CreateClient();
         var accept = await anon.PostAsJsonAsync($"/invites/{token}/accept",
-            new AcceptInviteRequest("Ny Person", "Password123!"), Web);
+            new AcceptInviteRequest("Ny Person", null, "Password123!"), Web);
         Assert.Equal(HttpStatusCode.OK, accept.StatusCode);
         var member = await accept.Content.ReadFromJsonAsync<MemberDto>(Web);
         Assert.Equal("Ny Person", member!.Name);
@@ -128,7 +128,7 @@ public class InvitesEndpointsTests
         var token = TokenForInvite(factory);
 
         var res = await factory.CreateClient().PostAsJsonAsync($"/invites/{token}/accept",
-            new AcceptInviteRequest("Ny Person", null), Web);
+            new AcceptInviteRequest("Ny Person", null, null), Web);
         Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
         Assert.Equal("Lösenord krävs", await DetailAsync(res));
     }
@@ -151,13 +151,13 @@ public class InvitesEndpointsTests
 
         // Accepting anonymously is rejected.
         var anonAccept = await factory.CreateClient().PostAsJsonAsync($"/invites/{token}/accept",
-            new AcceptInviteRequest(null, null), Web);
+            new AcceptInviteRequest(null, null, null), Web);
         Assert.Equal(HttpStatusCode.Unauthorized, anonAccept.StatusCode);
 
         // Accepting while logged in as Priya succeeds and adds the membership.
         var priya = factory.ClientAs(SeedIds.Priya);
         var accept = await priya.PostAsJsonAsync($"/invites/{token}/accept",
-            new AcceptInviteRequest(null, null), Web);
+            new AcceptInviteRequest(null, null, null), Web);
         Assert.Equal(HttpStatusCode.OK, accept.StatusCode);
 
         var members = await priya.GetFromJsonAsync<List<MemberDto>>(
@@ -184,7 +184,7 @@ public class InvitesEndpointsTests
         });
 
         var res = await factory.CreateClient().PostAsJsonAsync($"/invites/{token}/accept",
-            new AcceptInviteRequest("Ny", "Password123!"), Web);
+            new AcceptInviteRequest("Ny", null, "Password123!"), Web);
         Assert.Equal(HttpStatusCode.NotFound, res.StatusCode);
     }
 
@@ -200,11 +200,11 @@ public class InvitesEndpointsTests
         var token = TokenForInvite(factory);
 
         var first = await factory.CreateClient().PostAsJsonAsync($"/invites/{token}/accept",
-            new AcceptInviteRequest("Ny Person", "Password123!"), Web);
+            new AcceptInviteRequest("Ny Person", null, "Password123!"), Web);
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
 
         var second = await factory.CreateClient().PostAsJsonAsync($"/invites/{token}/accept",
-            new AcceptInviteRequest("Ny Person", "Password123!"), Web);
+            new AcceptInviteRequest("Ny Person", null, "Password123!"), Web);
         Assert.Equal(HttpStatusCode.NotFound, second.StatusCode);
     }
 

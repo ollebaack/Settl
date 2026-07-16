@@ -35,7 +35,7 @@ public static class AuthEndpoints
             await signIn.SignInAsync(member, isPersistent: true);
             await SendVerificationEmailAsync(member, users, email, config, ct);
 
-            return Results.Created("/me", new MeDto(member.Id, member.Name, member.AvatarColor, member.AvatarEmoji, member.Email, member.EmailConfirmed));
+            return Results.Created("/me", member.ToMeDto());
         }).WithName("Register")
             .AllowAnonymous()
             .Produces<MeDto>(StatusCodes.Status201Created)
@@ -52,7 +52,7 @@ public static class AuthEndpoints
             if (!result.Succeeded)
                 return Results.Problem("Fel e-post eller lösenord", statusCode: 401);
 
-            return Results.Ok(new MeDto(member.Id, member.Name, member.AvatarColor, member.AvatarEmoji, member.Email, member.EmailConfirmed));
+            return Results.Ok(member.ToMeDto());
         }).WithName("Login")
             .AllowAnonymous()
             .Produces<MeDto>(StatusCodes.Status200OK)
@@ -135,7 +135,7 @@ public static class AuthEndpoints
             if (!result.Succeeded) return Results.Problem(DescribeResetError(result), statusCode: 400);
 
             await signIn.SignInAsync(member, isPersistent: true);
-            return Results.Ok(new MeDto(member.Id, member.Name, member.AvatarColor, member.AvatarEmoji, member.Email, member.EmailConfirmed));
+            return Results.Ok(member.ToMeDto());
         }).WithName("ResetPassword")
             .AllowAnonymous()
             .Produces<MeDto>(StatusCodes.Status200OK)

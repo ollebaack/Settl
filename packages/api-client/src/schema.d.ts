@@ -555,12 +555,61 @@ export interface components {
     schemas: {
         AcceptInviteRequest: {
             name: null | string;
+            email: null | string;
             password: null | string;
         };
         ConfirmEmailRequest: {
             /** Format: uuid */
             userId: string;
             token: string;
+        };
+        ContactDto: {
+            /** Format: uuid */
+            memberId: string;
+            name: string;
+            avatarColor: string;
+            /** Format: int32 */
+            sharedHouseholdCount: number | string;
+        };
+        ContactInviteResultDto: {
+            /** Format: uuid */
+            id: string;
+            channel: string;
+            /** Format: date-time */
+            expiresAt: string;
+            delivered: boolean;
+        };
+        CreateContactInviteRequest: {
+            channel: string;
+            phone: null | string;
+            email: null | string;
+            /** Format: uuid */
+            householdId: null | string;
+        };
+        InvitableContactDto: {
+            /** Format: uuid */
+            memberId: string;
+            name: string;
+            avatarColor: string;
+            status: string;
+        };
+        InviteContactRequest: {
+            /** Format: uuid */
+            contactMemberId: string;
+        };
+        PendingInviteDto: {
+            /** Format: uuid */
+            id: string;
+            channel: string;
+            phone: null | string;
+            email: null | string;
+            /** Format: date-time */
+            sentAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        UpdateProfileRequest: {
+            phone: null | string;
         };
         CreateEntryRequest: {
             type: string;
@@ -680,10 +729,11 @@ export interface components {
             emailSent: boolean;
         };
         InvitePreviewDto: {
-            householdName: string;
+            householdName: null | string;
             inviterName: string;
-            email: string;
+            email: null | string;
             hasAccount: boolean;
+            channel: string;
         };
         LeaveResultDto: {
             archived: boolean;
@@ -700,6 +750,8 @@ export interface components {
             avatarEmoji: null | string;
             email: null | string;
             emailConfirmed: boolean;
+            phone: null | string;
+            phoneVerified: boolean;
         };
         MemberDto: {
             /** Format: uuid */

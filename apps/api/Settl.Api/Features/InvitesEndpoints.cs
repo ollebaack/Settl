@@ -1,6 +1,4 @@
 using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
@@ -13,7 +11,8 @@ namespace Settl.Api.Features;
 
 public static class InvitesEndpoints
 {
-    private static readonly TimeSpan InviteLifetime = TimeSpan.FromDays(7);
+    /// <summary>Invite lifetime (ADR-0011) — reused by both the email and SMS/contact paths.</summary>
+    public static readonly TimeSpan InviteLifetime = TimeSpan.FromDays(7);
 
     public static IEndpointRouteBuilder MapInvitesEndpoints(this IEndpointRouteBuilder app)
     {
@@ -37,13 +36,14 @@ public static class InvitesEndpoints
             var inviter = await db.Members.FirstAsync(m => m.Id == me, ct);
 
             var now = DateTimeOffset.UtcNow;
-            var rawToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+            var rawToken = InviteTokens.NewRawToken();
             var invite = new Invite
             {
                 Id = Guid.NewGuid(),
                 HouseholdId = id,
+                Channel = InviteChannel.Email,
                 Email = normalizedEmail,
-                TokenHash = Hash(rawToken),
+                TokenHash = InviteTokens.Hash(rawToken),
                 InvitedByMemberId = me.Value,
                 CreatedAt = now,
                 ExpiresAt = now.Add(InviteLifetime)
@@ -66,7 +66,7 @@ public static class InvitesEndpoints
             }
 
             return Results.Created($"/households/{id}/invites/{invite.Id}",
-                new InviteDto(invite.Id, invite.Email, invite.ExpiresAt, emailSent));
+                new InviteDto(invite.Id, invite.Email ?? "", invite.ExpiresAt, emailSent));
         }).WithName("CreateInvite")
             .Produces<InviteDto>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status400BadRequest)
@@ -84,12 +84,14 @@ public static class InvitesEndpoints
 
             // Ordered client-side: SQLite (used by tests) can't translate ORDER BY on
             // DateTimeOffset columns.
+            // Only email-channel invites carry an address to show as a pending "email — waiting"
+            // row here; SMS/contact invites surface in the contacts tab instead (ADR-0019).
             var pending = await db.Invites
-                .Where(i => i.HouseholdId == id && i.AcceptedAt == null)
+                .Where(i => i.HouseholdId == id && i.AcceptedAt == null && i.Email != null)
                 .ToListAsync(ct);
             return Results.Ok(pending
                 .OrderBy(i => i.CreatedAt)
-                .Select(i => new InviteDto(i.Id, i.Email, i.ExpiresAt, EmailSent: true)));
+                .Select(i => new InviteDto(i.Id, i.Email ?? "", i.ExpiresAt, EmailSent: true)));
         }).WithName("GetHouseholdInvites")
             .Produces<List<InviteDto>>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status403Forbidden);
@@ -100,11 +102,18 @@ public static class InvitesEndpoints
             var invite = await FindActiveInvite(db, token, ct);
             if (invite is null) return Results.Problem("Inbjudan hittades inte eller har gått ut", statusCode: 404);
 
-            var household = await db.Households.FirstAsync(h => h.Id == invite.HouseholdId, ct);
             var inviter = await db.Members.FirstAsync(m => m.Id == invite.InvitedByMemberId, ct);
-            var hasAccount = await users.FindByEmailAsync(invite.Email) is not null;
+            string? householdName = invite.HouseholdId is Guid hh
+                ? (await db.Households.FirstOrDefaultAsync(h => h.Id == hh, ct))?.Name
+                : null;
 
-            return Results.Ok(new InvitePreviewDto(household.Name, inviter.Name, invite.Email, hasAccount));
+            // SMS invites carry no email — the invitee supplies their own on accept — and we
+            // never reveal whether a number/email is already on Settl (ADR-0019: no oracle).
+            var hasAccount = invite is { Channel: InviteChannel.Email, Email: not null }
+                && await users.FindByEmailAsync(invite.Email) is not null;
+
+            return Results.Ok(new InvitePreviewDto(
+                householdName, inviter.Name, invite.Email, hasAccount, Contract.InviteChannel(invite.Channel)));
         }).WithName("PreviewInvite")
             .AllowAnonymous()
             .Produces<InvitePreviewDto>(StatusCodes.Status200OK)
@@ -117,44 +126,72 @@ public static class InvitesEndpoints
             var invite = await FindActiveInvite(db, token, ct);
             if (invite is null) return Results.Problem("Inbjudan hittades inte eller har gått ut", statusCode: 404);
 
-            var member = await users.FindByEmailAsync(invite.Email);
-            if (member is null)
+            var actingId = http.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            Guid? actingMemberId = actingId is not null && Guid.TryParse(actingId, out var a) ? a : null;
+
+            Member member;
+            if (invite.Channel == InviteChannel.Email)
             {
-                if (string.IsNullOrWhiteSpace(req.Password))
-                    return Results.Problem("Lösenord krävs", statusCode: 400);
-
-                member = new Member
+                // Email channel binds to the invited address (ADR-0011 unchanged).
+                var existing = await users.FindByEmailAsync(invite.Email!);
+                if (existing is null)
                 {
-                    Id = Guid.NewGuid(),
-                    Name = req.Name?.Trim() is { Length: > 0 } n ? n : invite.Email,
-                    AvatarColor = AccountHelpers.AvatarColorFor(invite.Email),
-                    UserName = invite.Email,
-                    Email = invite.Email,
-                    EmailConfirmed = true
-                };
-                var created = await users.CreateAsync(member, req.Password);
-                if (!created.Succeeded)
-                    return Results.Problem("Lösenordet är för svagt (minst 8 tecken)", statusCode: 400);
-
-                await signIn.SignInAsync(member, isPersistent: true);
+                    if (string.IsNullOrWhiteSpace(req.Password))
+                        return Results.Problem("Lösenord krävs", statusCode: 400);
+                    var created = await CreateAccountAsync(users, signIn, invite.Email!, req.Name, req.Password);
+                    if (created is null) return Results.Problem("Lösenordet är för svagt (minst 8 tecken)", statusCode: 400);
+                    member = created;
+                }
+                else
+                {
+                    if (actingMemberId != existing.Id)
+                        return Results.Problem("Logga in som den inbjudna e-postadressen för att acceptera", statusCode: 401);
+                    member = existing;
+                }
             }
             else
             {
-                var actingId = http.User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (actingId is null || !Guid.TryParse(actingId, out var actingMemberId) || actingMemberId != member.Id)
-                    return Results.Problem("Logga in som den inbjudna e-postadressen för att acceptera", statusCode: 401);
+                // SMS channel carries no identity — the invitee brings their own email
+                // (ADR-0005/0011: email stays the sole identity). A logged-in user accepts as
+                // themselves; otherwise they create an account, and we never confirm whether
+                // that email (or the invited number) was already registered.
+                if (actingMemberId is Guid me)
+                {
+                    member = await users.FindByIdAsync(me.ToString())
+                        ?? throw new InvalidOperationException("Authenticated member not found");
+                }
+                else
+                {
+                    var email = (req.Email ?? "").Trim().ToLowerInvariant();
+                    if (!AccountHelpers.IsValidEmail(email))
+                        return Results.Problem("Ogiltig e-postadress", statusCode: 400);
+                    if (await users.FindByEmailAsync(email) is not null)
+                        return Results.Problem("Det finns redan ett konto med den e-posten — logga in och öppna länken igen", statusCode: 401);
+                    if (string.IsNullOrWhiteSpace(req.Password))
+                        return Results.Problem("Lösenord krävs", statusCode: 400);
+                    var created = await CreateAccountAsync(users, signIn, email, req.Name, req.Password);
+                    if (created is null) return Results.Problem("Lösenordet är för svagt (minst 8 tecken)", statusCode: 400);
+                    member = created;
+                }
             }
 
-            var alreadyMember = await db.HouseholdMemberships
-                .AnyAsync(m => m.HouseholdId == invite.HouseholdId && m.MemberId == member.Id, ct);
-            if (!alreadyMember)
-                db.HouseholdMemberships.Add(new HouseholdMembership
-                { HouseholdId = invite.HouseholdId, MemberId = member.Id, JoinedAt = DateTimeOffset.UtcNow });
+            if (invite.HouseholdId is Guid householdId)
+            {
+                var alreadyMember = await db.HouseholdMemberships
+                    .AnyAsync(m => m.HouseholdId == householdId && m.MemberId == member.Id, ct);
+                if (!alreadyMember)
+                    db.HouseholdMemberships.Add(new HouseholdMembership
+                    { HouseholdId = householdId, MemberId = member.Id, JoinedAt = DateTimeOffset.UtcNow });
+            }
+
+            // Connection-on-accept: the reciprocal contact edge proves consent (ADR-0019).
+            await AddContactEdgesAsync(db, invite.InvitedByMemberId, member.Id, ct);
 
             invite.AcceptedAt = DateTimeOffset.UtcNow;
+            invite.PhoneNumber = null; // the raw number has served its purpose — don't retain it
             await db.SaveChangesAsync(ct);
 
-            return Results.Ok(new MeDto(member.Id, member.Name, member.AvatarColor, member.AvatarEmoji, member.Email, member.EmailConfirmed));
+            return Results.Ok(member.ToMeDto());
         }).WithName("AcceptInvite")
             .AllowAnonymous()
             .Produces<MeDto>(StatusCodes.Status200OK)
@@ -190,20 +227,63 @@ public static class InvitesEndpoints
         }).WithName("GetLatestDevPasswordReset")
             .AllowAnonymous();
 
+        app.MapGet("/dev/sms-invites/latest", (IHostEnvironment env, DevEmailLinkStore store) =>
+        {
+            if (!env.IsDevelopment()) return Results.NotFound();
+            var url = store.LastSmsInviteAcceptUrl;
+            return url is null ? Results.NotFound() : Results.Ok(new { acceptUrl = url });
+        }).WithName("GetLatestDevSmsInvite")
+            .AllowAnonymous();
+
         return app;
+    }
+
+    /// <summary>Creates a new signed-in account with email as its identity (ADR-0005). Returns
+    /// null if the password is rejected by Identity's policy.</summary>
+    private static async Task<Member?> CreateAccountAsync(
+        UserManager<Member> users, SignInManager<Member> signIn, string email, string? name, string password)
+    {
+        var member = new Member
+        {
+            Id = Guid.NewGuid(),
+            Name = name?.Trim() is { Length: > 0 } n ? n : email,
+            AvatarColor = AccountHelpers.AvatarColorFor(email),
+            UserName = email,
+            Email = email,
+            EmailConfirmed = true
+        };
+        var created = await users.CreateAsync(member, password);
+        if (!created.Succeeded) return null;
+
+        await signIn.SignInAsync(member, isPersistent: true);
+        return member;
+    }
+
+    /// <summary>Creates the reciprocal Member↔Member contact edges (ADR-0019), idempotently.
+    /// No-op for a self-edge or when the edge already exists from an earlier accepted invite.</summary>
+    private static async Task AddContactEdgesAsync(SettlDbContext db, Guid a, Guid b, CancellationToken ct)
+    {
+        if (a == b) return;
+        var now = DateTimeOffset.UtcNow;
+        await EnsureEdge(db, a, b, now, ct);
+        await EnsureEdge(db, b, a, now, ct);
+    }
+
+    private static async Task EnsureEdge(SettlDbContext db, Guid owner, Guid contact, DateTimeOffset now, CancellationToken ct)
+    {
+        var exists = await db.Contacts.AnyAsync(c => c.OwnerMemberId == owner && c.ContactMemberId == contact, ct);
+        if (!exists)
+            db.Contacts.Add(new Contact { OwnerMemberId = owner, ContactMemberId = contact, CreatedAt = now });
     }
 
     private static async Task<Invite?> FindActiveInvite(SettlDbContext db, string token, CancellationToken ct)
     {
         // TokenHash equality is translated server-side; AcceptedAt/ExpiresAt are checked after
         // fetching — SQLite (used by tests) can't translate DateTimeOffset ordering comparisons.
-        var hash = Hash(token);
+        var hash = InviteTokens.Hash(token);
         var invite = await db.Invites.SingleOrDefaultAsync(i => i.TokenHash == hash, ct);
         return invite is not null && invite.AcceptedAt is null && invite.ExpiresAt > DateTimeOffset.UtcNow
             ? invite
             : null;
     }
-
-    private static string Hash(string token) =>
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
 }

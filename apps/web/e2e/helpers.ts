@@ -195,6 +195,15 @@ export async function latestDevInviteToken(request: APIRequestContext): Promise<
   return new URL(acceptUrl).searchParams.get('token')!
 }
 
+/** Reads the most recent SMS invite's accept token via the Development-only dev side channel
+ * (ADR-0019). Same reasoning as latestDevInviteToken — the raw token is never persisted. */
+export async function latestDevSmsInviteToken(request: APIRequestContext): Promise<string> {
+  const res = await request.get(`${API}/dev/sms-invites/latest`)
+  expect(res.ok(), 'GET /dev/sms-invites/latest').toBeTruthy()
+  const { acceptUrl } = (await res.json()) as { acceptUrl: string }
+  return new URL(acceptUrl).searchParams.get('token')!
+}
+
 /** Reads the most recent email-verification link via the Development-only dev side channel
  * (same reasoning as latestDevInviteToken — a real inbox is the only other way to get it). */
 export async function latestDevVerificationUrl(request: APIRequestContext): Promise<string> {

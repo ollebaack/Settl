@@ -150,19 +150,33 @@ public class SettlementClosure
 }
 
 /// <summary>
-/// A household invite (ADR-0011). No Member/HouseholdMembership row exists for the
-/// invitee until <see cref="AcceptedAt"/> is set — activation happens entirely through
-/// the emailed link. Only <see cref="TokenHash"/> is persisted; the raw token lives in
-/// the link and is never stored.
+/// An invite (ADR-0011 email, ADR-0019 SMS). No Member/HouseholdMembership row exists for
+/// the invitee until <see cref="AcceptedAt"/> is set — activation happens entirely through
+/// the emailed/texted link. Only <see cref="TokenHash"/> is persisted; the raw token lives
+/// in the link and is never stored.
+///
+/// An invite may be <b>household-scoped</b> (<see cref="HouseholdId"/> set → accepting also
+/// joins that household) or <b>contact-only</b> (null → accepting just creates a
+/// <see cref="Contact"/> edge). Either way, accepting proves consent and, for SMS, ownership
+/// of the number, which is why a self-entered profile phone needs no OTP (tech-debt/0010).
 /// </summary>
 public class Invite
 {
     public Guid Id { get; set; }
-    public Guid HouseholdId { get; set; }
-    public Household Household { get; set; } = null!;
 
-    /// <summary>Normalized (lowercase, trimmed) invitee email.</summary>
-    public string Email { get; set; } = "";
+    /// <summary>Null for a contact-only invite (ADR-0019) — no household is joined on accept.</summary>
+    public Guid? HouseholdId { get; set; }
+    public Household? Household { get; set; }
+
+    public InviteChannel Channel { get; set; } = InviteChannel.Email;
+
+    /// <summary>Normalized (lowercase, trimmed) invitee email. Null for SMS invites.</summary>
+    public string? Email { get; set; }
+
+    /// <summary>E.164 invitee phone for SMS invites (ADR-0019). This raw typed number is
+    /// transient third-party data: it is scrubbed on accept and once the invite expires, so
+    /// the persistent graph only ever holds relationships between consenting members.</summary>
+    public string? PhoneNumber { get; set; }
 
     /// <summary>SHA-256 hash of the raw token embedded in the accept link.</summary>
     public string TokenHash { get; set; } = "";
@@ -171,4 +185,24 @@ public class Invite
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset ExpiresAt { get; set; }
     public DateTimeOffset? AcceptedAt { get; set; }
+}
+
+/// <summary>
+/// A directed contact edge between two members (ADR-0019). Created only when an invite is
+/// accepted — connection-on-accept — so the graph never holds scraped or unconsented numbers.
+/// Edges are created in both directions on accept, and are reusable across households to
+/// pre-fill future invites (the wishlist payoff). There is deliberately no friend-request,
+/// blocking, or presence concept.
+/// </summary>
+public class Contact
+{
+    /// <summary>The member who owns this contact-list row.</summary>
+    public Guid OwnerMemberId { get; set; }
+    public Member OwnerMember { get; set; } = null!;
+
+    /// <summary>The other person, saved in <see cref="OwnerMemberId"/>'s contacts.</summary>
+    public Guid ContactMemberId { get; set; }
+    public Member ContactMember { get; set; } = null!;
+
+    public DateTimeOffset CreatedAt { get; set; }
 }

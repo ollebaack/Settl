@@ -6,10 +6,15 @@ public sealed record CreateInviteRequest(string Email);
 /// failed to deliver it — the invite still exists and can be shared manually or retried.</summary>
 public sealed record InviteDto(Guid Id, string Email, DateTimeOffset ExpiresAt, bool EmailSent);
 
-/// <summary>Shown before accepting, so the web page knows whether to ask for a password
-/// (no account yet) or to prompt a login (email already has one).</summary>
-public sealed record InvitePreviewDto(string HouseholdName, string InviterName, string Email, bool HasAccount);
+/// <summary>Shown before accepting. <c>HouseholdName</c> is null for a contact-only invite
+/// (ADR-0019). For email invites the web page learns whether to ask for a password (no account
+/// yet) or prompt a login; for SMS invites <c>Email</c> is null and <c>HasAccount</c> is always
+/// false — the invitee supplies their own email, and we never reveal registration status.</summary>
+public sealed record InvitePreviewDto(
+    string? HouseholdName, string InviterName, string? Email, bool HasAccount, string Channel);
 
-/// <summary><c>Password</c> is required only when the invited email has no account yet;
-/// <c>Name</c> is used to create that account (ignored otherwise).</summary>
-public sealed record AcceptInviteRequest(string? Name, string? Password);
+/// <summary><c>Password</c> is required only when creating a new account (no account for the
+/// invited email/the supplied email yet); <c>Name</c> names that account. <c>Email</c> is
+/// supplied by the invitee only for SMS invites — email-channel invites bind to the invited
+/// address and ignore it (ADR-0005/0011: email stays the sole identity).</summary>
+public sealed record AcceptInviteRequest(string? Name, string? Email, string? Password);

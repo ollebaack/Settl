@@ -90,6 +90,10 @@ export type ProblemDetails = Schemas['ProblemDetails']
 export type InviteDto = Schemas['InviteDto']
 export type InvitePreviewDto = Schemas['InvitePreviewDto']
 export type MeDto = Schemas['MeDto']
+export type ContactDto = Schemas['ContactDto']
+export type ContactInviteResultDto = Schemas['ContactInviteResultDto']
+export type PendingInviteDto = Schemas['PendingInviteDto']
+export type InvitableContactDto = Schemas['InvitableContactDto']
 
 // Request DTOs
 export type CreateEntryRequest = Schemas['CreateEntryRequest']
@@ -103,6 +107,9 @@ export type SplitInput = Schemas['SplitInput']
 export type RegisterRequest = Schemas['RegisterRequest']
 export type LoginRequest = Schemas['LoginRequest']
 export type CreateInviteRequest = Schemas['CreateInviteRequest']
+export type CreateContactInviteRequest = Schemas['CreateContactInviteRequest']
+export type InviteContactRequest = Schemas['InviteContactRequest']
+export type UpdateProfileRequest = Schemas['UpdateProfileRequest']
 export type AcceptInviteRequest = Schemas['AcceptInviteRequest']
 export type ConfirmEmailRequest = Schemas['ConfirmEmailRequest']
 export type ForgotPasswordRequest = Schemas['ForgotPasswordRequest']
@@ -135,3 +142,6 @@ export type ViewerStatusKind =
 export type NudgeActionKind = 'viewEntry' | 'viewRecurring' | 'settle'
 export type EntryFilter = 'all' | 'expense' | 'iou' | 'recurring'
 export type NudgeTone = 'gentle' | 'direct'
+export type InviteChannel = 'sms' | 'email'
+/** invitable-contacts status: already joined | pick to invite | invite already outstanding */
+export type ContactStatus = 'member' | 'invitable' | 'pending'

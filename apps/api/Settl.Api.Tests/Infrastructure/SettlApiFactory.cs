@@ -95,6 +95,7 @@ public sealed class SettlApiFactory : WebApplicationFactory<Program>
     public string? LastDevInviteAcceptUrl => Services.GetRequiredService<DevEmailLinkStore>().LastInviteAcceptUrl;
     public string? LastDevVerificationUrl => Services.GetRequiredService<DevEmailLinkStore>().LastVerificationUrl;
     public string? LastDevPasswordResetUrl => Services.GetRequiredService<DevEmailLinkStore>().LastPasswordResetUrl;
+    public string? LastDevSmsInviteAcceptUrl => Services.GetRequiredService<DevEmailLinkStore>().LastSmsInviteAcceptUrl;
 
     /// <summary>Runs work against a fresh scoped <see cref="SettlDbContext"/> and returns a result.</summary>
     public async Task<T> WithDb<T>(Func<SettlDbContext, Task<T>> work)

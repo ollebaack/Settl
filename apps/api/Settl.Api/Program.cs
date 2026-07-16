@@ -1,4 +1,6 @@
 using System.Net.Http.Headers;
+using System.Security.Claims;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
@@ -47,6 +49,8 @@ if (!builder.Environment.IsEnvironment("Testing"))
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
 builder.Services.AddHostedService<RecurringPostingService>();
+// Scrubs the raw phone number off SMS invites once they expire (ADR-0019 / GDPR).
+builder.Services.AddHostedService<ExpiredInviteScrubber>();
 
 // ADR-0011: cookie auth via ASP.NET Identity. Relaxed password policy — consumer app,
 // not enterprise. No lockout/2FA changes from Identity's defaults.
@@ -129,6 +133,30 @@ else
     builder.Services.AddScoped<IEmailSender, DevEmailSender>();
 }
 
+// ADR-0019 defers the SMS vendor (Sinch/Vonage/Twilio), so only the logging dev sender exists;
+// a real ISmsSender is registered here the same way ResendEmailSender is once picked.
+builder.Services.AddScoped<ISmsSender, DevSmsSender>();
+
+// Rate-limit the invite-send path. ADR-0019: SMS costs money and SMS pumping is a fraud vector,
+// so throttling ships WITH the channel (unlike near-free email, tech-debt/0006). Partitioned by
+// the acting member (falling back to IP) so one abuser can't drain the SMS budget; a fixed window
+// keeps it simple and provider-portable. The default rejection status is 503 — override to 429.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy(ContactsEndpoints.InviteRateLimitPolicy, httpContext =>
+    {
+        var partitionKey = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? httpContext.Connection.RemoteIpAddress?.ToString()
+            ?? "anonymous";
+        return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10,
+            Window = TimeSpan.FromHours(1),
+        });
+    });
+});
+
 const string WebCorsPolicy = "web";
 builder.Services.AddCors(options =>
 {
@@ -191,6 +219,8 @@ app.UseCors(WebCorsPolicy);
 
 app.UseAuthentication();
 app.UseAuthorization();
+// After auth so the invite rate-limit policy can partition by the acting member (ADR-0019).
+app.UseRateLimiter();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
     .WithName("GetHealth")
@@ -198,6 +228,7 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
 
 app.MapAuthEndpoints();
 app.MapInvitesEndpoints();
+app.MapContactsEndpoints();
 app.MapMetaEndpoints();
 app.MapHouseholdsEndpoints();
 app.MapEntriesEndpoints();

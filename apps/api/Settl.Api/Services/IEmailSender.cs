@@ -6,6 +6,11 @@ namespace Settl.Api.Services;
 public interface IEmailSender
 {
     Task SendInviteEmailAsync(string toEmail, string householdName, string inviterName, string acceptUrl, CancellationToken ct = default);
+
+    /// <summary>Contact-only invite (ADR-0019): no household to join, just an invitation to
+    /// connect on Settl. Used when the email channel is picked from the contacts tab.</summary>
+    Task SendContactInviteEmailAsync(string toEmail, string inviterName, string acceptUrl, CancellationToken ct = default);
+
     Task SendVerificationEmailAsync(string toEmail, string confirmUrl, CancellationToken ct = default);
     Task SendPasswordResetEmailAsync(string toEmail, string resetUrl, CancellationToken ct = default);
 }
@@ -21,6 +26,13 @@ public sealed class ResendEmailSender(HttpClient http, IConfiguration config, IL
         SendAsync(toEmail, $"{inviterName} bjöd in dig till {householdName} på Settl", $"""
             <p>{inviterName} har bjudit in dig till hushållet <strong>{householdName}</strong> på Settl.</p>
             <p><a href="{acceptUrl}">Acceptera inbjudan</a></p>
+            <p>Länken slutar gälla om 7 dagar.</p>
+            """, "Kunde inte skicka inbjudan", ct);
+
+    public Task SendContactInviteEmailAsync(string toEmail, string inviterName, string acceptUrl, CancellationToken ct = default) =>
+        SendAsync(toEmail, $"{inviterName} vill lägga till dig som kontakt på Settl", $"""
+            <p>{inviterName} vill lägga till dig som kontakt på Settl.</p>
+            <p><a href="{acceptUrl}">Acceptera</a></p>
             <p>Länken slutar gälla om 7 dagar.</p>
             """, "Kunde inte skicka inbjudan", ct);
 
@@ -63,6 +75,14 @@ public sealed class DevEmailSender(ILogger<DevEmailSender> logger, DevEmailLinkS
     {
         logger.LogInformation("[dev email] Invite for {ToEmail} to {HouseholdName} from {InviterName}: {AcceptUrl}",
             toEmail, householdName, inviterName, acceptUrl);
+        linkStore.RecordInviteAccept(acceptUrl);
+        return Task.CompletedTask;
+    }
+
+    public Task SendContactInviteEmailAsync(string toEmail, string inviterName, string acceptUrl, CancellationToken ct = default)
+    {
+        logger.LogInformation("[dev email] Contact invite for {ToEmail} from {InviterName}: {AcceptUrl}",
+            toEmail, inviterName, acceptUrl);
         linkStore.RecordInviteAccept(acceptUrl);
         return Task.CompletedTask;
     }
