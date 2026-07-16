@@ -33,6 +33,9 @@ public class SettlDbContext(DbContextOptions<SettlDbContext> options) : Identity
             e.ToTable("Members");
             e.Property(x => x.Name).IsRequired();
             e.Property(x => x.AvatarColor).IsRequired();
+            // Nullable emoji (ADR-0019); cap the column so a single grapheme's worth of
+            // code units (incl. ZWJ sequences) fits but nothing larger can be stored.
+            e.Property(x => x.AvatarEmoji).HasMaxLength(32);
             e.Ignore(x => x.Initial);
         });
 

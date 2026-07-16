@@ -104,6 +104,7 @@ export type AcceptInviteRequest = Schemas['AcceptInviteRequest']
 export type ConfirmEmailRequest = Schemas['ConfirmEmailRequest']
 export type ForgotPasswordRequest = Schemas['ForgotPasswordRequest']
 export type ResetPasswordRequest = Schemas['ResetPasswordRequest']
+export type UpdateMeRequest = Schemas['UpdateMeRequest']
 
 // Domain string-union helpers (the API serialises these as plain strings)
 export type EntryType = 'expense' | 'iou' | 'recurringPost'

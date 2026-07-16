@@ -67,7 +67,7 @@ public static class HouseholdsEndpoints
 
             var data = await Loaders.LoadHousehold(db, household.Id, ct);
             var dto = new HouseholdDto(household.Id, household.Name, household.Currency,
-                data!.OrderedMembers.Select(m => new MemberDto(m.Id, m.Name, m.AvatarColor)).ToList());
+                data!.OrderedMembers.Select(m => new MemberDto(m.Id, m.Name, m.AvatarColor, m.AvatarEmoji)).ToList());
             return Results.Created($"/households/{household.Id}", dto);
         }).WithName("CreateHousehold")
             .Produces<HouseholdDto>(StatusCodes.Status201Created)
@@ -81,7 +81,7 @@ public static class HouseholdsEndpoints
 
             return Results.Ok(new HouseholdDto(
                 data.Household.Id, data.Household.Name, data.Household.Currency,
-                data.OrderedMembers.Select(m => new MemberDto(m.Id, m.Name, m.AvatarColor)).ToList()));
+                data.OrderedMembers.Select(m => new MemberDto(m.Id, m.Name, m.AvatarColor, m.AvatarEmoji)).ToList()));
         }).WithName("GetHousehold")
             .Produces<HouseholdDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound);
@@ -90,7 +90,7 @@ public static class HouseholdsEndpoints
         {
             var data = await Loaders.LoadHousehold(db, id, ct);
             if (data is null) return Results.Problem("Hushållet hittades inte", statusCode: 404);
-            return Results.Ok(data.OrderedMembers.Select(m => new MemberDto(m.Id, m.Name, m.AvatarColor)));
+            return Results.Ok(data.OrderedMembers.Select(m => new MemberDto(m.Id, m.Name, m.AvatarColor, m.AvatarEmoji)));
         }).WithName("GetHouseholdMembers")
             .Produces<List<MemberDto>>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound);
@@ -112,7 +112,8 @@ public static class HouseholdsEndpoints
             {
                 var net = BalanceCalculator.NetWith(me.Value, x, entries, closures);
                 return new PersonBalanceDto(
-                    x, Mapping.Name(data.MembersById, x), data.MembersById[x].AvatarColor, net, Labels.Relation(net));
+                    x, Mapping.Name(data.MembersById, x), data.MembersById[x].AvatarColor,
+                    data.MembersById[x].AvatarEmoji, net, Labels.Relation(net));
             }).ToList();
 
             var overall = people.Sum(p => p.NetMinor);

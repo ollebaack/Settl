@@ -11,6 +11,11 @@ public class Member : IdentityUser<Guid>
     /// <summary>Hex avatar colour — member data, NOT a UI token (e.g. <c>#dfe6cf</c>).</summary>
     public string AvatarColor { get; set; } = "";
 
+    /// <summary>Optional emoji shown on <see cref="AvatarColor"/> in place of the letter
+    /// <see cref="Initial"/> (ADR-0019). Null = fall back to the initial. Untrusted text:
+    /// validated to a single emoji grapheme on write (it renders in other members' UIs).</summary>
+    public string? AvatarEmoji { get; set; }
+
     public ICollection<HouseholdMembership> Memberships { get; set; } = new List<HouseholdMembership>();
 
     /// <summary>Derived, not stored.</summary>

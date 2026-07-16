@@ -42,6 +42,7 @@ interface ShareRowData {
   key: string
   name: string
   avatarColor: string
+  avatarEmoji?: string | null
   tag: string
   minor: number | string
 }
@@ -60,6 +61,7 @@ function buildShareRows(entry: EntryDto, members: MemberDto[]): ShareRowData[] {
         key: `from-${from.id}`,
         name: from.name,
         avatarColor: from.avatarColor,
+        avatarEmoji: from.avatarEmoji,
         tag: '· skyldig',
         minor: entry.amountMinor,
       })
@@ -69,6 +71,7 @@ function buildShareRows(entry: EntryDto, members: MemberDto[]): ShareRowData[] {
         key: `to-${to.id}`,
         name: to.name,
         avatarColor: to.avatarColor,
+        avatarEmoji: to.avatarEmoji,
         tag: '· ska få',
         minor: entry.amountMinor,
       })
@@ -80,6 +83,7 @@ function buildShareRows(entry: EntryDto, members: MemberDto[]): ShareRowData[] {
     key: s.memberId,
     name: s.name,
     avatarColor: s.avatarColor,
+    avatarEmoji: s.avatarEmoji,
     tag: s.isPayer ? '· betalade' : '· skyldig',
     minor: s.shareMinor,
   }))
@@ -206,7 +210,7 @@ function EntryDetailBody({ entry }: { entry: EntryDto }) {
         <div className="flex flex-col gap-2">
           {rows.map((row) => (
             <Card key={row.key} size="sm" className="flex flex-row items-center gap-3 p-3">
-              <MemberAvatar name={row.name} avatarColor={row.avatarColor} size="sm" />
+              <MemberAvatar name={row.name} avatarColor={row.avatarColor} avatarEmoji={row.avatarEmoji} size="sm" />
               <div className="min-w-0 flex-1 truncate text-sm">
                 <span className="font-medium">{row.name}</span>{' '}
                 <span className="font-bold text-accent-foreground">{row.tag}</span>

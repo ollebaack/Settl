@@ -194,7 +194,7 @@ function PersonRow({
       }}
       className="flex flex-row items-center gap-3 p-3 text-left transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <MemberAvatar name={person.name} avatarColor={person.avatarColor} />
+      <MemberAvatar name={person.name} avatarColor={person.avatarColor} avatarEmoji={person.avatarEmoji} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold">{person.name}</p>
         <p className="truncate text-xs text-muted-foreground">{relation}</p>

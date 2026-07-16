@@ -44,6 +44,7 @@ import {
   type ResetPasswordRequest,
   type SettlePreviewDto,
   type UpdateEntryRequest,
+  type UpdateMeRequest,
   type UpdateRecurringRequest,
 } from './api'
 
@@ -269,6 +270,23 @@ export function useLogout() {
     mutationFn: () => apiPost<void>('/auth/logout'),
     onSuccess: () => {
       qc.setQueryData(queryKeys.me, undefined)
+      qc.invalidateQueries()
+    },
+  })
+}
+
+/**
+ * Update the acting member's own profile (name + avatar emoji, ADR-0019). The response is
+ * the fresh MeDto, set directly into the `me` cache so every avatar (header, ledger, …)
+ * reflects the change immediately, then broadly invalidated since member avatars ride along
+ * on household-scoped reads (summary/entries/recurring) too.
+ */
+export function useUpdateMe() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: UpdateMeRequest) => apiPut<MeDto>('/me', body),
+    onSuccess: (me) => {
+      qc.setQueryData(queryKeys.me, me)
       qc.invalidateQueries()
     },
   })

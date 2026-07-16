@@ -269,7 +269,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["GetCurrentUser"];
-        put?: never;
+        put: operations["UpdateCurrentUser"];
         post?: never;
         delete?: never;
         options?: never;
@@ -604,6 +604,8 @@ export interface components {
             id: string;
             name: string;
             avatarColor: string;
+            avatarEmoji: null | string;
+            email: null | string;
             emailConfirmed: boolean;
         };
         MemberDto: {
@@ -611,6 +613,7 @@ export interface components {
             id: string;
             name: string;
             avatarColor: string;
+            avatarEmoji: null | string;
         };
         NudgeActionDto: {
             label: string;
@@ -630,6 +633,7 @@ export interface components {
             memberId: string;
             name: string;
             avatarColor: string;
+            avatarEmoji: null | string;
             /** Format: int64 */
             netMinor: number | string;
             relation: string;
@@ -724,6 +728,7 @@ export interface components {
             memberId: string;
             name: string;
             avatarColor: string;
+            avatarEmoji: null | string;
             /** Format: int64 */
             shareMinor: number | string;
             isPayer: boolean;
@@ -762,6 +767,10 @@ export interface components {
             toMemberId: null | string;
             split: null | components["schemas"]["SplitInput"];
             category: null | string;
+        };
+        UpdateMeRequest: {
+            name: string;
+            avatarEmoji: null | string;
         };
         UpdateRecurringRequest: {
             active: null | boolean;
@@ -1251,6 +1260,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    UpdateCurrentUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeDto"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
             /** @description Not Found */

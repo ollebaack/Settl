@@ -129,7 +129,7 @@ function RecurringCard({
   const avatars = template.contributingMemberIds
     .map((id) => members?.find((m) => m.id === id))
     .filter((m): m is MemberDto => Boolean(m))
-    .map((m) => ({ name: m.name, avatarColor: m.avatarColor }))
+    .map((m) => ({ name: m.name, avatarColor: m.avatarColor, avatarEmoji: m.avatarEmoji }))
 
   const onToggle = () => {
     const next = !template.active
