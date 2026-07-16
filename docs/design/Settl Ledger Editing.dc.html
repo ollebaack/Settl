@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Bricolage Grotesque',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{cursor:pointer;font:inherit;color:inherit;background:none;border:none;padding:0;margin:0;text-align:left}
+[data-theme="mint"]{--bg:#f4f6f2;--card:#ffffff;--ink:#1c2620;--sub:#64715f;--line:#e2e7dd;--accent:#2e7d5b;--soft:#e2f0e6;--pos:#2e7d5b;--neg:#bb5433;--chip:#eaeee6}
+.wrap{background:#e6e4de;padding:30px;display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start;color:var(--ink)}
+.frame{display:flex;flex-direction:column;gap:10px}
+.cap{font-size:12.5px;font-weight:700;color:#4f5e52}
+.cap span{color:#8c9a87;font-weight:500}
+.phone{width:392px;box-sizing:border-box;background:var(--bg);border:1px solid var(--line);border-radius:30px;padding:20px 18px 24px;box-shadow:0 22px 44px -26px rgba(20,30,22,.55)}
+.sheet{width:392px;box-sizing:border-box;background:var(--card);border:1px solid var(--line);border-radius:26px;padding:16px 18px 22px;box-shadow:0 22px 44px -26px rgba(20,30,22,.55)}
+.handle{width:36px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 16px}
+.title{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.sub{font-size:12.5px;color:var(--sub);line-height:1.5}
+.uplabel{font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--sub)}
+.mono{font-family:'Spline Sans Mono',monospace}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px}
+.row{display:flex;align-items:center;gap:12px}
+.col{display:flex;flex-direction:column}
+.av{width:36px;height:36px;flex:none;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;color:#33352b}
+.av.sm{width:28px;height:28px;font-size:11px}
+.tag{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--sub);background:var(--chip);border-radius:999px;padding:3px 9px}
+.pill{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);background:var(--soft);border-radius:999px;padding:3px 9px}
+.btn{display:block;width:100%;box-sizing:border-box;text-align:center;border-radius:15px;padding:13px 0;font-size:14px;font-weight:700}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-outline{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn-danger{background:var(--neg);color:#fff}
+.btn-disabled{background:var(--chip);color:var(--sub);opacity:.6}
+.chip-btn{background:var(--chip);border-radius:999px;padding:7px 13px;font-size:12px;font-weight:600}
+.warnbox{background:rgba(187,84,51,.09);border:1px solid rgba(187,84,51,.24);border-radius:14px;padding:13px 14px}
+.warnhd{font-size:12.5px;font-weight:700;color:var(--neg)}
+.infobox{background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:13px 14px;font-size:13px;line-height:1.5}
+.actions{display:flex;flex-direction:column;gap:9px;margin-top:20px}
+.hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.iconbtn{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;color:var(--sub);font-size:19px;font-weight:700;background:var(--chip)}
+.menu{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px;box-shadow:0 14px 32px -12px rgba(20,30,22,.42);width:186px}
+.item{padding:9px 10px;border-radius:9px;font-size:13.5px;font-weight:600;display:flex;gap:10px;align-items:center}
+.item.danger{color:var(--neg)}
+.item.off{color:var(--sub);opacity:.5}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.opt{border:1px solid var(--line);border-radius:12px;padding:8px 13px;font-size:13px;font-weight:600;background:var(--card);color:var(--sub)}
+.opt.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.opt.acc{border:1.5px solid var(--accent);background:var(--soft);color:var(--accent)}
+.inp{border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:14px;background:var(--card);width:100%;box-sizing:border-box}
+.amt{font-family:'Spline Sans Mono',monospace;font-size:34px;font-weight:600;letter-spacing:-.01em}
+.splitrow{display:flex;align-items:center;justify-content:space-between;padding:9px 14px}
+.toast{background:#20291f;color:#fff;border-radius:14px;padding:13px 15px;display:flex;align-items:center;gap:14px;box-shadow:0 18px 36px -14px rgba(20,30,22,.65)}
+.toast .undo{margin-left:auto;font-weight:700;font-size:13px;color:#8fd3b0}
+</style>
+</helmet>
+<div data-theme="mint" class="wrap">
+
+  <div style="width:100%;max-width:900px">
+    <div style="font-size:22px;font-weight:700;letter-spacing:-.01em">Redigera loggboken — delning, redigera, ta bort &amp; ta bort återkommande</div>
+    <div class="sub" style="margin-top:4px">ADR-0018 · önskelista 6–7–8. Mobil, mint-tema, svensk copy. Redigera (<b>PUT</b>) och ta bort (<b>hård DELETE</b>) finns redan i API:t — det här är den saknade/säkrare ytan. Ingen modelländring för delning: den nya <b>”Allt på en”</b> är bara ett snabbval ovanpå belopps-delning (betalarens andel = 0).</div>
+  </div>
+
+  <!-- ============ 1 · SPLIT PRESET ============ -->
+
+  <div class="frame">
+    <div class="cap">1 · Ny post <span>— delning ”Allt på en”</span></div>
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="title" style="margin-bottom:14px">Ny post</div>
+
+      <div class="seg" style="margin-bottom:16px">
+        <span class="opt on" style="flex:1;text-align:center">Utgift</span>
+        <span class="opt" style="flex:1;text-align:center">Lån</span>
+        <span class="opt" style="flex:1;text-align:center">Återkommande</span>
+      </div>
+
+      <div class="row" style="justify-content:flex-end;border-bottom:1px solid var(--line);padding-bottom:6px">
+        <span class="amt">1&nbsp;000</span><span class="mono" style="font-size:16px;color:var(--sub);margin-left:6px">kr</span>
+      </div>
+      <div class="inp" style="margin-top:14px;color:var(--ink)">Biljetter till Sam</div>
+
+      <div class="uplabel" style="margin:18px 0 8px">Vem betalade</div>
+      <div class="seg">
+        <span class="opt acc"><span class="av sm" style="background:#dfe6cf;display:inline-grid;margin-right:6px;vertical-align:middle">D</span>Du</span>
+        <span class="opt"><span class="av sm" style="background:#f0dcc3;display:inline-grid;margin-right:6px;vertical-align:middle">S</span>Sam</span>
+        <span class="opt"><span class="av sm" style="background:#d9e0ee;display:inline-grid;margin-right:6px;vertical-align:middle">P</span>Priya</span>
+      </div>
+
+      <div class="uplabel" style="margin:18px 0 8px">Delning</div>
+      <div class="seg" style="margin-bottom:10px">
+        <span class="opt" style="flex:1;text-align:center">Lika</span>
+        <span class="opt" style="flex:1;text-align:center">%</span>
+        <span class="opt" style="flex:1;text-align:center">kr</span>
+        <span class="opt on" style="flex:1;text-align:center">Allt på en</span>
+      </div>
+
+      <div class="sub" style="margin:0 2px 8px">Vem står för hela beloppet?</div>
+      <div class="card" style="padding:2px 0">
+        <div class="splitrow" style="border-bottom:1px solid var(--line)">
+          <span class="row" style="gap:9px"><span class="av sm" style="background:#dfe6cf">D</span><span style="font-size:14px">Du</span></span>
+          <span class="mono" style="font-size:13px;color:var(--sub)">0&nbsp;kr</span>
+        </div>
+        <div class="splitrow" style="border-bottom:1px solid var(--line);background:var(--soft)">
+          <span class="row" style="gap:9px"><span class="av sm" style="background:#f0dcc3">S</span><span style="font-size:14px;font-weight:600">Sam</span><span style="color:var(--accent);font-weight:700">✓</span></span>
+          <span class="mono" style="font-size:13px;font-weight:600">1&nbsp;000&nbsp;kr</span>
+        </div>
+        <div class="splitrow">
+          <span class="row" style="gap:9px"><span class="av sm" style="background:#d9e0ee">P</span><span style="font-size:14px">Priya</span></span>
+          <span class="mono" style="font-size:13px;color:var(--sub)">0&nbsp;kr</span>
+        </div>
+        <div style="display:flex;justify-content:flex-end;border-top:1px solid var(--line);padding:9px 14px">
+          <span style="font-size:12px;font-weight:600;color:var(--accent)">Sam står för hela beloppet</span>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" style="margin-top:18px">Lägg i loggboken</button>
+    </div>
+  </div>
+
+  <div class="frame">
+    <div class="cap">2 · Så läses den <span>— entry detail</span></div>
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="row" style="gap:8px"><span class="tag">Utgift</span><span class="chip-btn" style="color:var(--sub)">🎟 Nöje</span><span class="sub">16 jul</span></div>
+      <div class="amt" style="margin:12px 0 2px">1&nbsp;000&nbsp;kr</div>
+      <div class="sub">Du betalade · Sam står för allt</div>
+      <div class="col" style="gap:8px;margin-top:16px">
+        <div class="card row" style="padding:11px 13px">
+          <span class="av" style="background:#dfe6cf">D</span>
+          <span style="flex:1;font-size:14px"><b>Du</b> <span style="color:var(--accent);font-weight:700">· betalade</span></span>
+          <span class="mono" style="font-size:13px;color:var(--sub)">0&nbsp;kr</span>
+        </div>
+        <div class="card row" style="padding:11px 13px">
+          <span class="av" style="background:#f0dcc3">S</span>
+          <span style="flex:1;font-size:14px"><b>Sam</b> <span style="color:var(--accent);font-weight:700">· skyldig</span></span>
+          <span class="mono" style="font-size:13px;font-weight:600">1&nbsp;000&nbsp;kr</span>
+        </div>
+      </div>
+      <div class="infobox" style="margin-top:16px;background:var(--chip);border-color:var(--line)">Snabbvalet fryser en belopps-delning (Du 0&nbsp;kr, Sam allt). Ändra när som helst via <b>Redigera</b>.</div>
+    </div>
+  </div>
+
+  <!-- ============ 2 · EDIT ============ -->
+
+  <div class="frame">
+    <div class="cap">3 · Entry detail <span>— åtgärdsmeny</span></div>
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="hdr">
+        <div class="row" style="gap:8px"><span class="tag">Utgift</span><span class="sub">16 jul</span></div>
+        <span class="iconbtn">⋯</span>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin:-2px 0 6px">
+        <div class="menu">
+          <div class="item"><span style="width:18px">✎</span>Redigera</div>
+          <div class="item danger"><span style="width:18px">🗑</span>Ta bort</div>
+        </div>
+      </div>
+      <div class="amt" style="margin:8px 0 2px">420&nbsp;kr</div>
+      <div class="sub">Du betalade · Delas lika</div>
+      <div class="card row" style="padding:11px 13px;margin-top:14px">
+        <span class="av" style="background:#dfe6cf">D</span>
+        <span style="flex:1;font-size:14px"><b>Du</b> <span style="color:var(--accent);font-weight:700">· betalade</span></span>
+        <span class="mono" style="font-size:13px">210&nbsp;kr</span>
+      </div>
+      <button class="btn btn-primary" style="margin-top:16px">Markera som reglerad</button>
+    </div>
+  </div>
+
+  <div class="frame">
+    <div class="cap">4 · Redigera post <span>— återanvänder Ny post-formuläret</span></div>
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="title" style="margin-bottom:16px">Redigera post</div>
+      <div class="row" style="justify-content:flex-end;border-bottom:1px solid var(--line);padding-bottom:6px">
+        <span class="amt">420</span><span class="mono" style="font-size:16px;color:var(--sub);margin-left:6px">kr</span>
+      </div>
+      <div class="inp" style="margin-top:14px;color:var(--ink)">Middag ute</div>
+      <div class="uplabel" style="margin:18px 0 8px">Vem betalade</div>
+      <div class="seg">
+        <span class="opt acc"><span class="av sm" style="background:#dfe6cf;display:inline-grid;margin-right:6px;vertical-align:middle">D</span>Du</span>
+        <span class="opt"><span class="av sm" style="background:#f0dcc3;display:inline-grid;margin-right:6px;vertical-align:middle">S</span>Sam</span>
+      </div>
+      <div class="uplabel" style="margin:18px 0 8px">Delning</div>
+      <div class="seg">
+        <span class="opt on" style="flex:1;text-align:center">Lika</span>
+        <span class="opt" style="flex:1;text-align:center">%</span>
+        <span class="opt" style="flex:1;text-align:center">kr</span>
+        <span class="opt" style="flex:1;text-align:center">Allt på en</span>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary">Spara ändringar</button>
+        <button class="btn btn-outline">Avbryt</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame">
+    <div class="cap">5 · Låst av uppgörelse <span>— öppna igen först</span></div>
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="hdr">
+        <div class="row" style="gap:8px"><span class="tag">Utgift</span><span class="sub">12 jul</span></div>
+        <span class="iconbtn">⋯</span>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin:-2px 0 6px">
+        <div class="menu">
+          <div class="item off"><span style="width:18px">✎</span>Redigera</div>
+          <div class="item off"><span style="width:18px">🗑</span>Ta bort</div>
+          <div style="padding:6px 10px 4px;font-size:11px;color:var(--sub);line-height:1.4">Låst — öppna igen för att ändra eller ta bort.</div>
+        </div>
+      </div>
+      <div class="amt" style="margin:8px 0 2px;opacity:.55">640&nbsp;kr</div>
+      <div class="sub">Du betalade · Delas lika</div>
+      <div class="warnbox" style="margin-top:14px">
+        <div class="warnhd">Posten är låst</div>
+        <div style="font-size:13px;line-height:1.5;margin-top:5px">En uppgörelse rör den här posten. Öppna igen innan du ändrar eller tar bort — då rörs bara den här posten.</div>
+      </div>
+      <button class="btn btn-outline" style="margin-top:16px">Reglerad ✓ — tryck för att öppna igen</button>
+    </div>
+  </div>
+
+  <!-- ============ 3 · DELETE ============ -->
+
+  <div class="frame">
+    <div class="cap">6 · Ta bort <span>— bekräfta</span></div>
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="title">Ta bort posten?</div>
+      <div class="warnbox" style="margin-top:14px">
+        <div class="warnhd">Det här ändrar saldot för alla som var med</div>
+        <div style="font-size:13px;line-height:1.5;margin-top:5px">”Middag ute” · <b class="mono">420&nbsp;kr</b> tas bort ur loggboken. Du kan ångra direkt efteråt.</div>
+      </div>
+      <div class="sub" style="margin-top:12px">Borttagningen görs efter några sekunder — hinner du ångra händer inget.</div>
+      <div class="actions">
+        <button class="btn btn-danger">Ta bort</button>
+        <button class="btn btn-outline">Avbryt</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame">
+    <div class="cap">7 · Ångra-toast <span>— ~5 s, skjuter upp DELETE</span></div>
+    <div class="phone" style="min-height:300px;display:flex;flex-direction:column">
+      <div class="uplabel">Loggboken</div>
+      <div class="col" style="gap:8px;margin-top:12px;opacity:.5">
+        <div class="card row" style="padding:11px 13px"><span class="av" style="background:#d9e0ee">P</span><span style="flex:1;font-size:14px">Matvaror</span><span class="mono" style="font-size:13px">240&nbsp;kr</span></div>
+        <div class="card row" style="padding:11px 13px"><span class="av" style="background:#f0dcc3">S</span><span style="flex:1;font-size:14px">Bensin</span><span class="mono" style="font-size:13px">300&nbsp;kr</span></div>
+      </div>
+      <div style="flex:1"></div>
+      <div class="toast">
+        <span style="font-size:13.5px;font-weight:600">Posten togs bort</span>
+        <button class="undo">Ångra</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 4 · RECURRING DELETE ============ -->
+
+  <div class="frame">
+    <div class="cap">8 · Återkommande <span>— ren mall, kan tas bort</span></div>
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="hdr">
+        <div class="row" style="gap:8px"><span class="tag">På repeat</span><span class="sub">Varje månad · Du betalar</span></div>
+        <span class="iconbtn">⋯</span>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin:-2px 0 6px">
+        <div class="menu">
+          <div class="item"><span style="width:18px">✎</span>Redigera</div>
+          <div class="item danger"><span style="width:18px">🗑</span>Ta bort</div>
+        </div>
+      </div>
+      <div class="amt" style="margin:6px 0 2px">129&nbsp;kr</div>
+      <div class="infobox" style="margin-top:14px">Ingen period bokförd än — inget i loggboken påverkas om du tar bort den.</div>
+      <button class="btn btn-outline" style="margin-top:16px">Pausa autobokföring</button>
+    </div>
+  </div>
+
+  <div class="frame">
+    <div class="cap">9 · Återkommande <span>— har historik, bara pausa</span></div>
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="hdr">
+        <div class="row" style="gap:8px"><span class="tag">På repeat</span><span class="sub">Varje månad · Du betalar</span></div>
+        <span class="iconbtn">⋯</span>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin:-2px 0 6px">
+        <div class="menu">
+          <div class="item"><span style="width:18px">✎</span>Redigera</div>
+          <div class="item off"><span style="width:18px">🗑</span>Ta bort</div>
+          <div style="padding:6px 10px 4px;font-size:11px;color:var(--sub);line-height:1.4">Har bokförda perioder — pausa i stället, så finns historiken kvar.</div>
+        </div>
+      </div>
+      <div class="amt" style="margin:6px 0 2px">8&nbsp;500&nbsp;kr</div>
+      <div class="uplabel" style="margin:16px 0 6px">Tidigare perioder</div>
+      <div class="col">
+        <div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:9px 0"><span style="font-size:13px;font-weight:600">Hyra · jul</span><span class="row" style="gap:10px"><span class="sub">öppen</span><span class="mono" style="font-size:12.5px">8&nbsp;500&nbsp;kr</span></span></div>
+        <div class="row" style="justify-content:space-between;padding:9px 0"><span style="font-size:13px;font-weight:600">Hyra · jun</span><span class="row" style="gap:10px"><span class="sub">reglerad</span><span class="mono" style="font-size:12.5px">8&nbsp;500&nbsp;kr</span></span></div>
+      </div>
+      <div class="sub" style="margin-top:10px">De bokförda posterna är vanliga poster — ta bort dem var för sig i loggboken.</div>
+      <button class="btn btn-outline" style="margin-top:14px">Pausa autobokföring</button>
+    </div>
+  </div>
+
+  <div class="frame">
+    <div class="cap">10 · Ta bort mall <span>— ren, bekräfta</span></div>
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="title">Ta bort ”Spotify”?</div>
+      <div class="infobox" style="margin-top:14px">Den har inte bokfört någon post än, så inget försvinner ur loggboken. Vill du behålla den för senare kan du pausa i stället.</div>
+      <div class="actions">
+        <button class="btn btn-danger">Ta bort</button>
+        <button class="btn btn-outline">Pausa i stället</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{}'>
+  class Component extends DCLogic {
+    renderVals() { return {}; }
+  }
+</script>
+</body>
+</html>
