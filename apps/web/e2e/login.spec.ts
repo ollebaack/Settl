@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { latestDevVerificationUrl, relativePath, uniqueSuffix } from './helpers'
+import { API, devVerificationUrlFor, relativePath, uniqueSuffix } from './helpers'
 
 // LOGIN, SIGNUP & EMAIL VERIFICATION (ADR-0011 + the email-verification decision made
 // alongside it). Uses a brand-new account per run so it never collides with seeded members
@@ -12,7 +12,7 @@ test('unauthenticated visitors are redirected to /login', async ({ page }) => {
   await expect(page.getByText('Välkommen tillbaka')).toBeVisible()
 })
 
-test('signs up, verifies email, logs out, and logs back in', async ({ page, request }) => {
+test('signs up, verifies email, logs out, and logs back in', async ({ page }) => {
   const suffix = uniqueSuffix()
   const name = `E2E Person ${suffix}`
   const email = `e2e-${suffix}@example.com`
@@ -28,7 +28,14 @@ test('signs up, verifies email, logs out, and logs back in', async ({ page, requ
   await expect(page).toHaveURL(/\/verify-email$/)
   await expect(page.getByText('Bekräfta din e-postadress')).toBeVisible()
 
-  const confirmUrl = await latestDevVerificationUrl(request)
+  // Follow THIS user's verification link. The dev channel is a single slot shared across
+  // parallel workers, so match on our own userId (read from the now-authenticated session)
+  // rather than grabbing whatever link landed there last, or we may confirm someone else's
+  // account and stay unconfirmed ourselves.
+  const meRes = await page.request.get(`${API}/me`)
+  expect(meRes.ok(), 'GET /me').toBeTruthy()
+  const { id } = (await meRes.json()) as { id: string }
+  const confirmUrl = await devVerificationUrlFor(page.request, id)
   await page.goto(relativePath(confirmUrl))
   await expect(page.getByText('E-post bekräftad')).toBeVisible()
 

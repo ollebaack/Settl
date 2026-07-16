@@ -176,19 +176,13 @@ export async function registerConfirmedUser(
   expect(res.ok(), `register ${user.email}: ${await safeText(res)}`).toBeTruthy()
   const id = ((await res.json()) as Member).id
 
-  for (let attempt = 0; attempt < 15; attempt++) {
-    const confirmUrl = await latestDevVerificationUrl(page.request)
-    const url = new URL(confirmUrl)
-    if (url.searchParams.get('userId') === id) {
-      const confirm = await page.request.post(`${API}/auth/confirm-email`, {
-        data: { userId: id, token: url.searchParams.get('token') },
-      })
-      expect(confirm.ok(), `confirm ${user.email}: ${await safeText(confirm)}`).toBeTruthy()
-      return id
-    }
-    await page.waitForTimeout(100)
-  }
-  throw new Error(`No verification link surfaced for ${user.email}`)
+  const confirmUrl = await devVerificationUrlFor(page.request, id)
+  const token = new URL(confirmUrl).searchParams.get('token')
+  const confirm = await page.request.post(`${API}/auth/confirm-email`, {
+    data: { userId: id, token },
+  })
+  expect(confirm.ok(), `confirm ${user.email}: ${await safeText(confirm)}`).toBeTruthy()
+  return id
 }
 
 /** Reads the most recent invite's accept token via the Development-only dev
@@ -207,6 +201,29 @@ export async function latestDevVerificationUrl(request: APIRequestContext): Prom
   const res = await request.get(`${API}/dev/verifications/latest`)
   expect(res.ok(), 'GET /dev/verifications/latest').toBeTruthy()
   return ((await res.json()) as { confirmUrl: string }).confirmUrl
+}
+
+/**
+ * Resolves THIS user's verification link, robust to parallel workers racing on the
+ * single-slot dev channel. `/dev/verifications/latest` only ever holds the most recently
+ * generated link, so a competing signup can evict ours before we read it — matching on
+ * userId alone would then time out waiting for a link that's gone. So each round we
+ * force-resend our own link (which re-publishes it into the slot) and read it straight
+ * back, matching on userId in case a competitor still slipped in between. `authed` must be
+ * a context signed in as `userId` (e.g. `page.request` right after signup).
+ */
+export async function devVerificationUrlFor(
+  authed: APIRequestContext,
+  userId: string,
+): Promise<string> {
+  for (let attempt = 0; attempt < 15; attempt++) {
+    const resent = await authed.post(`${API}/auth/resend-verification`)
+    expect(resent.ok(), `resend verification: ${await safeText(resent)}`).toBeTruthy()
+    const confirmUrl = await latestDevVerificationUrl(authed)
+    if (new URL(confirmUrl).searchParams.get('userId') === userId) return confirmUrl
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
+  throw new Error(`No verification link surfaced for user ${userId}`)
 }
 
 /** Reads the most recent password-reset link via the Development-only dev side channel. */
