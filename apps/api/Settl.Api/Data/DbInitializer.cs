@@ -52,9 +52,11 @@ public static class DbInitializer
         var h1Order = new[] { Du, Sam, Priya };
         var h2Order = new[] { Du, Mamma, Pappa };
 
+        // Owner = first member in each order (Du owns both), matching the earliest-JoinedAt
+        // backfill rule (ADR-0016).
         db.Households.AddRange(
-            new Household { Id = Lonnvagen, Name = "Lönnvägen 3", Currency = "SEK", CreatedAt = now },
-            new Household { Id = Familjen, Name = "Familjen", Currency = "SEK", CreatedAt = now });
+            new Household { Id = Lonnvagen, Name = "Lönnvägen 3", Currency = "SEK", CreatedAt = now, OwnerMemberId = h1Order[0] },
+            new Household { Id = Familjen, Name = "Familjen", Currency = "SEK", CreatedAt = now, OwnerMemberId = h2Order[0] });
 
         for (var i = 0; i < h1Order.Length; i++)
             db.HouseholdMemberships.Add(new HouseholdMembership

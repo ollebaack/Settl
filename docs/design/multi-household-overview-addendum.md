@@ -1,12 +1,13 @@
 # Multi-household overview addendum
 
 Extends `implementation-map.md` with the screens in **`Settl Multi-Household Overview.dc.html`**
-(new export, 2026-07-16) and realizes **ADR-0019** (adaptive home). Same conventions:
+(new export, 2026-07-16) and realizes the **[adaptive-home & multi-household overview
+spec](../specs/adaptive-home-multi-household-overview.md)**. Same conventions:
 UI structure from the DC export is authoritative; API fields below are **proposed
 contracts**. Business logic (net, netLabel, currency roll-up, owner check) is
 server-derived — the screens render and call, never compute (ADR-0006).
 
-**Core IA decision (ADR-0019):** "Hem" (`/`) is **adaptive on the count of the user's
+**Core IA decision (adaptive-home spec):** "Hem" (`/`) is **adaptive on the count of the user's
 *active* households**. Zero → first-run create flow (existing). Exactly one → that
 household's dashboard, *unchanged* (today's home). Two or more → the **multi-household
 overview**. The single-household majority pays no tax — the overview simply does not
@@ -59,7 +60,7 @@ with helper `Olika valutor — summeras inte. Öppna ett hushåll för dess sald
 card appends its `· {CURRENCY}` to the member line and renders its net in that book's
 own currency (`sv-SE` amount, currency-specific suffix — `kr`, `€`, …).
 
-**Rule (ADR-0019):** the client must detect >1 distinct `currency` across active books
+**Rule (adaptive-home spec):** the client must detect >1 distinct `currency` across active books
 and switch to the descriptive hero. No cross-currency arithmetic anywhere in the UI.
 
 ### 2.3 Hem — single-household collapse (frame 3)
@@ -155,11 +156,12 @@ implementing PR.
    clean. Proposed, not required.
 3. **Cross-currency rule is load-bearing** — the UI must never sum across currencies;
    the descriptive roll-up (§2.2) is the only multi-currency hero.
-4. **Contacts dependency + ADR numbering.** The add-friend affordance depends on the
-   parallel contacts-by-phone ADR (blind SMS invites, contact graph) which is **not in
-   this branch** (this branch's ADRs end at 0016; 0015 and the contacts/ledger-editing
-   ADRs live on other unmerged branches). This overview ADR was assigned **0019** to
-   avoid colliding with in-flight numbers; reconcile ADR numbering at merge.
+4. **Contacts dependency.** The add-friend affordance depends on the contacts-by-phone
+   decision (blind SMS invites, contact graph),
+   [ADR-0019](../adr/0019-contacts-by-phone-and-sms-invites.md). This overview started as
+   a parallel "ADR-0019" during the design build but is now the
+   [adaptive-home & multi-household overview spec](../specs/adaptive-home-multi-household-overview.md)
+   — a reversible IA choice, not an ADR — so contacts-by-phone is the sole ADR-0019.
 5. **Switcher sheet overlap.** For multi-household users the Overview and the switcher
    sheet both change books; kept intentionally (the sheet is the only in-context switch
    from non-home screens). Revisit if it proves redundant.

@@ -37,6 +37,7 @@ import {
   type HouseholdSummaryDto,
   type InviteDto,
   type InvitePreviewDto,
+  type LeaveResultDto,
   type LoginRequest,
   type MeDto,
   type MemberDto,
@@ -48,8 +49,10 @@ import {
   type RecurringDto,
   type RecurringListDto,
   type RegisterRequest,
+  type RemovalPreviewDto,
   type ResetPasswordRequest,
   type SettlePreviewDto,
+  type TransferOwnershipRequest,
   type UpdateEntryRequest,
   type UpdateRecurringRequest,
 } from './api'
@@ -64,8 +67,10 @@ export interface EntriesParams {
 export const queryKeys = {
   me: ['me'] as const,
   households: ['households'] as const,
+  householdsWithArchived: ['households', 'withArchived'] as const,
   household: (id: string | undefined) => ['household', id] as const,
   members: (id: string | undefined) => ['household', id, 'members'] as const,
+  removalPreview: (id: string | undefined) => ['household', id, 'removal-preview'] as const,
   summary: (id: string | undefined) => ['household', id, 'summary'] as const,
   entriesAll: (id: string | undefined) => ['household', id, 'entries'] as const,
   entries: (id: string | undefined, params?: EntriesParams) =>
@@ -155,6 +160,24 @@ export function useHouseholds() {
   return useQuery({
     queryKey: queryKeys.households,
     queryFn: () => apiGet<HouseholdListItemDto[]>('/households'),
+  })
+}
+
+/** Active + archived households — for the switcher's "Arkiverade" section (ADR-0016). */
+export function useHouseholdsWithArchived() {
+  return useQuery({
+    queryKey: queryKeys.householdsWithArchived,
+    queryFn: () =>
+      apiGet<HouseholdListItemDto[]>('/households?includeArchived=true'),
+  })
+}
+
+/** Debt figures + guard flags for the leave/archive confirmation sheets. */
+export function useRemovalPreview(id: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.removalPreview(id),
+    queryFn: () => apiGet<RemovalPreviewDto>(`/households/${id}/removal-preview`),
+    enabled: !!id && enabled,
   })
 }
 
@@ -401,7 +424,67 @@ export function useCreateHousehold() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (body: CreateHouseholdRequest) => apiPost<HouseholdDto>('/households', body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.households }),
+    onSuccess: () => invalidateHouseholdLists(qc),
+  })
+}
+
+/** Both household lists (active + archived) plus a household's members/detail — the
+ * surfaces every ownership/archival mutation can move. Returns the invalidation
+ * promise so callers (via mutation `onSuccess`) await the refetch before acting on
+ * the new list — e.g. the create flow switches into the fresh household only once
+ * it's present in the cache, avoiding the active-household reset race. */
+function invalidateHouseholdMembership(qc: QueryClient, householdId: string | undefined) {
+  const lists = invalidateHouseholdLists(qc)
+  if (!householdId) return lists
+  return Promise.all([
+    lists,
+    qc.invalidateQueries({ queryKey: queryKeys.household(householdId) }),
+    qc.invalidateQueries({ queryKey: queryKeys.members(householdId) }),
+    qc.invalidateQueries({ queryKey: queryKeys.removalPreview(householdId) }),
+  ])
+}
+
+function invalidateHouseholdLists(qc: QueryClient) {
+  return Promise.all([
+    qc.invalidateQueries({ queryKey: queryKeys.households }),
+    qc.invalidateQueries({ queryKey: queryKeys.householdsWithArchived }),
+  ])
+}
+
+/** Owner hands ownership to another current member (ADR-0016). */
+export function useTransferOwnership(householdId: string | undefined) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: TransferOwnershipRequest) =>
+      apiPost<HouseholdDto>(`/households/${householdId}/transfer-ownership`, body),
+    onSuccess: () => invalidateHouseholdMembership(qc, householdId),
+  })
+}
+
+/** Leave a household. Sole-owner leaving archives it instead (LeaveResultDto.archived). */
+export function useLeaveHousehold(householdId: string | undefined) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => apiPost<LeaveResultDto>(`/households/${householdId}/leave`),
+    onSuccess: () => invalidateHouseholdMembership(qc, householdId),
+  })
+}
+
+/** Soft-archive the whole household (owner-only). */
+export function useArchiveHousehold(householdId: string | undefined) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => apiPost<HouseholdDto>(`/households/${householdId}/archive`),
+    onSuccess: () => invalidateHouseholdMembership(qc, householdId),
+  })
+}
+
+/** Restore an archived household (owner-only). */
+export function useRestoreHousehold(householdId: string | undefined) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => apiPost<HouseholdDto>(`/households/${householdId}/restore`),
+    onSuccess: () => invalidateHouseholdMembership(qc, householdId),
   })
 }
 
