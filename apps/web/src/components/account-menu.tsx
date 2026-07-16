@@ -47,7 +47,7 @@ export function AccountMenu({ className }: { className?: string }) {
           />
         }
       >
-        <MemberAvatar name={me.name} avatarColor={me.avatarColor} size="sm" />
+        <MemberAvatar name={me.name} avatarColor={me.avatarColor} size="sm" isYou />
         {/* Name hidden below the desktop breakpoint — mobile header has no room,
             but logout must still be reachable there (mobile-first); the aria-label
             above keeps the accessible name stable regardless. */}
