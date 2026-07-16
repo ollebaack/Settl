@@ -22,7 +22,7 @@ test('add a contact by phone, accept the SMS invite, and see the connection', as
   await expect(page.getByRole('heading', { name: 'Lägg till kontakt' })).toBeVisible()
   await expect(page.getByText(/Vi berättar inte om numret redan använder Settl/)).toBeVisible()
 
-  await page.getByLabel('Telefonnummer').fill(local)
+  await page.getByRole('textbox', { name: 'Telefonnummer' }).fill(local)
   await page.getByRole('button', { name: 'Skicka SMS-inbjudan' }).click()
 
   // Blind confirmation — no "user exists" branch.
@@ -57,9 +57,9 @@ test('add a contact by phone, accept the SMS invite, and see the connection', as
   // Save an optional, unverified profile phone (this invitee is unique, so no shared-state race).
   const myLocal = `73${String(Date.now()).slice(-7)}`
   await expect(page.getByText('Overifierat')).toBeVisible()
-  await page.getByLabel('Ditt telefonnummer').fill(myLocal)
+  await page.getByRole('textbox', { name: 'Ditt telefonnummer' }).fill(myLocal)
   await page.getByRole('button', { name: 'Spara' }).click()
   await expect(page.getByText('Nummer sparat')).toBeVisible()
   await page.reload()
-  await expect(page.getByLabel('Ditt telefonnummer')).toHaveValue(myLocal)
+  await expect(page.getByRole('textbox', { name: 'Ditt telefonnummer' })).toHaveValue(myLocal)
 })
