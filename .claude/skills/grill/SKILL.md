@@ -1,6 +1,6 @@
 ---
 name: grill
-description: Interrogate a decision before committing to it. Use when the user says "grill me", "/grill <topic>", or faces an important/irreversible choice. Ends in a decision and, if ADR-worthy, an ADR.
+description: Interrogate a decision before committing to it. Use when the user says "grill me", "/grill <topic>", or faces an important/irreversible choice. Ends in a decision and the right artifact — an ADR, a spec, or just a summary.
 ---
 
 # Grill
@@ -27,16 +27,29 @@ not an interview.
 
 ## Output
 
-- If the decision is important (expensive to reverse, shapes architecture, or fixes a
-  product principle): write ONE ADR using [docs/adr/template.md](../../../docs/adr/template.md),
-  next number in sequence. Keep it under a page — short and decision-shaped.
-- If it's not ADR-worthy, say so explicitly and just record the summary in the
-  conversation. Not every grill ends in an ADR; that's the point.
-- If a deliberate shortcut was accepted, add a `docs/tech-debt/` entry now.
+Pick the artifact that fits the outcome — not every grill is an ADR.
+
+- **ADR** — when the outcome is a *decision*: expensive to reverse, shapes
+  architecture, or fixes a product principle. Write ONE ADR using
+  [docs/adr/template.md](../../../docs/adr/template.md), next number in sequence.
+  Keep it under a page — short and decision-shaped.
+- **Spec** — when the outcome is *what we're building and why* (a feature's shape,
+  scope, or behaviour) rather than a hard-to-reverse decision. Write or update a file
+  in [docs/specs/](../../../docs/specs/), one per feature, from
+  [docs/specs/template.md](../../../docs/specs/template.md) (see
+  [docs/specs/README.md](../../../docs/specs/README.md)). A grill can produce a spec
+  and reference a separate ADR for a load-bearing decision inside it — don't force
+  feature scope into ADR shape.
+- **Neither** — if it's neither decision- nor spec-worthy, say so explicitly and just
+  record the summary in the conversation. Not every grill produces a doc; that's the point.
+- If a deliberate shortcut was accepted, add a `docs/tech-debt/` entry now (in
+  addition to any of the above).
+
+When more than one could apply, ask the user which artifact they want before writing.
 
 ## Rules
 
-- Never write the ADR before the user has confirmed the final position.
+- Never write any artifact (ADR or spec) before the user has confirmed the final position.
 - One ADR per decision, not per session.
 - If the user's answer reveals a missing prerequisite decision, name it and offer to
   grill that instead.
