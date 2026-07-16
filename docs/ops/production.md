@@ -25,14 +25,28 @@ production changes.
 ## Deploy flow
 
 1. Push to `main` → CI runs → CD builds the image and pushes it to GHCR.
-2. **Nothing auto-redeploys Dokploy.** No webhook is wired from CD to Dokploy's deploy
-   webhook (`settl-api` → General tab → Deployments tab shows the per-app webhook URL).
-   After CD finishes, someone has to open the `settl-api` app in Dokploy and click
-   **Deploy** by hand — check the deployment's log for `Digest: sha256:...` before/after
-   to confirm it actually pulled a new image rather than reusing a cached "up to date"
-   pull.
-3. Wiring the webhook into `cd.yml` as a final step is the obvious next improvement —
-   not done yet.
+2. CD's final "Trigger Dokploy deploy" step then calls Dokploy's authenticated deploy
+   API (`POST http://31.70.90.93:3000/api/application.deploy` with an `x-api-key` header
+   and `{"applicationId": ...}` body) to roll the new image out automatically. We use the
+   API-token method rather than the no-auth deploy webhook the Dokploy UI surfaces
+   (`settl-api` → Deployments tab): that webhook URL form has a history of 404ing across
+   Dokploy versions, whereas the API endpoint is documented and stable.
+3. This needs two GitHub **repository secrets** (Settings → Secrets and variables →
+   Actions):
+   - `DOKPLOY_API_KEY` — a Dokploy API token (Dokploy → profile → `/settings/profile`,
+     API/CLI section → generate). Account-scoped, so keep it secret.
+   - `DOKPLOY_APP_ID` — the `settl-api` application's `applicationId`. Not sensitive, but
+     kept as a secret for uniformity. Find it with the API key:
+     `curl -s http://31.70.90.93:3000/api/project.all -H "x-api-key: <token>"` and read
+     the `applicationId` under project `settl` → application `settl-api`.
+4. If a deploy ever looks like it didn't pick up the new image, open the deployment's log
+   in Dokploy and check for `Digest: sha256:...` — a Docker-provider app pulling `:latest`
+   can occasionally reuse a cached "up to date" pull. You can always still redeploy by
+   hand via the **Deploy** button in the `settl-api` app.
+5. **Before deploying a newer image, confirm `Web__BaseUrl=https://settlapp.se` is set**
+   in the Environment tab (see env vars below) — the app fail-fast-crashes on startup if
+   it's unset (commit `70f7dfd`), so a deploy against a missing value crash-loops the
+   container.
 
 ## Environment variables (`settl-api`, Dokploy → Environment tab)
 
@@ -78,8 +92,11 @@ local dev, since dev's topology differs — see each fix's commit for the full w
 - **Login/session dropped or every confirm/reset link fails right after a redeploy** →
   the Data Protection key ring wasn't persisted; check `DataProtection__KeyPath=/keys` is
   set and the `/keys` volume is mounted (see env vars above). Fixed in commit `86bbe6a`.
-- **New commit doesn't seem to be live** → see "Deploy flow" above; almost certainly
-  just needs a manual redeploy in Dokploy, not a real bug.
+- **New commit doesn't seem to be live** → CD now auto-triggers the deploy (see "Deploy
+  flow" above). Check the CD run's "Trigger Dokploy deploy" step succeeded and that
+  Dokploy shows a fresh deployment; if the deployment ran but the image looks stale, it's
+  the cached-`:latest`-pull case (check the log's `Digest: sha256:...`), not a code bug.
+  A manual **Deploy** in Dokploy is always a safe fallback.
 - **Container logs:** Dokploy → `settl-api` → Logs tab, real-time, shows EF Core
   migrations, the `Now listening on` line, and request-level app logs.
 
