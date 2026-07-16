@@ -11,6 +11,11 @@ public class Member : IdentityUser<Guid>
     /// <summary>Hex avatar colour — member data, NOT a UI token (e.g. <c>#dfe6cf</c>).</summary>
     public string AvatarColor { get; set; } = "";
 
+    /// <summary>Optional emoji shown on <see cref="AvatarColor"/> in place of the letter
+    /// <see cref="Initial"/> (ADR-0019). Null = fall back to the initial. Untrusted text:
+    /// validated to a single emoji grapheme on write (it renders in other members' UIs).</summary>
+    public string? AvatarEmoji { get; set; }
+
     public ICollection<HouseholdMembership> Memberships { get; set; } = new List<HouseholdMembership>();
 
     /// <summary>Derived, not stored.</summary>
@@ -23,6 +28,15 @@ public class Household
     public string Name { get; set; } = "";
     public string Currency { get; set; } = "SEK";
     public DateTimeOffset CreatedAt { get; set; }
+
+    /// <summary>The single owner (ADR-0016). Always one of this household's current members —
+    /// backfilled to the earliest-<see cref="HouseholdMembership.JoinedAt"/> member for rows
+    /// created before ownership was recorded.</summary>
+    public Guid OwnerMemberId { get; set; }
+
+    /// <summary>Soft-archive marker (ADR-0016). Null = active; set = archived (hidden but
+    /// fully retained and restorable by the owner). Never hard-deleted.</summary>
+    public DateTimeOffset? ArchivedAt { get; set; }
 
     public ICollection<HouseholdMembership> Memberships { get; set; } = new List<HouseholdMembership>();
     public ICollection<Entry> Entries { get; set; } = new List<Entry>();

@@ -29,8 +29,9 @@ function HomePage() {
   const { households, isLoading: householdsLoading } = useActiveHousehold()
   const { sheet, openSheet } = useSheet()
 
-  // GET /households returns the user's ACTIVE books (archival — ADR-0016 — is
-  // not on this branch, so there is no archived scope to exclude yet).
+  // GET /households returns the user's ACTIVE books — archived households
+  // (ADR-0016) are hidden from this list, so the adaptive threshold naturally
+  // counts active books only.
   const activeHouseholds = households
   const hasNoHousehold = !householdsLoading && activeHouseholds.length === 0
 

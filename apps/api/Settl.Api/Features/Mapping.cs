@@ -26,6 +26,7 @@ public static class Mapping
                     s.MemberId,
                     Name(membersById, s.MemberId),
                     Color(membersById, s.MemberId),
+                    Emoji(membersById, s.MemberId),
                     s.ShareMinor,
                     s.MemberId == entry.PaidByMemberId))
                 .ToList();
@@ -102,4 +103,7 @@ public static class Mapping
 
     private static string Color(IReadOnlyDictionary<Guid, Member> members, Guid id) =>
         members.TryGetValue(id, out var m) ? m.AvatarColor : "#cccccc";
+
+    private static string? Emoji(IReadOnlyDictionary<Guid, Member> members, Guid id) =>
+        members.TryGetValue(id, out var m) ? m.AvatarEmoji : null;
 }

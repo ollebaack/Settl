@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Settl.Api.Data;
@@ -11,9 +12,11 @@ using Settl.Api.Data;
 namespace Settl.Api.Migrations
 {
     [DbContext(typeof(SettlDbContext))]
-    partial class SettlDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260716184354_AddMemberAvatarEmoji")]
+    partial class AddMemberAvatarEmoji
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -170,9 +173,6 @@ namespace Settl.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTimeOffset?>("ArchivedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -185,9 +185,6 @@ namespace Settl.Api.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<Guid>("OwnerMemberId")
-                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 

@@ -14,6 +14,9 @@ export type SheetKind =
   | 'newHousehold'
   | 'recurring'
   | 'addFriend'
+  | 'leaveHousehold'
+  | 'transferOwnership'
+  | 'archiveHousehold'
 
 export interface SheetSearch {
   sheet?: SheetKind
@@ -31,6 +34,9 @@ const SHEET_KINDS: readonly SheetKind[] = [
   'newHousehold',
   'recurring',
   'addFriend',
+  'leaveHousehold',
+  'transferOwnership',
+  'archiveHousehold',
 ]
 
 /** Validate/normalise the sheet search params (used by the root route). */

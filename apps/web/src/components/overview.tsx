@@ -14,14 +14,16 @@
  */
 import { useNavigate } from '@tanstack/react-router'
 import { useQueries } from '@tanstack/react-query'
-import { PlusIcon } from 'lucide-react'
+import { Loader2Icon, PlusIcon } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { HouseholdBadge } from '@/components/household-badge'
 import { useActiveHousehold } from '@/lib/active-household'
 import { useSheet } from '@/lib/sheet'
 import { apiGet, type HouseholdListItemDto, type HouseholdSummaryDto } from '@/lib/api'
-import { queryKeys } from '@/lib/queries'
-import { formatSignedMoney } from '@/lib/format'
+import { queryKeys, useHouseholdsWithArchived, useRestoreHousehold } from '@/lib/queries'
+import { formatSignedMoney, shortDate } from '@/lib/format'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
 const SECTION_LABEL =
@@ -103,7 +105,7 @@ export function Overview({ households }: { households: HouseholdListItemDto[] })
 
       <FriendsAffordance onOpen={() => openSheet('addFriend')} />
 
-      <ArchivedSection households={households} />
+      <ArchivedSection />
     </div>
   )
 }
@@ -286,24 +288,12 @@ function FriendsAffordance({ onOpen }: { onOpen: () => void }) {
 
 /**
  * Archived households render as dimmed rows with an owner-only `Återställ` chip
- * (design §2.5). ADR-0016 (household archival) is NOT built on this branch:
- * GET /households returns active books only and HouseholdListItemDto carries no
- * `archivedAt`/`isOwner`, so there is nothing to list yet and the section stays
- * hidden. When archival lands (adds an archived scope + those fields, plus
- * POST /households/{id}/restore), feed the archived list in here — the row +
- * owner-gated restore below are ready. See addendum §2.5 / §5.6.
+ * (design §2.5). Uses the include-archived list (ADR-0016); the section is
+ * hidden when the user has no archived books.
  */
-interface ArchivedHousehold {
-  id: string
-  name: string
-  currency: string
-  /** Localised archived date, e.g. "4 jul". */
-  archivedLabel: string
-  isOwner: boolean
-}
-
-function ArchivedSection({ households: _households }: { households: HouseholdListItemDto[] }) {
-  const archived: ArchivedHousehold[] = []
+function ArchivedSection() {
+  const { data } = useHouseholdsWithArchived()
+  const archived = (data ?? []).filter((h) => h.archivedAt)
   if (archived.length === 0) return null
 
   return (
@@ -311,32 +301,47 @@ function ArchivedSection({ households: _households }: { households: HouseholdLis
       <p className={SECTION_LABEL}>Arkiverade</p>
       <div className="mt-2 flex flex-col gap-2">
         {archived.map((h) => (
-          <Card
-            key={h.id}
-            size="sm"
-            className="flex flex-row items-center gap-3 p-3 opacity-60"
-          >
-            <HouseholdBadge name={h.name} size="md" className="grayscale" />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold">{h.name}</p>
-              <p className="truncate text-[11px] text-muted-foreground">
-                Arkiverad {h.archivedLabel} · {h.currency}
-              </p>
-            </div>
-            {h.isOwner && (
-              <button
-                type="button"
-                className="rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                Återställ
-              </button>
-            )}
-          </Card>
+          <ArchivedRow key={h.id} household={h} />
         ))}
       </div>
       <p className="mt-2 text-[12.5px] text-muted-foreground">
         Bara ägaren ser återställ-knappen.
       </p>
     </section>
+  )
+}
+
+function ArchivedRow({ household: h }: { household: HouseholdListItemDto }) {
+  const restore = useRestoreHousehold(h.id)
+  const onRestore = () => {
+    if (restore.isPending) return
+    restore.mutate(undefined, {
+      onSuccess: () => toast(`${h.name} återställd`),
+      onError: (err) =>
+        toast.error(err instanceof Error ? err.message : 'Kunde inte återställa hushållet'),
+    })
+  }
+  return (
+    <Card size="sm" className="flex flex-row items-center gap-3 p-3 opacity-60">
+      <HouseholdBadge name={h.name} size="md" className="grayscale" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold">{h.name}</p>
+        <p className="truncate text-[11px] text-muted-foreground">
+          Arkiverad {h.archivedAt ? shortDate(h.archivedAt) : ''} · {h.currency}
+        </p>
+      </div>
+      {h.isOwner && (
+        <Button
+          variant="secondary"
+          size="sm"
+          className="rounded-full text-primary"
+          onClick={onRestore}
+          disabled={restore.isPending}
+        >
+          {restore.isPending && <Loader2Icon className="animate-spin" />}
+          Återställ
+        </Button>
+      )}
+    </Card>
   )
 }
