@@ -1,9 +1,8 @@
 name: CD
 
 # Builds and publishes the production image (ADR-0009/ADR-0014: single container,
-# built from apps/api/Settl.Api/Dockerfile with the repo root as build context).
-# Dokploy pulls this image by tag for its docker-compose deployment; this workflow
-# does not trigger a Dokploy redeploy itself.
+# built from apps/api/Settl.Api/Dockerfile with the repo root as build context),
+# then calls Dokploy's deploy webhook so the new image actually gets rolled out.
 on:
   workflow_run:
     workflows: [CI]
@@ -47,3 +46,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Trigger Dokploy deploy
+        run: curl -fsS -X POST "${{ secrets.DOKPLOY_DEPLOY_WEBHOOK }}"
