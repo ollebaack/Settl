@@ -12,12 +12,15 @@ public sealed class DevEmailLinkStore
     private volatile string? _lastInviteAcceptUrl;
     private volatile string? _lastVerificationUrl;
     private volatile string? _lastPasswordResetUrl;
+    private volatile string? _lastSmsInviteAcceptUrl;
 
     public void RecordInviteAccept(string url) => _lastInviteAcceptUrl = url;
     public void RecordVerification(string url) => _lastVerificationUrl = url;
     public void RecordPasswordReset(string url) => _lastPasswordResetUrl = url;
+    public void RecordSmsInvite(string url) => _lastSmsInviteAcceptUrl = url;
 
     public string? LastInviteAcceptUrl => _lastInviteAcceptUrl;
     public string? LastVerificationUrl => _lastVerificationUrl;
     public string? LastPasswordResetUrl => _lastPasswordResetUrl;
+    public string? LastSmsInviteAcceptUrl => _lastSmsInviteAcceptUrl;
 }

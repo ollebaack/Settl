@@ -18,9 +18,14 @@ import {
   apiPut,
   type AcceptInviteRequest,
   type ConfirmEmailRequest,
+  type ContactDto,
+  type ContactInviteResultDto,
+  type CreateContactInviteRequest,
   type CreateEntryRequest,
   type CreateHouseholdRequest,
   type CreateInviteRequest,
+  type InvitableContactDto,
+  type InviteContactRequest,
   type CreateRecurringRequest,
   type CreateSettlementRequest,
   type CreateSettlementResponse,
@@ -37,6 +42,8 @@ import {
   type MemberDto,
   type NudgeDto,
   type NudgeTone,
+  type PendingInviteDto,
+  type UpdateProfileRequest,
   type RecurringDetailDto,
   type RecurringDto,
   type RecurringListDto,
@@ -73,6 +80,9 @@ export const queryKeys = {
   nudges: (id: string | undefined, tone: NudgeTone) =>
     ['household', id, 'nudges', tone] as const,
   householdInvites: (id: string | undefined) => ['household', id, 'invites'] as const,
+  contacts: ['contacts'] as const,
+  pendingContactInvites: ['contacts', 'pending'] as const,
+  invitableContacts: (id: string | undefined) => ['household', id, 'invitable-contacts'] as const,
   invitePreview: (token: string | undefined) => ['invite', token] as const,
   confirmEmail: (userId: string | undefined, token: string | undefined) =>
     ['confirm-email', userId, token] as const,
@@ -303,6 +313,73 @@ export function useSendInvite(householdId: string | undefined) {
     mutationFn: (body: CreateInviteRequest) =>
       apiPost<InviteDto>(`/households/${householdId}/invites`, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.householdInvites(householdId) }),
+  })
+}
+
+// --- Contacts (ADR-0019) ----------------------------------------------------
+
+/** Accepted contacts — the Member↔Member edges (connection-on-accept). */
+export function useContacts() {
+  return useQuery({
+    queryKey: queryKeys.contacts,
+    queryFn: () => apiGet<ContactDto[]>('/contacts'),
+  })
+}
+
+/** Invites the current user sent that haven't been accepted yet ("Väntar på svar"). */
+export function usePendingContactInvites() {
+  return useQuery({
+    queryKey: queryKeys.pendingContactInvites,
+    queryFn: () => apiGet<PendingInviteDto[]>('/contacts/pending'),
+  })
+}
+
+/** Saved contacts with their status for one household (member | pending | invitable). */
+export function useInvitableContacts(householdId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.invitableContacts(householdId),
+    queryFn: () => apiGet<InvitableContactDto[]>(`/households/${householdId}/invitable-contacts`),
+    enabled: !!householdId,
+  })
+}
+
+/**
+ * Send a blind invite (SMS or email). Typing a number reveals nothing about whether it's on
+ * Settl — the response is always the same "sent" shape (ADR-0019). Refreshes the pending list
+ * and, when a household was attached, that household's invitable-contacts view.
+ */
+export function useSendContactInvite() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: CreateContactInviteRequest) =>
+      apiPost<ContactInviteResultDto>('/contacts/invites', body),
+    onSuccess: (_data, body) => {
+      qc.invalidateQueries({ queryKey: queryKeys.pendingContactInvites })
+      if (body.householdId)
+        qc.invalidateQueries({ queryKey: queryKeys.invitableContacts(body.householdId) })
+    },
+  })
+}
+
+/** Invite a saved contact (by member id) to a household — the "reuse a saved contact" flow. */
+export function useInviteContactToHousehold(householdId: string | undefined) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: InviteContactRequest) =>
+      apiPost<ContactInviteResultDto>(`/households/${householdId}/invite-contact`, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.invitableContacts(householdId) })
+      qc.invalidateQueries({ queryKey: queryKeys.householdInvites(householdId) })
+    },
+  })
+}
+
+/** Update the acting member's own profile (the optional, unverified phone). */
+export function useUpdateProfile() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: UpdateProfileRequest) => apiPatch<MeDto>('/me', body),
+    onSuccess: (me) => qc.setQueryData(queryKeys.me, me),
   })
 }
 

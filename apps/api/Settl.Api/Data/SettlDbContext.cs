@@ -23,6 +23,7 @@ public class SettlDbContext(DbContextOptions<SettlDbContext> options) : Identity
     public DbSet<Settlement> Settlements => Set<Settlement>();
     public DbSet<SettlementClosure> SettlementClosures => Set<SettlementClosure>();
     public DbSet<Invite> Invites => Set<Invite>();
+    public DbSet<Contact> Contacts => Set<Contact>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -122,11 +123,23 @@ public class SettlDbContext(DbContextOptions<SettlDbContext> options) : Identity
         b.Entity<Invite>(e =>
         {
             e.HasKey(x => x.Id);
-            e.Property(x => x.Email).IsRequired();
+            // Email is null for SMS invites; PhoneNumber is null for email invites (ADR-0019).
+            e.Property(x => x.Channel).HasConversion<string>().IsRequired();
             e.Property(x => x.TokenHash).IsRequired();
+            // HouseholdId is nullable (contact-only invites have none); SetNull so deleting a
+            // household leaves any contact-only history intact rather than cascading.
             e.HasOne(x => x.Household).WithMany()
                 .HasForeignKey(x => x.HouseholdId).OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(x => x.TokenHash).IsUnique();
+        });
+
+        b.Entity<Contact>(e =>
+        {
+            e.HasKey(x => new { x.OwnerMemberId, x.ContactMemberId });
+            e.HasOne(x => x.OwnerMember).WithMany()
+                .HasForeignKey(x => x.OwnerMemberId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.ContactMember).WithMany()
+                .HasForeignKey(x => x.ContactMemberId).OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

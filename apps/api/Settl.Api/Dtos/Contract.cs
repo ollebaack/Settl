@@ -83,6 +83,20 @@ public static class Contract
         _ => throw new SplitValidationException("Ogiltig kategori")
     };
 
+    public static string InviteChannel(InviteChannel c) => c switch
+    {
+        Domain.InviteChannel.Email => "email",
+        Domain.InviteChannel.Sms => "sms",
+        _ => throw new ArgumentOutOfRangeException(nameof(c))
+    };
+
+    public static InviteChannel ParseInviteChannel(string? channel) => channel?.Trim().ToLowerInvariant() switch
+    {
+        "email" => Domain.InviteChannel.Email,
+        "sms" => Domain.InviteChannel.Sms,
+        _ => throw new SplitValidationException("Ogiltig inbjudningskanal")
+    };
+
     public static string ViewerStatusKind(ViewerStatusKind k) => k switch
     {
         Domain.ViewerStatusKind.Settled => "settled",

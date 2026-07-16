@@ -16,11 +16,18 @@ import { ResponsiveSheet } from '@/components/responsive-sheet'
 import { HouseholdBadge } from '@/components/household-badge'
 import { ErrorState, LoadingState } from '@/components/screen-states'
 import { cn } from '@/lib/utils'
+import { MemberAvatar } from '@/components/member-avatar'
 import { useActiveHousehold } from '@/lib/active-household'
-import { useHouseholdInvites, useHouseholds, useSendInvite } from '@/lib/queries'
+import {
+  useHouseholdInvites,
+  useHouseholds,
+  useInvitableContacts,
+  useInviteContactToHousehold,
+  useSendInvite,
+} from '@/lib/queries'
 import { useSheet } from '@/lib/sheet'
 import type { MoneyIntent } from '@/components/money'
-import type { HouseholdListItemDto } from '@/lib/api'
+import type { HouseholdListItemDto, InvitableContactDto } from '@/lib/api'
 
 /** household-list netLabel is Labels.Net: owed | owe | square. */
 function netSub(label: string): string {
@@ -163,6 +170,7 @@ function InviteSection({
       <p className="text-xs font-semibold uppercase tracking-[0.09em] text-muted-foreground">
         Bjud in till {householdName ?? 'hushållet'}
       </p>
+      <InvitableContacts householdId={householdId} />
       <div className="flex gap-2">
         <Input
           aria-label="E-post"
@@ -183,6 +191,61 @@ function InviteSection({
           ))}
         </ul>
       )}
+    </div>
+  )
+}
+
+/**
+ * Screen 4 (ADR-0019): reuse a saved contact instead of re-typing. Lists the acting user's
+ * contacts with their status for this household and lets them invite an "invitable" one with a
+ * tap. "member"/"pending" rows are shown but not actionable. The wishlist payoff.
+ */
+function InvitableContacts({ householdId }: { householdId: string }) {
+  const contacts = useInvitableContacts(householdId)
+  const inviteContact = useInviteContactToHousehold(householdId)
+
+  const list = contacts.data ?? []
+  if (list.length === 0) return null
+
+  const invite = async (c: InvitableContactDto) => {
+    try {
+      await inviteContact.mutateAsync({ contactMemberId: c.memberId })
+      toast(`Inbjudan skickad till ${c.name}`)
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Något gick fel. Försök igen.')
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <p className="text-[11px] text-muted-foreground">Från dina kontakter</p>
+      <div className="flex flex-col gap-1.5">
+        {list.map((c) => (
+          <div key={c.memberId} className="flex items-center gap-2.5">
+            <MemberAvatar name={c.name} avatarColor={c.avatarColor} size="sm" />
+            <span className="min-w-0 flex-1 truncate text-sm">{c.name}</span>
+            {c.status === 'member' ? (
+              <span className="rounded-full bg-muted px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                Med
+              </span>
+            ) : c.status === 'pending' ? (
+              <span className="rounded-full bg-muted px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                Väntar
+              </span>
+            ) : (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={inviteContact.isPending}
+                onClick={() => invite(c)}
+              >
+                Bjud in
+              </Button>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

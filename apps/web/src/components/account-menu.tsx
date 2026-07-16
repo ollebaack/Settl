@@ -3,7 +3,7 @@
  * user switcher this app used before real auth).
  */
 import { useNavigate } from '@tanstack/react-router'
-import { LogOutIcon } from 'lucide-react'
+import { LogOutIcon, UsersIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -59,6 +59,10 @@ export function AccountMenu({ className }: { className?: string }) {
         <DropdownMenuGroup>
           <DropdownMenuLabel>{me.name}</DropdownMenuLabel>
           <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => navigate({ to: '/kontakter' })}>
+            <UsersIcon />
+            Kontakter
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={onLogout}>
             <LogOutIcon />
             Logga ut
