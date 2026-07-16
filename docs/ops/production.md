@@ -70,6 +70,49 @@ production changes.
   memory on every redeploy, silently invalidating all auth cookies and every outstanding
   email-confirmation / password-reset token.
 
+## Backups (`settl-postgres`, Dokploy → Backups tab)
+
+Decided in ADR-0014 (mechanism) and ADR-0015 (provider); turned on 2026-07-16.
+
+- **Destination:** Cloudflare R2 bucket `settl-pg-backups`, **EU jurisdiction** (holds EU
+  household financial data). Configured as a Dokploy S3 destination named `cloudflare-r2`
+  (Settings → S3 Destinations) using the **Cloudflare R2 Storage** provider.
+  - **Endpoint:** `https://3ad985748cebc76f9780c3f06e03bf27.eu.r2.cloudflarestorage.com`
+    — note the **`.eu.`**; EU-jurisdiction buckets need it and the plain
+    `...r2.cloudflarestorage.com` form fails auth. **Region** is the literal `auto`.
+    These two are the usual reasons the destination's Test button fails.
+  - Auth is a Cloudflare **Account API token** (`settl-dokploy-backups`), scoped to
+    Object Read & Write on this one bucket. The secret lives only in Dokploy; rotate by
+    deleting the token in Cloudflare (R2 → Manage R2 API Tokens) and re-entering a new one.
+- **Job:** database `Settl` (capital S — the DB name, not the service name), schedule
+  `0 3 * * *` (03:00 **UTC** — Dokploy's server clock is UTC), keep latest `14`, prefix
+  `settl-prod/`.
+- **Where dumps land:** `settl-pg-backups/settl-settlpostgres-w2kk0z/settl-prod/<ISO-8601>.sql.gz`
+  — Dokploy nests the `settl-prod/` prefix under an auto-generated `<service>` folder, so
+  a restore has to look one level deeper than the prefix alone suggests. Files are gzipped
+  `pg_dump` output (~7 KB today).
+- **Restore (verified 2026-07-16):** the proven-safe drill is to spin up a *separate*
+  throwaway Postgres service (Create Service → Database → Postgres, e.g.
+  `settl-restore-test`, same user `settl`), Deploy it, then on **its** Backups → Restore
+  pick destination `cloudflare-r2`, drill into
+  `settl-settlpostgres-w2kk0z/settl-prod/<file>.sql.gz`, set the target DB name, Restore —
+  then delete the throwaway. Doing it in a separate service (not `settl-postgres`) means a
+  restore can't overwrite production even by mistake. Restores only reliably from
+  Dokploy-generated dumps.
+- **Deletion protection:** R2 Bucket Lock Rule `settl-backups-7day-lock` (bucket Settings →
+  Bucket Lock Rules) makes every object immutable for 7 days after upload — a leaked key or
+  fat-fingered delete can't remove the last week of backups. 7 days is deliberately shorter
+  than the job's 14-backup retention so Dokploy's own cleanup (deleting ~14-day-old dumps)
+  never collides with a still-locked object. If you ever need to delete a backup sooner, you
+  must wait out its 7-day lock. (Object versioning would be the S3-API/Wrangler alternative;
+  bucket lock was chosen as the stronger, dashboard-native option — ADR-0015.)
+- **⚠️ Secret in logs:** Dokploy's restore (and the rclone step generally) prints the full
+  command — **including the R2 secret access key in plaintext** — into the deployment log.
+  So the backup credential is readable by anyone with Dokploy dashboard access, not just
+  via the encrypted destination config. Treat Dokploy dashboard access as equivalent to
+  holding the R2 key; rotate the key (R2 → Manage R2 API Tokens) if that access is ever in
+  doubt.
+
 ## Debugging quick-reference
 
 Several production-only bugs surfaced during initial rollout (none ever showed up in
@@ -108,5 +151,5 @@ local dev, since dev's topology differs — see each fix's commit for the full w
 
 - [tech-debt/0007](../tech-debt/0007-vps-firewall-not-locked-to-cloudflare.md) — VPS
   firewall not yet restricted to Cloudflare's IP ranges.
-- [tech-debt/0008](../tech-debt/0008-no-postgres-backups.md) — Postgres backups not yet
-  configured (mechanism decided in ADR-0014, not turned on).
+- ~~tech-debt/0008 — Postgres backups~~ **Resolved 2026-07-16**: backups run to Cloudflare
+  R2, restore-proven, and hardened with a 7-day R2 bucket lock (see Backups above).
