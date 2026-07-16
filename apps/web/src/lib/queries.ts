@@ -352,18 +352,26 @@ export function useCreateHousehold() {
 }
 
 /** Both household lists (active + archived) plus a household's members/detail — the
- * surfaces every ownership/archival mutation can move. */
+ * surfaces every ownership/archival mutation can move. Returns the invalidation
+ * promise so callers (via mutation `onSuccess`) await the refetch before acting on
+ * the new list — e.g. the create flow switches into the fresh household only once
+ * it's present in the cache, avoiding the active-household reset race. */
 function invalidateHouseholdMembership(qc: QueryClient, householdId: string | undefined) {
-  invalidateHouseholdLists(qc)
-  if (!householdId) return
-  qc.invalidateQueries({ queryKey: queryKeys.household(householdId) })
-  qc.invalidateQueries({ queryKey: queryKeys.members(householdId) })
-  qc.invalidateQueries({ queryKey: queryKeys.removalPreview(householdId) })
+  const lists = invalidateHouseholdLists(qc)
+  if (!householdId) return lists
+  return Promise.all([
+    lists,
+    qc.invalidateQueries({ queryKey: queryKeys.household(householdId) }),
+    qc.invalidateQueries({ queryKey: queryKeys.members(householdId) }),
+    qc.invalidateQueries({ queryKey: queryKeys.removalPreview(householdId) }),
+  ])
 }
 
 function invalidateHouseholdLists(qc: QueryClient) {
-  qc.invalidateQueries({ queryKey: queryKeys.households })
-  qc.invalidateQueries({ queryKey: queryKeys.householdsWithArchived })
+  return Promise.all([
+    qc.invalidateQueries({ queryKey: queryKeys.households }),
+    qc.invalidateQueries({ queryKey: queryKeys.householdsWithArchived }),
+  ])
 }
 
 /** Owner hands ownership to another current member (ADR-0016). */
