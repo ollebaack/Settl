@@ -21,22 +21,19 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { AccountMenu } from '@/components/account-menu'
 import { DevBar } from '@/components/dev-bar'
 import { MemberAvatarStack } from '@/components/member-avatar'
+import { HouseholdBadge } from '@/components/household-badge'
 import { GhostCard } from '@/components/ghost-card'
 import { Money } from '@/components/money'
 import { cn } from '@/lib/utils'
 import { inDays, shortDate } from '@/lib/format'
 import { useSheet } from '@/lib/sheet'
 import { useActiveHousehold } from '@/lib/active-household'
-import { useMembers, useNudges, useSummary } from '@/lib/queries'
+import { useMe, useMembers, useNudges, useSummary } from '@/lib/queries'
 import type { NudgeActionDto, NudgeDto } from '@/lib/api'
 
 /** Uppercase tracked eyebrow used by the desktop right-rail section headers. */
 const RAIL_LABEL =
   'text-[11.5px] font-semibold uppercase tracking-[0.09em] text-muted-foreground'
-
-/** Initial badge shared by the household switcher triggers (mobile + desktop). */
-const HH_BADGE =
-  'flex size-[26px] shrink-0 items-center justify-center rounded-[9px] bg-accent text-xs font-semibold text-accent-foreground'
 
 interface NavItem {
   to: string
@@ -94,9 +91,7 @@ function Sidebar() {
         className="justify-start gap-2.5"
         onClick={() => openSheet('households')}
       >
-        <span aria-hidden="true" className={HH_BADGE}>
-          {(household?.name?.[0] ?? 'S').toUpperCase()}
-        </span>
+        <HouseholdBadge name={household?.name} />
         <span className="flex-1 truncate text-left">{household?.name ?? 'Välj hushåll'}</span>
         <ChevronDownIcon className="text-muted-foreground" />
       </Button>
@@ -159,6 +154,7 @@ function MobileHeader() {
   const { openSheet } = useSheet()
   const { household, householdId } = useActiveHousehold()
   const { data: members } = useMembers(householdId)
+  const { data: me } = useMe()
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-border bg-background/90 px-4 py-3 backdrop-blur min-[980px]:hidden">
@@ -167,16 +163,18 @@ function MobileHeader() {
         onClick={() => openSheet('households')}
         className="flex items-center gap-2 rounded-full bg-muted px-3 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <span aria-hidden="true" className={HH_BADGE}>
-          {(household?.name?.[0] ?? 'S').toUpperCase()}
-        </span>
+        <HouseholdBadge name={household?.name} />
         <span className="max-w-[160px] truncate font-medium">{household?.name ?? 'Settl'}</span>
         <ChevronDownIcon className="size-4 text-muted-foreground" />
       </button>
       <div className="flex items-center gap-1.5">
         {members && members.length > 0 && (
           <MemberAvatarStack
-            members={members.map((m) => ({ name: m.name, avatarColor: m.avatarColor }))}
+            members={members.map((m) => ({
+              name: m.name,
+              avatarColor: m.avatarColor,
+              isYou: m.id === me?.id,
+            }))}
           />
         )}
         <AccountMenu />

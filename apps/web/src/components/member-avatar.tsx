@@ -24,16 +24,26 @@ export function MemberAvatar({
   name,
   avatarColor,
   size = 'default',
+  isYou = false,
   className,
 }: {
   name: string
   avatarColor: string
   size?: 'sm' | 'default' | 'lg'
+  /** Mark this as the acting user's own bubble: a thin accent ring so you can
+   *  spot yourself at a glance (docs/design/bubble-hierarchy-addendum.md). */
+  isYou?: boolean
   className?: string
 }) {
   const initial = (name.trim()[0] ?? '?').toUpperCase()
   return (
-    <Avatar size={size} className={className}>
+    <Avatar
+      size={size}
+      className={cn(
+        isYou && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
+        className,
+      )}
+    >
       <AvatarFallback
         className="font-medium"
         style={{ backgroundColor: avatarColor, color: readableInk(avatarColor) }}
@@ -44,14 +54,15 @@ export function MemberAvatar({
   )
 }
 
-/** Overlapping stack of member avatars (decorative header cluster). */
+/** Overlapping stack of member avatars (decorative header cluster). The acting
+ *  user (`isYou`) wears the accent ring and sits on top so its ring stays whole. */
 export function MemberAvatarStack({
   members,
   max = 4,
   size = 'sm',
   className,
 }: {
-  members: { name: string; avatarColor: string }[]
+  members: { name: string; avatarColor: string; isYou?: boolean }[]
   max?: number
   size?: 'sm' | 'default' | 'lg'
   className?: string
@@ -65,7 +76,8 @@ export function MemberAvatarStack({
           name={m.name}
           avatarColor={m.avatarColor}
           size={size}
-          className="ring-2 ring-background"
+          isYou={m.isYou}
+          className={m.isYou ? 'z-10' : 'ring-2 ring-background'}
         />
       ))}
     </div>

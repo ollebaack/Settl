@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Money } from '@/components/money'
 import { ResponsiveSheet } from '@/components/responsive-sheet'
+import { HouseholdBadge } from '@/components/household-badge'
 import { ErrorState, LoadingState } from '@/components/screen-states'
 import { cn } from '@/lib/utils'
 import { useActiveHousehold } from '@/lib/active-household'
@@ -90,12 +91,7 @@ export function HouseholdSwitcherSheet({
                     active && 'ring-2 ring-primary',
                   )}
                 >
-                  <span
-                    aria-hidden="true"
-                    className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent text-sm font-medium text-accent-foreground"
-                  >
-                    {(h.name.trim()[0] ?? '?').toUpperCase()}
-                  </span>
+                  <HouseholdBadge name={h.name} size="md" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{h.name}</p>
                     <p className="truncate text-xs text-muted-foreground">
