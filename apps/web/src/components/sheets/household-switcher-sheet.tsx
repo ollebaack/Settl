@@ -50,8 +50,14 @@ export function HouseholdSwitcherSheet({
 
   const select = (h: HouseholdListItemDto) => {
     setHouseholdId(h.id)
-    // Reset back to Home with a clean overlay/search state.
-    navigate({ to: '/', search: {} })
+    // Enter the chosen book with a clean overlay/search state. With 2+ books `/`
+    // is the overview (ADR-0019), so drill into the focused book route; with a
+    // single book `/` already IS its dashboard.
+    if (households.length > 1) {
+      navigate({ to: '/hushall/$id', params: { id: h.id }, search: {} })
+    } else {
+      navigate({ to: '/', search: {} })
+    }
     toast(`Bytte till ${h.name}`)
   }
 

@@ -13,7 +13,10 @@
  */
 import { type APIRequestContext, type Page, expect } from '@playwright/test'
 
-export const API = 'http://localhost:5000'
+/** API origin the specs hit directly. Defaults to the standard local API, but
+ * can be pointed elsewhere (e.g. an isolated instance on another port) via
+ * E2E_API_URL — kept in sync with playwright.config's webServer. */
+export const API = process.env.E2E_API_URL ?? 'http://localhost:5000'
 
 /** Shared dev password for every seeded member — apps/api/Settl.Api/Data/SeedIds.cs. */
 const DEV_PASSWORD = 'Settl-Dev-123!'
@@ -149,12 +152,43 @@ export async function createRecurring(
 export async function createHousehold(
   request: APIRequestContext,
   name: string,
+  currency = 'SEK',
 ): Promise<{ id: string }> {
   const res = await request.post(`${API}/households`, {
-    data: { name, currency: 'SEK' },
+    data: { name, currency },
   })
   expect(res.ok(), `create household: ${await safeText(res)}`).toBeTruthy()
   return (await res.json()) as { id: string }
+}
+
+/**
+ * Registers a brand-new account and confirms its email via the Development-only
+ * dev side channel, leaving `page.request` signed in as that (now confirmed)
+ * member — ready to create households and load the app past RequireAuth. Polls
+ * the "latest verification" channel until it sees THIS user's link, so parallel
+ * signups don't hand us someone else's token.
+ */
+export async function registerConfirmedUser(
+  page: Page,
+  user: { name: string; email: string; password: string },
+): Promise<string> {
+  const res = await page.request.post(`${API}/auth/register`, { data: user })
+  expect(res.ok(), `register ${user.email}: ${await safeText(res)}`).toBeTruthy()
+  const id = ((await res.json()) as Member).id
+
+  for (let attempt = 0; attempt < 15; attempt++) {
+    const confirmUrl = await latestDevVerificationUrl(page.request)
+    const url = new URL(confirmUrl)
+    if (url.searchParams.get('userId') === id) {
+      const confirm = await page.request.post(`${API}/auth/confirm-email`, {
+        data: { userId: id, token: url.searchParams.get('token') },
+      })
+      expect(confirm.ok(), `confirm ${user.email}: ${await safeText(confirm)}`).toBeTruthy()
+      return id
+    }
+    await page.waitForTimeout(100)
+  }
+  throw new Error(`No verification link surfaced for ${user.email}`)
 }
 
 /** Reads the most recent invite's accept token via the Development-only dev
@@ -245,7 +279,9 @@ export async function openHouseholdSwitcher(page: Page, currentName: string): Pr
     .filter({ visible: true })
     .first()
     .click()
-  await expect(page.getByText('Dina hushåll')).toBeVisible()
+  // Assert on the sheet's unique description — its "Dina hushåll" title now
+  // collides with the multi-household overview's own heading (ADR-0019).
+  await expect(page.getByText('En bok per hushåll — du kan vara med i flera.')).toBeVisible()
 }
 
 function escapeRegExp(s: string): string {

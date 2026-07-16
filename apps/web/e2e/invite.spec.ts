@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import {
+  API,
   createHousehold,
   getMembers,
   latestDevInviteToken,
@@ -20,7 +21,9 @@ test('invite a new email, accept it, and see the shared household', async ({ pag
   const householdName = `E2E Inbjudan ${suffix}`
   const household = await createHousehold(page.request, householdName)
   await pinHousehold(page, household.id)
-  await page.goto('/')
+  // "Du" has several books, so `/` is the overview — open the fresh book's
+  // focused dashboard directly (ADR-0019).
+  await page.goto(`/hushall/${household.id}`)
   await expect(page.getByText(`öppna poster i ${householdName}`)).toBeVisible()
 
   const inviteEmail = `e2e-invitee-${suffix}@example.com`
@@ -51,6 +54,6 @@ test('invite a new email, accept it, and see the shared household', async ({ pag
 })
 
 test('invite preview 404s for an unknown token', async ({ page }) => {
-  const res = await page.request.get('http://localhost:5000/invites/not-a-real-token')
+  const res = await page.request.get(`${API}/invites/not-a-real-token`)
   expect(res.status()).toBe(404)
 })
