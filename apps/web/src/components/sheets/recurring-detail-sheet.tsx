@@ -77,6 +77,7 @@ export function RecurringDetailSheet({
           detail={detail.data}
           householdId={householdId}
           colorOf={(id) => members?.find((m) => m.id === id)?.avatarColor ?? ''}
+          emojiOf={(id) => members?.find((m) => m.id === id)?.avatarEmoji ?? null}
           cadLabel={cadLabel}
           onClose={onClose}
         />
@@ -89,12 +90,14 @@ function RecurringDetailBody({
   detail,
   householdId,
   colorOf,
+  emojiOf,
   cadLabel,
   onClose,
 }: {
   detail: RecurringDetailDto
   householdId: string | undefined
   colorOf: (id: string) => string
+  emojiOf: (id: string) => string | null
   cadLabel: string
   onClose: () => void
 }) {
@@ -228,7 +231,7 @@ function RecurringDetailBody({
               i < shares.length - 1 && 'border-b border-border',
             )}
           >
-            <MemberAvatar name={s.name} avatarColor={colorOf(s.memberId)} size="sm" />
+            <MemberAvatar name={s.name} avatarColor={colorOf(s.memberId)} avatarEmoji={emojiOf(s.memberId)} size="sm" />
             <span className="flex-1 text-sm font-semibold">
               {s.name}
               {s.isPayer && (

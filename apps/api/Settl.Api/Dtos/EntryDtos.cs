@@ -4,6 +4,7 @@ public sealed record ShareDto(
     Guid MemberId,
     string Name,
     string AvatarColor,
+    string? AvatarEmoji,
     long ShareMinor,
     bool IsPayer);
 

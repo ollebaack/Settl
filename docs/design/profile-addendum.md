@@ -6,11 +6,11 @@ profilbild, byta namn."* Same conventions: UI structure from the DC export is
 authoritative; API fields below are **proposed contracts** to build and regenerate into
 `packages/api-client` in the same PR that consumes them.
 
-**Binding decision — `ADR-0019` (avatar personalization, no image uploads):** the
-"profilbild" is an **optional emoji** rendered on the member's existing email-derived
-`AvatarColor`, with the letter initial as the fallback when unset. There is **no image
-upload**, no crop tool, and no color picker. Anything in this addendum that implies file
-upload or stored image bytes is out of scope by ADR-0019.
+**Binding decision — the [avatar-personalization spec](../specs/avatar-personalization.md)
+(emoji, no image uploads):** the "profilbild" is an **optional emoji** rendered on the
+member's existing email-derived `AvatarColor`, with the letter initial as the fallback
+when unset. There is **no image upload**, no crop tool, and no color picker. Anything in
+this addendum that implies file upload or stored image bytes is out of scope by that spec.
 
 ---
 
@@ -63,7 +63,7 @@ toggle). No new nav slot in the bottom tab bar.
 
 **Validation** — name required → `Ange ditt namn.` (reuse). Emoji is validated
 server-side: must be a **single emoji grapheme**, length-capped — it is untrusted text
-rendered in *other* members' UIs (ADR-0019). Reject non-emoji input.
+rendered in *other* members' UIs (avatar-personalization spec). Reject non-emoji input.
 
 **States** — Loading: skeleton avatar + field. Save in flight: disable `Spara`, spinner.
 Success: toast `Profilen sparad`. Error: toast + keep form (implementation-map §7 / amb. 12).
@@ -144,7 +144,7 @@ toast `Lösenordet uppdaterat`.
    carry `AvatarEmoji`, so avatars render consistently across Home/Ledger/detail — not
    just on the profile page. `MemberAvatar` renders emoji-over-color with initial
    fallback everywhere.
-3. **Emoji validation is security-relevant, not cosmetic** (ADR-0019): enforce
+3. **Emoji validation is security-relevant, not cosmetic** (avatar-personalization spec): enforce
    single-grapheme + length cap server-side; the client picker constrains input but the
    API is authoritative (ADR-0006).
 4. **Emoji picker implementation — dependency decision (open):** the design shows a

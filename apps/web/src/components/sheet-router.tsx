@@ -11,6 +11,9 @@ import { SettleUpSheet } from '@/components/sheets/settle-up-sheet'
 import { HouseholdSwitcherSheet } from '@/components/sheets/household-switcher-sheet'
 import { NewHouseholdSheet } from '@/components/sheets/new-household-sheet'
 import { RecurringDetailSheet } from '@/components/sheets/recurring-detail-sheet'
+import { LeaveHouseholdSheet } from '@/components/sheets/leave-household-sheet'
+import { TransferOwnershipSheet } from '@/components/sheets/transfer-ownership-sheet'
+import { ArchiveHouseholdSheet } from '@/components/sheets/archive-household-sheet'
 
 export function SheetRouter() {
   const { sheet, id, person, closeSheet } = useSheet()
@@ -28,6 +31,9 @@ export function SheetRouter() {
       <HouseholdSwitcherSheet open={sheet === 'households'} onClose={closeSheet} />
       <NewHouseholdSheet open={sheet === 'newHousehold'} onClose={closeSheet} />
       <RecurringDetailSheet open={sheet === 'recurring'} onClose={closeSheet} recId={id} />
+      <LeaveHouseholdSheet open={sheet === 'leaveHousehold'} onClose={closeSheet} householdId={id} />
+      <TransferOwnershipSheet open={sheet === 'transferOwnership'} onClose={closeSheet} householdId={id} />
+      <ArchiveHouseholdSheet open={sheet === 'archiveHousehold'} onClose={closeSheet} householdId={id} />
     </>
   )
 }

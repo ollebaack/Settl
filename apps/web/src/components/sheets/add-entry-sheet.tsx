@@ -537,7 +537,7 @@ function EntryForm({
             >
               {otherMembers.map((m) => (
                 <ToggleGroupItem key={m.id} value={m.id} className="gap-2">
-                  <MemberAvatar name={m.name} avatarColor={m.avatarColor} size="sm" />
+                  <MemberAvatar name={m.name} avatarColor={m.avatarColor} avatarEmoji={m.avatarEmoji} size="sm" />
                   {m.name}
                 </ToggleGroupItem>
               ))}
@@ -557,7 +557,7 @@ function EntryForm({
             >
               {memberList.map((m) => (
                 <ToggleGroupItem key={m.id} value={m.id} className="gap-2">
-                  <MemberAvatar name={m.name} avatarColor={m.avatarColor} size="sm" />
+                  <MemberAvatar name={m.name} avatarColor={m.avatarColor} avatarEmoji={m.avatarEmoji} size="sm" />
                   {m.name}
                 </ToggleGroupItem>
               ))}
@@ -598,7 +598,7 @@ function EntryForm({
                 >
                   {memberList.map((m) => (
                     <ToggleGroupItem key={m.id} value={m.id} className="gap-2">
-                      <MemberAvatar name={m.name} avatarColor={m.avatarColor} size="sm" />
+                      <MemberAvatar name={m.name} avatarColor={m.avatarColor} avatarEmoji={m.avatarEmoji} size="sm" />
                       {m.name}
                     </ToggleGroupItem>
                   ))}
@@ -620,7 +620,7 @@ function EntryForm({
                     )}
                   >
                     <div className="flex items-center gap-2">
-                      <MemberAvatar name={m.name} avatarColor={m.avatarColor} size="sm" />
+                      <MemberAvatar name={m.name} avatarColor={m.avatarColor} avatarEmoji={m.avatarEmoji} size="sm" />
                       <span className="text-sm">{m.name}</span>
                     </div>
 

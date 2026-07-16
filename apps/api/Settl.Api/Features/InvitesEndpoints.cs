@@ -154,7 +154,7 @@ public static class InvitesEndpoints
             invite.AcceptedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(ct);
 
-            return Results.Ok(new MeDto(member.Id, member.Name, member.AvatarColor, member.EmailConfirmed));
+            return Results.Ok(new MeDto(member.Id, member.Name, member.AvatarColor, member.AvatarEmoji, member.Email, member.EmailConfirmed));
         }).WithName("AcceptInvite")
             .AllowAnonymous()
             .Produces<MeDto>(StatusCodes.Status200OK)

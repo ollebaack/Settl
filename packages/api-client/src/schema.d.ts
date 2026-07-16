@@ -269,7 +269,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["GetCurrentUser"];
-        put?: never;
+        put: operations["UpdateCurrentUser"];
         post?: never;
         delete?: never;
         options?: never;
@@ -335,6 +335,86 @@ export interface paths {
         get: operations["GetHouseholdSummary"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/households/{id}/removal-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetHouseholdRemovalPreview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/households/{id}/transfer-ownership": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["TransferHouseholdOwnership"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/households/{id}/leave": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["LeaveHousehold"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/households/{id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ArchiveHousehold"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/households/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["RestoreHousehold"];
         delete?: never;
         options?: never;
         head?: never;
@@ -561,6 +641,11 @@ export interface components {
             name: string;
             currency: string;
             members: components["schemas"]["MemberDto"][];
+            /** Format: uuid */
+            ownerMemberId: string;
+            isOwner: boolean;
+            /** Format: date-time */
+            archivedAt: null | string;
         };
         HouseholdListItemDto: {
             /** Format: uuid */
@@ -571,6 +656,11 @@ export interface components {
             /** Format: int64 */
             netMinor: number | string;
             netLabel: string;
+            /** Format: uuid */
+            ownerMemberId: string;
+            isOwner: boolean;
+            /** Format: date-time */
+            archivedAt: null | string;
         };
         HouseholdSummaryDto: {
             /** Format: int64 */
@@ -595,6 +685,9 @@ export interface components {
             email: string;
             hasAccount: boolean;
         };
+        LeaveResultDto: {
+            archived: boolean;
+        };
         LoginRequest: {
             email: string;
             password: string;
@@ -604,6 +697,8 @@ export interface components {
             id: string;
             name: string;
             avatarColor: string;
+            avatarEmoji: null | string;
+            email: null | string;
             emailConfirmed: boolean;
         };
         MemberDto: {
@@ -611,6 +706,7 @@ export interface components {
             id: string;
             name: string;
             avatarColor: string;
+            avatarEmoji: null | string;
         };
         NudgeActionDto: {
             label: string;
@@ -630,6 +726,7 @@ export interface components {
             memberId: string;
             name: string;
             avatarColor: string;
+            avatarEmoji: null | string;
             /** Format: int64 */
             netMinor: number | string;
             relation: string;
@@ -697,6 +794,16 @@ export interface components {
             email: string;
             password: string;
         };
+        RemovalPreviewDto: {
+            isOwner: boolean;
+            /** Format: int32 */
+            memberCount: number | string;
+            soleMember: boolean;
+            mustTransferFirst: boolean;
+            viewerOpenDebts: components["schemas"]["PersonBalanceDto"][];
+            /** Format: int64 */
+            householdOpenTotalMinor: number | string;
+        };
         ResetPasswordRequest: {
             /** Format: uuid */
             userId: string;
@@ -724,6 +831,7 @@ export interface components {
             memberId: string;
             name: string;
             avatarColor: string;
+            avatarEmoji: null | string;
             /** Format: int64 */
             shareMinor: number | string;
             isPayer: boolean;
@@ -733,6 +841,10 @@ export interface components {
             values: null | {
                 [key: string]: number | string;
             };
+        };
+        TransferOwnershipRequest: {
+            /** Format: uuid */
+            newOwnerMemberId: string;
         };
         UpcomingDto: {
             /** Format: uuid */
@@ -762,6 +874,10 @@ export interface components {
             toMemberId: null | string;
             split: null | components["schemas"]["SplitInput"];
             category: null | string;
+        };
+        UpdateMeRequest: {
+            name: string;
+            avatarEmoji: null | string;
         };
         UpdateRecurringRequest: {
             active: null | boolean;
@@ -1264,9 +1380,53 @@ export interface operations {
             };
         };
     };
-    GetHouseholds: {
+    UpdateCurrentUser: {
         parameters: {
             query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeDto"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetHouseholds: {
+        parameters: {
+            query?: {
+                includeArchived?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1419,6 +1579,228 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetHouseholdRemovalPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RemovalPreviewDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    TransferHouseholdOwnership: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferOwnershipRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdDto"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    LeaveHousehold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveResultDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ArchiveHousehold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    RestoreHousehold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
