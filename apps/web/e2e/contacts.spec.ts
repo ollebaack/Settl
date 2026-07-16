@@ -28,9 +28,11 @@ test('add a contact by phone, accept the SMS invite, and see the connection', as
   // Blind confirmation — no "user exists" branch.
   await expect(page.getByRole('heading', { name: 'Inbjudan skickad' })).toBeVisible()
   await page.getByRole('button', { name: 'Klart' }).click()
+  // Wait for the sheet to fully close (its info box also mentions "Väntar på svar").
+  await expect(page.getByRole('heading', { name: 'Inbjudan skickad' })).toBeHidden()
 
   // The number now sits under "Väntar på svar" as the raw number, not a person.
-  await expect(page.getByText('Väntar på svar')).toBeVisible()
+  await expect(page.getByText('Väntar på svar', { exact: true })).toBeVisible()
   await expect(page.getByText(e164)).toBeVisible()
 
   // Accept the blind invite as a brand-new person (their own email becomes the identity).

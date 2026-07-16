@@ -139,8 +139,10 @@ function AcceptInvitePage() {
 
       {error && <AuthError>{error}</AuthError>}
 
-      {me ? (
-        // Signed in → accept directly.
+      {me && (isSms || hasAccount) ? (
+        // Signed in AND acceptable as this account (SMS has no bound identity; an email invite
+        // whose account already exists is presumably this one) → accept directly. A new-email
+        // invite must still create ITS account below, even if someone else is logged in.
         <Button type="button" onClick={onAcceptLoggedIn} disabled={busy} className="mt-1 h-12 w-full">
           {busy && <Loader2Icon className="animate-spin" />}
           {householdName ? 'Acceptera inbjudan' : 'Lägg till som kontakt'}
