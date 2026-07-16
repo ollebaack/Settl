@@ -2,7 +2,7 @@
 
 Decisions made during the full-design build that smell ADR-worthy. Each has an **interim
 default** already in the code; none has been grilled, so no ADR exists yet. Run `/grill`
-(or `/grill-with-docs` where external tech is involved) before treating any as settled.
+before treating any as settled.
 
 | # | Decision | Interim default (in code) | Why it needs a grill |
 |---|---|---|---|

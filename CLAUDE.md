@@ -31,6 +31,6 @@ flexible splits, pure-ledger settlement. Brief: `docs/specs/product-brief.md`.
 - User↔household is many-to-many; never assume single household.
 - API-shape change → regenerate `packages/api-client` in the same PR.
 - No new dependencies without stating why first. No secrets in the repo.
-- Important/irreversible decision → propose `/grill` (or `/grill-with-docs` for
-  external tech). ADRs only from grill sessions. Deliberate shortcut →
+- Important/irreversible decision → propose `/grill` (researches current docs first
+  when external tech is involved). ADRs only from grill sessions. Deliberate shortcut →
   `docs/tech-debt/` entry.
