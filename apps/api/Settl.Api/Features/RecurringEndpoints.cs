@@ -224,6 +224,30 @@ public static class RecurringEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        // Delete-if-clean, else deactivate (ADR-0018). A template that has posted zero entries
+        // can be hard-deleted (its RecurringShares cascade). Once it has posted history the debts
+        // those cycles created are real, so deletion is refused with 409 — the caller pauses
+        // (PATCH { active:false }) instead, or deletes the individual posted entries in the ledger.
+        app.MapDelete("/recurring/{id:guid}", async (
+            Guid id, ICurrentUserAccessor cu, SettlDbContext db, CancellationToken ct) =>
+        {
+            var me = await cu.GetMemberIdAsync(ct);
+            if (me is null) return Results.Problem("Ingen användare", statusCode: 404);
+
+            var template = await db.RecurringTemplates.FirstOrDefaultAsync(t => t.Id == id, ct);
+            if (template is null) return Results.Problem("Den återkommande posten hittades inte", statusCode: 404);
+
+            if (await db.Entries.AnyAsync(e => e.RecurringTemplateId == id, ct))
+                return Results.Problem("Den återkommande posten har bokförda perioder", statusCode: 409);
+
+            db.RecurringTemplates.Remove(template);
+            await db.SaveChangesAsync(ct);
+            return Results.NoContent();
+        }).WithName("DeleteRecurringTemplate")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+
         return app;
     }
 }

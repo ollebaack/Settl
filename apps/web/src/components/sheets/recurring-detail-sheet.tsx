@@ -1,14 +1,25 @@
 /**
- * Recurring detail overlay — implementation-map §2.9. Rendered by SheetRouter
- * when `sheet==='recurring'`. Shows the template's next auto-post, how it splits
- * (frozen shares), previous posted periods, and a pause/resume toggle. All state
- * (shares, posted entries, active) comes from the API (ADR-0006).
+ * Recurring detail overlay — implementation-map §2.9 + ledger-editing addendum §2.4.
+ * Rendered by SheetRouter when `sheet==='recurring'`. Shows the template's next
+ * auto-post, how it splits (frozen shares), previous posted periods, a pause/resume
+ * toggle, and a ⋯ menu (Redigera / Ta bort). Delete-if-clean, else deactivate
+ * (ADR-0018): a template with posted history can only be paused. All state (shares,
+ * posted entries, active) comes from the API (ADR-0006).
  */
+import { useState } from 'react'
+import { MoreHorizontalIcon, PencilIcon, Trash2Icon } from 'lucide-react'
 import { toast } from 'sonner'
 import { ResponsiveSheet } from '@/components/responsive-sheet'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { Money } from '@/components/money'
 import { GhostCard } from '@/components/ghost-card'
 import { MemberAvatar } from '@/components/member-avatar'
@@ -16,7 +27,13 @@ import { LoadingState, ErrorState } from '@/components/screen-states'
 import { cn } from '@/lib/utils'
 import { inDays, shortDate } from '@/lib/format'
 import { useActiveHousehold } from '@/lib/active-household'
-import { useMembers, useRecurringDetail, useUpdateRecurring } from '@/lib/queries'
+import { useSheet } from '@/lib/sheet'
+import {
+  useDeleteRecurring,
+  useMembers,
+  useRecurringDetail,
+  useUpdateRecurring,
+} from '@/lib/queries'
 import type { RecurringDetailDto } from '@/lib/api'
 
 const CADENCE_LABEL: Record<string, string> = {
@@ -37,37 +54,11 @@ export function RecurringDetailSheet({
   const { householdId } = useActiveHousehold()
   const detail = useRecurringDetail(recId)
   const { data: members } = useMembers(householdId)
-  const updateRecurring = useUpdateRecurring(householdId)
 
   const template = detail.data?.template
   const cadLabel = template
     ? `${CADENCE_LABEL[template.cadence] ?? template.cadence} · ${template.payerName} betalar`
     : ''
-
-  const onToggle = () => {
-    if (!template) return
-    const next = !template.active
-    updateRecurring.mutate(
-      {
-        recId: template.id,
-        body: {
-          active: next,
-          title: null,
-          amountMinor: null,
-          cadence: null,
-          nextPostDate: null,
-          paidByMemberId: null,
-          split: null,
-        },
-      },
-      {
-        onSuccess: () =>
-          toast(next ? `${template.title} återupptagen` : `${template.title} pausad`),
-        onError: (err) =>
-          toast.error(err instanceof Error ? err.message : 'Något gick fel. Försök igen.'),
-      },
-    )
-  }
 
   return (
     <ResponsiveSheet
@@ -84,10 +75,10 @@ export function RecurringDetailSheet({
       ) : (
         <RecurringDetailBody
           detail={detail.data}
+          householdId={householdId}
           colorOf={(id) => members?.find((m) => m.id === id)?.avatarColor ?? ''}
           cadLabel={cadLabel}
-          toggling={updateRecurring.isPending}
-          onToggle={onToggle}
+          onClose={onClose}
         />
       )}
     </ResponsiveSheet>
@@ -96,18 +87,25 @@ export function RecurringDetailSheet({
 
 function RecurringDetailBody({
   detail,
+  householdId,
   colorOf,
   cadLabel,
-  toggling,
-  onToggle,
+  onClose,
 }: {
   detail: RecurringDetailDto
+  householdId: string | undefined
   colorOf: (id: string) => string
   cadLabel: string
-  toggling: boolean
-  onToggle: () => void
+  onClose: () => void
 }) {
   const { template, shares, postedEntries } = detail
+  const { openSheet } = useSheet()
+  const updateRecurring = useUpdateRecurring(householdId)
+  const deleteRecurring = useDeleteRecurring(householdId)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+
+  const hasHistory = postedEntries.length > 0
+  const toggling = updateRecurring.isPending
 
   const nextTitle = template.active
     ? `Nästa: ${template.title} — ${shortDate(template.nextPostDate)}`
@@ -116,6 +114,47 @@ function RecurringDetailBody({
     ? `Bokförs automatiskt ${inDays(template.nextPostDate)}`
     : 'Återuppta för att schemalägga nästa period'
 
+  const setActive = (next: boolean, onDone?: () => void) => {
+    updateRecurring.mutate(
+      {
+        recId: template.id,
+        body: {
+          active: next,
+          title: null,
+          amountMinor: null,
+          cadence: null,
+          nextPostDate: null,
+          paidByMemberId: null,
+          split: null,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast(next ? `${template.title} återupptagen` : `${template.title} pausad`)
+          onDone?.()
+        },
+        onError: (err) =>
+          toast.error(err instanceof Error ? err.message : 'Något gick fel. Försök igen.'),
+      },
+    )
+  }
+
+  const onToggle = () => setActive(!template.active)
+
+  const handleDelete = () => {
+    deleteRecurring.mutate(template.id, {
+      onSuccess: () => {
+        toast(`${template.title} borttagen`)
+        setConfirmOpen(false)
+        onClose()
+      },
+      onError: (err) =>
+        toast.error(err instanceof Error ? err.message : 'Något gick fel. Försök igen.'),
+    })
+  }
+
+  const handlePauseInstead = () => setActive(false, () => setConfirmOpen(false))
+
   return (
     <div className="flex flex-col">
       <div className="flex items-center gap-2">
@@ -123,6 +162,39 @@ function RecurringDetailBody({
           På repeat
         </Badge>
         <span className="text-xs text-muted-foreground">{cadLabel}</span>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <button
+                type="button"
+                aria-label="Fler åtgärder"
+                className="ml-auto grid size-8 place-items-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-muted/70"
+              />
+            }
+          >
+            <MoreHorizontalIcon className="size-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => openSheet('editRecurring', { id: template.id })}>
+              <PencilIcon />
+              Redigera
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              variant="destructive"
+              disabled={hasHistory}
+              onClick={() => setConfirmOpen(true)}
+            >
+              <Trash2Icon />
+              Ta bort
+            </DropdownMenuItem>
+            {hasHistory && (
+              <p className="px-3 pt-1 pb-1.5 text-xs text-muted-foreground">
+                Har bokförda perioder — pausa i stället, så finns historiken kvar.
+              </p>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <Money minor={template.amountMinor} className="mt-3 text-[28px] font-semibold" />
@@ -171,7 +243,7 @@ function RecurringDetailBody({
         Ändrad delning gäller framtida perioder.
       </p>
 
-      {postedEntries.length > 0 && (
+      {hasHistory ? (
         <div className="mt-4">
           <h3 className="mb-1.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
             Tidigare perioder
@@ -190,12 +262,32 @@ function RecurringDetailBody({
               </span>
             </div>
           ))}
+          <p className="mt-2 text-xs text-muted-foreground">
+            De bokförda posterna är vanliga poster — ta bort dem var för sig i loggboken.
+          </p>
         </div>
+      ) : (
+        <p className="mt-4 text-xs text-muted-foreground">
+          Ingen period bokförd än — inget i loggboken påverkas om du tar bort den.
+        </p>
       )}
 
       <Button variant="outline" className="mt-4 w-full" disabled={toggling} onClick={onToggle}>
         {template.active ? 'Pausa autobokföring' : 'Återuppta autobokföring'}
       </Button>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={`Ta bort ”${template.title}”?`}
+        description="Den har inte bokfört någon post än, så inget försvinner ur loggboken. Vill du behålla den för senare kan du pausa i stället."
+        confirmLabel="Ta bort"
+        destructive
+        secondaryLabel={template.active ? 'Pausa i stället' : undefined}
+        onSecondary={template.active ? handlePauseInstead : undefined}
+        busy={deleteRecurring.isPending || toggling}
+        onConfirm={handleDelete}
+      />
     </div>
   )
 }

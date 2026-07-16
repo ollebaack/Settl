@@ -413,3 +413,18 @@ export function useUpdateRecurring(householdId?: string) {
     },
   })
 }
+
+/**
+ * Hard-delete a recurring template (ADR-0018 delete-if-clean). The API 409s when the
+ * template has posted history; the caller surfaces that and falls back to pausing.
+ */
+export function useDeleteRecurring(householdId?: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (recId: string) => apiDelete<void>(`/recurring/${recId}`),
+    onSuccess: (_data, recId) => {
+      qc.removeQueries({ queryKey: queryKeys.recurringDetail(recId) })
+      invalidateHousehold(qc, householdId)
+    },
+  })
+}
