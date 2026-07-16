@@ -56,6 +56,7 @@ public sealed record PersonBalanceDto(
     Guid MemberId,
     string Name,
     string AvatarColor,
+    string? AvatarEmoji,
     long NetMinor,
     string Relation);
 
