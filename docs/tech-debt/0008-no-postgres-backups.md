@@ -1,16 +1,23 @@
-# 0008: Production Postgres has no backups configured
+# 0008: Postgres backups — RESOLVED 2026-07-16
 
-**What:** The `settl-postgres` Dokploy database service has no scheduled backups. A
-volume/disk failure on the VPS loses all household ledger data with no recovery path.
-ADR-0014 decided *how* this will eventually be solved — Dokploy's native scheduled
-`pg_dump`-to-S3 feature — but deciding the mechanism isn't the same as it being on;
-nothing is actually backed up today.
+**Status:** Resolved. Scheduled Postgres backups run to Cloudflare R2, are verified in the
+bucket, restore-proven into a throwaway database, and hardened against deletion with a
+7-day R2 bucket lock. Kept for history; live config lives in `docs/ops/production.md` →
+Backups, decisions in ADR-0014 (mechanism) and ADR-0015 (provider + hardening).
 
-**Why we took it:** Configuring the backup feature needs S3-compatible storage
-credentials (a bucket + access keys), which weren't available during the Dokploy setup
-session. Getting the app live took priority over this follow-up step.
-
-**Trigger to pay it down:** Before onboarding any real household's data, or immediately
-if a second person starts relying on the app — same trigger the SQLite-era version of
-this debt used. Get S3-compatible storage credentials (Backblaze B2, AWS S3, MinIO,
-etc.), then configure the schedule under `settl-postgres` → Backups in Dokploy.
+**What was done (all 2026-07-16):**
+1. ✅ Cloudflare R2 bucket `settl-pg-backups` (EU jurisdiction) + scoped Account API token
+   (`settl-dokploy-backups`, Object Read & Write, this bucket only).
+2. ✅ Dokploy S3 destination `cloudflare-r2` (Cloudflare R2 Storage provider, region
+   `auto`, `.eu.` endpoint); Test passed.
+3. ✅ Backup job: database `Settl`, cron `0 3 * * *` (UTC), prefix `settl-prod/`, keep 14.
+4. ✅ Manual run succeeded; dump verified at
+   `settl-pg-backups/settl-settlpostgres-w2kk0z/settl-prod/<ISO>.sql.gz` (~7 KB gzip).
+5. ✅ Restore drill: spun up a throwaway `settl-restore-test` Postgres service, restored
+   the dump into it (`pg_restore … --clean --if-exists` reported success), deleted the
+   throwaway. Production `settl-postgres` was never touched.
+6. ✅ Anti-deletion hardening (ADR-0015): R2 Bucket Lock Rule `settl-backups-7day-lock`,
+   7-day retention. Chosen over object versioning because versioning isn't
+   dashboard-configurable in R2 (S3-API/Wrangler only), and bucket lock is a stronger
+   guarantee. 7 days sits safely under the job's 14-backup retention, so Dokploy's own
+   cleanup deletes (of ~14-day-old objects) never hit still-locked objects.
