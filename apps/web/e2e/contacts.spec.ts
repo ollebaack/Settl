@@ -19,14 +19,14 @@ test('add a contact by phone, accept the SMS invite, and see the connection', as
 
   // Open the add-a-friend sheet. SMS is the default channel; the privacy note is explicit.
   await page.getByRole('button', { name: '+ Lägg till kontakt' }).click()
-  await expect(page.getByText('Lägg till kontakt')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Lägg till kontakt' })).toBeVisible()
   await expect(page.getByText(/Vi berättar inte om numret redan använder Settl/)).toBeVisible()
 
   await page.getByLabel('Telefonnummer').fill(local)
   await page.getByRole('button', { name: 'Skicka SMS-inbjudan' }).click()
 
   // Blind confirmation — no "user exists" branch.
-  await expect(page.getByText('Inbjudan skickad')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Inbjudan skickad' })).toBeVisible()
   await page.getByRole('button', { name: 'Klart' }).click()
 
   // The number now sits under "Väntar på svar" as the raw number, not a person.
@@ -46,7 +46,7 @@ test('add a contact by phone, accept the SMS invite, and see the connection', as
 
   // Now signed in as the invitee — Du appears in their contacts (connection-on-accept).
   await page.goto('/kontakter')
-  await expect(page.getByText('Du', { exact: true })).toBeVisible()
+  await expect(page.getByText('Du', { exact: true }).first()).toBeVisible()
 
   // And the edge is reciprocal: Du has the new person too (checked via the API contract).
   const theirContacts = await page.request.get(`${API}/contacts`)
