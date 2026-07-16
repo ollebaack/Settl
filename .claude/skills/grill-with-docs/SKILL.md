@@ -20,9 +20,10 @@ where versions, pricing, or APIs change.
 3. **Grill in rounds** (AskUserQuestion, max 4/round) — but now every option cites
    evidence: "X dropped Y in v3 (changelog, 2026-01)". If research already settles a
    question, don't ask it; state the finding.
-4. **Close** exactly like `grill`: decision summary → ADR if ADR-worthy (include a
-   short "Sources" list of load-bearing links in the ADR's Context), tech-debt entry
-   for accepted shortcuts.
+4. **Close** exactly like `grill`: decision summary → the right artifact (ADR, spec,
+   or just a summary) per `grill`'s Output rules. When it's an ADR, include a short
+   "Sources" list of load-bearing links in its Context; a spec grounded in research
+   should cite the same way. Add a tech-debt entry for accepted shortcuts.
 
 ## Rules
 
