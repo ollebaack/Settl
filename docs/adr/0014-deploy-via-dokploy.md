@@ -55,6 +55,16 @@ abandoned/unmaintained, or if Settl's traffic ever needs multi-VPS scale-out a s
 Dokploy instance can't manage cleanly (the same trigger ADR-0009 already named for
 revisiting the single-VPS approach).
 
+Rollout is automated end-to-end: after CD pushes a new image to GHCR it triggers the
+Dokploy deploy so nobody has to click **Deploy** by hand. We reach Dokploy through its
+authenticated API (`POST /api/application.deploy` with an `x-api-key` token) rather than
+the no-auth deploy webhook its UI surfaces — that webhook URL form 404s across Dokploy
+versions ([dokploy/dokploy#2645](https://github.com/Dokploy/dokploy/issues/2645)),
+whereas the API endpoint is documented and stable. This adds a Dokploy API token as a
+deploy-time secret (stored in GitHub Actions, not the repo). The mechanics — required
+secrets, the `Web__BaseUrl` fail-fast precondition, and rollback by pinning a
+`sha-<full-sha>` image tag — live in `docs/ops/production.md`.
+
 ## Sources
 
 - [Dokploy: Cloudflare domain guide](https://docs.dokploy.com/docs/core/domains/cloudflare) — Full (Strict) + Let's Encrypt is the documented, supported combination
@@ -63,3 +73,5 @@ revisiting the single-VPS approach).
 - [Dokploy: Docker Compose domains](https://docs.dokploy.com/docs/core/docker-compose/domains) — native domain/TLS routing without hand-written Traefik labels
 - [dokploy/dokploy#1839](https://github.com/Dokploy/dokploy/issues/1839) — Origin CA certificate support still unresolved as of this writing
 - [Dokploy GitHub releases](https://github.com/Dokploy/dokploy/releases) — active maintenance, recent security patch cadence
+- [Dokploy: API deployment](https://docs.dokploy.com/docs/api) — `POST /api/application.deploy` with an `x-api-key` token, the documented programmatic deploy method
+- [dokploy/dokploy#2645](https://github.com/Dokploy/dokploy/issues/2645) — deploy webhook 404s, why we use the authenticated API instead
