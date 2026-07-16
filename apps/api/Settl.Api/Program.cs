@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
@@ -52,6 +53,20 @@ builder.Services.AddIdentityCore<Member>(options =>
 
 builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
     .AddIdentityCookies();
+
+// Without this, the Data Protection key ring lives only in the running container's
+// memory: every redeploy recreates the container, rotates the keys, and silently
+// invalidates every outstanding auth cookie, email-confirmation token, and password-reset
+// token. DataProtection:KeyPath is only set in production (mounted as a persistent
+// volume, same pattern as settl-postgres-data) — dev/test processes aren't recycled
+// mid-session, so there's nothing to persist there.
+var dataProtectionKeyPath = builder.Configuration["DataProtection:KeyPath"];
+if (!string.IsNullOrWhiteSpace(dataProtectionKeyPath))
+{
+    builder.Services.AddDataProtection()
+        .SetApplicationName("Settl")
+        .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeyPath));
+}
 
 // This is a JSON API, not a server-rendered app — an unauthenticated/forbidden request
 // should get a plain status code, not the cookie scheme's default redirect-to-login-page.
