@@ -2,7 +2,11 @@ name: CD
 
 # Builds and publishes the production image (ADR-0009/ADR-0014: single container,
 # built from apps/api/Settl.Api/Dockerfile with the repo root as build context),
-# then calls Dokploy's deploy webhook so the new image actually gets rolled out.
+# then calls Dokploy's authenticated deploy API so the new image actually gets rolled
+# out. We use the API-token method (POST /api/application.deploy with an x-api-key
+# header) rather than the no-auth deploy webhook the Dokploy UI surfaces: the webhook
+# URL form has a history of 404ing across Dokploy versions, while the API endpoint is
+# documented and stable. See docs/ops/production.md "Deploy flow".
 on:
   workflow_run:
     workflows: [CI]
@@ -48,4 +52,12 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Trigger Dokploy deploy
-        run: curl -fsS -X POST "${{ secrets.DOKPLOY_DEPLOY_WEBHOOK }}"
+        env:
+          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+          DOKPLOY_APP_ID: ${{ secrets.DOKPLOY_APP_ID }}
+        run: |
+          curl -fsS -X POST "http://31.70.90.93:3000/api/application.deploy" \
+            -H "accept: application/json" \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: $DOKPLOY_API_KEY" \
+            -d "{\"applicationId\": \"$DOKPLOY_APP_ID\"}"
