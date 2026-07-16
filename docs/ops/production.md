@@ -24,7 +24,8 @@ production changes.
 
 ## Deploy flow
 
-1. Push to `main` → CI runs → CD builds the image and pushes it to GHCR.
+1. Push to `main` → CI runs → CD builds the image and pushes it to GHCR, tagged both
+   `latest` and `sha-<full-sha>` (`docker/metadata-action` in `cd.yml`).
 2. CD's final "Trigger Dokploy deploy" step then calls Dokploy's authenticated deploy
    API (`POST http://31.70.90.93:3000/api/application.deploy` with an `x-api-key` header
    and `{"applicationId": ...}` body) to roll the new image out automatically. We use the
@@ -42,7 +43,10 @@ production changes.
 4. If a deploy ever looks like it didn't pick up the new image, open the deployment's log
    in Dokploy and check for `Digest: sha256:...` — a Docker-provider app pulling `:latest`
    can occasionally reuse a cached "up to date" pull. You can always still redeploy by
-   hand via the **Deploy** button in the `settl-api` app.
+   hand via the **Deploy** button in the `settl-api` app. To **roll back**, point the
+   app's Docker image at a specific `ghcr.io/ollebaack/settl-api:sha-<full-sha>` tag
+   (General tab → Provider) instead of `latest`, so you pin an exact prior build rather
+   than whatever `latest` currently resolves to, then Deploy.
 5. **Before deploying a newer image, confirm `Web__BaseUrl=https://settlapp.se` is set**
    in the Environment tab (see env vars below) — the app fail-fast-crashes on startup if
    it's unset (commit `70f7dfd`), so a deploy against a missing value crash-loops the
