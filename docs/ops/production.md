@@ -41,10 +41,20 @@ production changes.
   service's internal Dokploy hostname (not localhost, not the public IP).
 - `Resend__ApiKey` — real Resend key. No `Resend__FromAddress` override needed; the
   code's built-in default (`no-reply@settlapp.se`) matches the verified domain.
+- `Web__BaseUrl=https://settlapp.se` — origin baked into the links in outbound emails
+  (email confirmation, password reset) and household invites. **Required in prod:** the
+  code falls back to `http://localhost:5173` when unset (`AuthEndpoints.cs`,
+  `InvitesEndpoints.cs`), so a missing value ships emails whose links point at the
+  recipient's own machine instead of the app.
+- `DataProtection__KeyPath=/keys` — directory the ASP.NET Core Data Protection key ring
+  is persisted to, backed by the `settl-api-dataprotection-keys` volume mounted at `/keys`
+  (Advanced → Volumes). **Required in prod:** without it the key ring is regenerated in
+  memory on every redeploy, silently invalidating all auth cookies and every outstanding
+  email-confirmation / password-reset token.
 
 ## Debugging quick-reference
 
-Two real production-only bugs surfaced during initial rollout (neither ever showed up in
+Several production-only bugs surfaced during initial rollout (none ever showed up in
 local dev, since dev's topology differs — see each fix's commit for the full why):
 
 - **Every static asset (JS/CSS) returns 401, only `index.html` loads** → check
@@ -60,6 +70,14 @@ local dev, since dev's topology differs — see each fix's commit for the full w
   `pnpm --filter web build` — without it, `apps/web/src/lib/api.ts`'s dev-convenience
   fallback (`http://localhost:5000`) gets baked into the production build. Fixed in
   commit `f6b9c78`.
+- **Confirmation / password-reset / invite email links point at `localhost:5173`** (so
+  clicking one hits the recipient's own machine and the confirm page shows "Länken är
+  ogiltig eller har gått ut") → `Web__BaseUrl` is unset; the code falls back to
+  `http://localhost:5173` (`AuthEndpoints.cs`, `InvitesEndpoints.cs`). Set it in the
+  Environment tab (see env vars above) and redeploy.
+- **Login/session dropped or every confirm/reset link fails right after a redeploy** →
+  the Data Protection key ring wasn't persisted; check `DataProtection__KeyPath=/keys` is
+  set and the `/keys` volume is mounted (see env vars above). Fixed in commit `86bbe6a`.
 - **New commit doesn't seem to be live** → see "Deploy flow" above; almost certainly
   just needs a manual redeploy in Dokploy, not a real bug.
 - **Container logs:** Dokploy → `settl-api` → Logs tab, real-time, shows EF Core
