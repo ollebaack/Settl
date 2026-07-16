@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Bricolage Grotesque',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{cursor:pointer;font:inherit;color:inherit;background:none;border:none;padding:0;margin:0;text-align:left}
+input{font:inherit;color:inherit}
+[data-theme="mint"]{--bg:#f4f6f2;--card:#ffffff;--ink:#1c2620;--sub:#64715f;--line:#e2e7dd;--accent:#2e7d5b;--soft:#e2f0e6;--pos:#2e7d5b;--neg:#bb5433;--chip:#eaeee6}
+.wrap{background:#e6e4de;padding:30px;display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start;color:var(--ink)}
+.frame{display:flex;flex-direction:column;gap:10px}
+.cap{font-size:12.5px;font-weight:700;color:#4f5e52}
+.cap span{color:#8c9a87;font-weight:500}
+.phone{width:392px;box-sizing:border-box;background:var(--bg);border:1px solid var(--line);border-radius:30px;padding:20px 18px 24px;box-shadow:0 22px 44px -26px rgba(20,30,22,.55)}
+.sheet{width:392px;box-sizing:border-box;background:var(--card);border:1px solid var(--line);border-radius:26px;padding:16px 18px 22px;box-shadow:0 22px 44px -26px rgba(20,30,22,.55)}
+.handle{width:36px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 16px}
+.title{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.sub{font-size:12.5px;color:var(--sub);line-height:1.5}
+.uplabel{font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--sub)}
+.mono{font-family:'Spline Sans Mono',monospace}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px}
+.row{display:flex;align-items:center;gap:12px}
+.col{display:flex;flex-direction:column}
+.av{width:36px;height:36px;flex:none;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;color:#1c2620}
+.pav{width:78px;height:78px;flex:none;border-radius:50%;display:grid;place-items:center;font-weight:700;color:#1c2620;box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line)}
+.pav .ini{font-size:31px}
+.pav .emo{font-size:40px;line-height:1}
+.pill{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);background:var(--soft);border-radius:999px;padding:3px 9px}
+.btn{display:block;width:100%;box-sizing:border-box;text-align:center;border-radius:15px;padding:13px 0;font-size:14px;font-weight:700}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-outline{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn-danger-ghost{background:transparent;border:1px solid var(--neg);color:var(--neg)}
+.chip-btn{background:var(--chip);border-radius:999px;padding:7px 13px;font-size:12px;font-weight:600}
+.input{width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 13px;font-size:14px}
+.input.err{border-color:var(--neg)}
+.flabel{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--sub);margin-bottom:7px}
+.errline{font-size:12px;color:var(--neg);margin-top:7px}
+.okline{font-size:12px;color:var(--accent);margin-top:7px}
+.rowlink{display:flex;align-items:center;gap:12px;width:100%;padding:13px 0}
+.chev{color:var(--sub);font-size:16px}
+.actions{display:flex;flex-direction:column;gap:9px;margin-top:20px}
+.hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.back{display:flex;align-items:center;gap:5px;color:var(--sub);font-size:13px;font-weight:600}
+.emojigrid{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}
+.emojicell{aspect-ratio:1;border-radius:13px;display:grid;place-items:center;font-size:22px;background:var(--chip)}
+.emojicell.on{background:var(--soft);box-shadow:inset 0 0 0 1.5px var(--accent)}
+.searchbox{width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:13.5px;color:var(--sub)}
+.sect{margin-top:22px}
+</style>
+</helmet>
+<div data-theme="mint" class="wrap">
+
+  <div style="width:100%;max-width:840px">
+    <div style="font-size:22px;font-weight:700;letter-spacing:-.01em">Profil — namn, lösenord &amp; profilbild</div>
+    <div class="sub" style="margin-top:4px">Önskemål: <i>”En profilsida där man kan justera lösen, byta profilbild, byta namn.”</i> Mobil, mint-tema, svensk copy. Per <b>ADR-0019</b>: ingen bilduppladdning — profilbilden är en valfri <b>emoji</b> på medlemmens färg, med bokstaven som reserv. Personbubbla = cirkel (ADR-0016).</div>
+  </div>
+
+  <div class="frame">
+    <div class="cap">1 · Profil <span>— bokstav som reserv (ingen emoji vald)</span></div>
+    <div class="phone">
+      <div class="hdr">
+        <button class="back"><span style="font-size:16px">‹</span> Tillbaka</button>
+        <span class="uplabel">Profil</span>
+        <span style="width:56px"></span>
+      </div>
+
+      <div class="col" style="align-items:center;gap:12px;padding:6px 0 2px">
+        <span class="pav" style="background:#dfe6cf"><span class="ini">A</span></span>
+        <button class="chip-btn" style="color:var(--accent)">Välj profilbild</button>
+      </div>
+
+      <div class="sect">
+        <div class="flabel">Namn</div>
+        <input class="input" value="Alex" />
+        <div class="sub" style="margin-top:7px">Så här syns du i loggboken.</div>
+      </div>
+
+      <div class="sect">
+        <div class="flabel">Konto</div>
+        <div class="card" style="padding:2px 14px">
+          <div class="row" style="padding:12px 0;border-bottom:1px solid var(--line)">
+            <div class="col" style="flex:1;gap:2px">
+              <span style="font-size:13.5px;font-weight:600">E-post</span>
+              <span class="sub">alex@exempel.se</span>
+            </div>
+            <span class="sub" style="font-size:11.5px">Din inloggning</span>
+          </div>
+          <button class="rowlink">
+            <span style="flex:1;font-size:14px;font-weight:600">Byt lösenord</span>
+            <span class="chev">›</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary">Spara</button>
+        <button class="btn btn-danger-ghost">Logga ut</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame">
+    <div class="cap">2 · Profil <span>— emoji vald</span></div>
+    <div class="phone">
+      <div class="hdr">
+        <button class="back"><span style="font-size:16px">‹</span> Tillbaka</button>
+        <span class="uplabel">Profil</span>
+        <span style="width:56px"></span>
+      </div>
+
+      <div class="col" style="align-items:center;gap:12px;padding:6px 0 2px">
+        <span class="pav" style="background:#dfe6cf"><span class="emo">🦊</span></span>
+        <div class="row" style="gap:8px">
+          <button class="chip-btn" style="color:var(--accent)">Byt emoji</button>
+          <button class="chip-btn" style="color:var(--sub)">Ta bort</button>
+        </div>
+      </div>
+
+      <div class="sect">
+        <div class="flabel">Namn</div>
+        <input class="input" value="Alex" />
+        <div class="sub" style="margin-top:7px">Så här syns du i loggboken.</div>
+      </div>
+
+      <div class="sect">
+        <div class="flabel">Konto</div>
+        <div class="card" style="padding:2px 14px">
+          <div class="row" style="padding:12px 0;border-bottom:1px solid var(--line)">
+            <div class="col" style="flex:1;gap:2px">
+              <span style="font-size:13.5px;font-weight:600">E-post</span>
+              <span class="sub">alex@exempel.se</span>
+            </div>
+            <span class="sub" style="font-size:11.5px">Din inloggning</span>
+          </div>
+          <button class="rowlink">
+            <span style="flex:1;font-size:14px;font-weight:600">Byt lösenord</span>
+            <span class="chev">›</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary">Spara</button>
+        <button class="btn btn-danger-ghost">Logga ut</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame">
+    <div class="cap">3 · Välj profilbild <span>— emoji-väljare (sheet)</span></div>
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="title">Välj profilbild</div>
+      <div class="sub" style="margin-top:2px">Plocka en emoji — eller håll dig till din bokstav.</div>
+
+      <div class="col" style="align-items:center;gap:6px;margin:16px 0">
+        <span class="pav" style="background:#dfe6cf"><span class="emo">🦊</span></span>
+      </div>
+
+      <input class="searchbox" value="Sök emoji" style="margin-bottom:12px" />
+      <div class="emojigrid">
+        <span class="emojicell">😀</span>
+        <span class="emojicell on">🦊</span>
+        <span class="emojicell">🐧</span>
+        <span class="emojicell">🌿</span>
+        <span class="emojicell">🔥</span>
+        <span class="emojicell">⭐</span>
+        <span class="emojicell">🍋</span>
+        <span class="emojicell">🎧</span>
+        <span class="emojicell">🚲</span>
+        <span class="emojicell">☕</span>
+        <span class="emojicell">🏔️</span>
+        <span class="emojicell">🐈</span>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary">Använd 🦊</button>
+        <button class="btn btn-outline">Använd min bokstav istället</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame">
+    <div class="cap">4 · Byt lösenord <span>— sheet</span></div>
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="title">Byt lösenord</div>
+      <div class="sub" style="margin-top:2px">Fyll i ditt nuvarande lösenord och välj ett nytt.</div>
+
+      <div class="col" style="gap:15px;margin-top:18px">
+        <div>
+          <div class="flabel">Nuvarande lösenord</div>
+          <input class="input mono" type="password" value="••••••••" />
+        </div>
+        <div>
+          <div class="flabel">Nytt lösenord</div>
+          <input class="input mono" type="password" value="••••••••••" />
+          <div class="sub" style="margin-top:7px">Minst 8 tecken.</div>
+        </div>
+        <div>
+          <div class="flabel">Upprepa nytt lösenord</div>
+          <input class="input mono" type="password" value="••••••••••" />
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary">Spara lösenord</button>
+        <button class="btn btn-outline">Avbryt</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame">
+    <div class="cap">5 · Byt lösenord <span>— felstater</span></div>
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="title">Byt lösenord</div>
+      <div class="sub" style="margin-top:2px">Fyll i ditt nuvarande lösenord och välj ett nytt.</div>
+
+      <div class="col" style="gap:15px;margin-top:18px">
+        <div>
+          <div class="flabel">Nuvarande lösenord</div>
+          <input class="input mono err" type="password" value="••••••" />
+          <div class="errline">Fel nuvarande lösenord.</div>
+        </div>
+        <div>
+          <div class="flabel">Nytt lösenord</div>
+          <input class="input mono" type="password" value="••••••••••" />
+        </div>
+        <div>
+          <div class="flabel">Upprepa nytt lösenord</div>
+          <input class="input mono err" type="password" value="•••••••" />
+          <div class="errline">Lösenorden matchar inte.</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary">Spara lösenord</button>
+        <button class="btn btn-outline">Avbryt</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{}'>
+  class Component extends DCLogic {
+    renderVals() { return {}; }
+  }
+</script>
+</body>
+</html>
