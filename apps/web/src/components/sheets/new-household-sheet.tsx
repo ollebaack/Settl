@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils'
 
 export function NewHouseholdSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const navigate = useNavigate()
-  const { setHouseholdId } = useActiveHousehold()
+  const { households, setHouseholdId } = useActiveHousehold()
   const createHousehold = useCreateHousehold()
 
   const [name, setName] = useState('')
@@ -32,7 +32,14 @@ export function NewHouseholdSheet({ open, onClose }: { open: boolean; onClose: (
     try {
       const created = await createHousehold.mutateAsync({ name: trimmedName, currency: null })
       setHouseholdId(created.id)
-      navigate({ to: '/', search: {} })
+      // Enter the fresh book. When it's the user's first household, `/` IS its
+      // dashboard (adaptive home, ADR-0019); with others already present, `/`
+      // would be the overview, so drop straight into the focused book route.
+      if (households.length === 0) {
+        navigate({ to: '/', search: {} })
+      } else {
+        navigate({ to: '/hushall/$id', params: { id: created.id }, search: {} })
+      }
       toast(`${created.name} skapat — bjud in andra från hushållets inställningar`)
       setName('')
       onClose()

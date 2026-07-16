@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test'
+import { API } from './helpers'
 
 test('API is healthy', async ({ request }) => {
-  const response = await request.get('http://localhost:5000/health')
+  const response = await request.get(`${API}/health`)
   expect(response.ok()).toBeTruthy()
   expect(await response.json()).toEqual({ status: 'ok' })
 })

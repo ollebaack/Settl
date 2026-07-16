@@ -15,6 +15,7 @@ export type SheetKind =
   | 'households'
   | 'newHousehold'
   | 'recurring'
+  | 'addFriend'
   | 'leaveHousehold'
   | 'transferOwnership'
   | 'archiveHousehold'
@@ -36,6 +37,7 @@ const SHEET_KINDS: readonly SheetKind[] = [
   'households',
   'newHousehold',
   'recurring',
+  'addFriend',
   'leaveHousehold',
   'transferOwnership',
   'archiveHousehold',

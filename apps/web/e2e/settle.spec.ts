@@ -34,7 +34,9 @@ test('settle up with a person closes the pair', async ({ page }) => {
   await createIou(page.request, household.id, 'E2E skuld', 50000, sam, du)
 
   await pinHousehold(page, household.id)
-  await page.goto('/')
+  // "Du" has several books, so `/` is the overview; the person rows live on the
+  // focused book dashboard (ADR-0019).
+  await page.goto(`/hushall/${household.id}`)
 
   // Open settle-up from the person row.
   await page.getByTestId('person-row').first().click()

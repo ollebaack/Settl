@@ -27,6 +27,47 @@ export function formatKr(minor: number | string): string {
 }
 
 /**
+ * Currency suffix for a household's ISO code. The multi-household overview shows
+ * each book's net in its OWN currency (ADR-0019 §2.2), so money there can't use
+ * the SEK-only `formatKr`. Unknown codes fall back to the raw code so nothing is
+ * silently mislabelled.
+ */
+const CURRENCY_SUFFIX: Record<string, string> = {
+  SEK: 'kr',
+  NOK: 'kr',
+  DKK: 'kr',
+  EUR: '€',
+  USD: '$',
+  GBP: '£',
+}
+
+function currencySuffix(currency: string): string {
+  return CURRENCY_SUFFIX[currency?.toUpperCase()] ?? currency
+}
+
+/** `1 234 €` — absolute value, sv-SE grouping, currency-specific suffix. */
+export function formatMoney(minor: number | string, currency: string): string {
+  const major = Math.abs(toNumber(minor) / 100)
+  const num = major.toLocaleString('sv-SE', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })
+  return `${num}${NBSP}${currencySuffix(currency)}`
+}
+
+/**
+ * Signed money in a given currency: `+180 kr` / `−42 €` (true minus). Zero
+ * renders without a sign. Used by the overview cards + same-currency hero.
+ */
+export function formatSignedMoney(minor: number | string, currency: string): string {
+  const n = toNumber(minor)
+  const base = formatMoney(n, currency)
+  if (n > 0) return `+${base}`
+  if (n < 0) return `${MINUS}${base}`
+  return base
+}
+
+/**
  * Signed money for the settle sheet: `+1 234 kr` / `−1 234 kr` (true minus).
  * Zero renders without a sign.
  */

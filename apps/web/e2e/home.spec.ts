@@ -1,13 +1,16 @@
 import { test, expect } from '@playwright/test'
 import { getHouseholdId, loginAs, pinHousehold } from './helpers'
 
-// HOME (Hem, §2.1): net hero, per-person rows, "Senaste", "Visa alla" → ledger.
-test.describe('Home', () => {
+// HOME dashboard (Hem, §2.1): net hero, per-person rows, "Senaste", "Visa alla"
+// → ledger. "Du" belongs to 2 seeded books, so `/` is the multi-household
+// overview (ADR-0019); the focused single-book dashboard lives at `/hushall/$id`.
+// This spec exercises that shared dashboard directly via the focused route.
+test.describe('Home dashboard', () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'Du')
     const household = await getHouseholdId(page.request, 'Lönnvägen 3')
     await pinHousehold(page, household)
-    await page.goto('/')
+    await page.goto(`/hushall/${household}`)
   })
 
   test('shows the net hero with a Swedish net label', async ({ page }) => {
