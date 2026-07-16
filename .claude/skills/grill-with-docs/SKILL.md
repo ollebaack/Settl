@@ -19,7 +19,9 @@ where versions, pricing, or APIs change.
    recall. 3–6 sources is typical; note anything that contradicts your priors.
 3. **Grill in rounds** (AskUserQuestion, max 4/round) — but now every option cites
    evidence: "X dropped Y in v3 (changelog, 2026-01)". If research already settles a
-   question, don't ask it; state the finding.
+   question, don't ask it; state the finding. Recommend one of the answers: make it the
+   first option and append " (Recommended)" to its label. Base the recommendation on the
+   evidence you fetched, not on priors.
 4. **Close** exactly like `grill`: decision summary → the right artifact (ADR, spec,
    or just a summary) per `grill`'s Output rules. When it's an ADR, include a short
    "Sources" list of load-bearing links in its Context; a spec grounded in research

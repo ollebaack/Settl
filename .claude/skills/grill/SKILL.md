@@ -20,6 +20,9 @@ not an interview.
      think of.
    - Push back where the user's stated position is weakest. Play devil's advocate for
      the strongest alternative.
+   - Recommend one of the answers: make it the first option and append " (Recommended)"
+     to its label, so the user gets a clear steer rather than a neutral menu. Recommend
+     the option you actually think is best on the evidence, not the user's default.
 3. **Stop when marginal questions stop changing the outcome.** Two rounds is usually
    enough; don't pad.
 4. **Close with a decision summary:** what was decided, what was explicitly rejected
