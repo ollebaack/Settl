@@ -99,7 +99,7 @@ public static class HouseholdsEndpoints
         {
             var data = await Loaders.LoadHousehold(db, id, ct);
             if (data is null) return Results.Problem("Hushållet hittades inte", statusCode: 404);
-            return Results.Ok(data.OrderedMembers.Select(m => new MemberDto(m.Id, m.Name, m.AvatarColor)));
+            return Results.Ok(data.OrderedMembers.Select(m => new MemberDto(m.Id, m.Name, m.AvatarColor, m.AvatarEmoji)));
         }).WithName("GetHouseholdMembers")
             .Produces<List<MemberDto>>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound);
@@ -121,7 +121,8 @@ public static class HouseholdsEndpoints
             {
                 var net = BalanceCalculator.NetWith(me.Value, x, entries, closures);
                 return new PersonBalanceDto(
-                    x, Mapping.Name(data.MembersById, x), data.MembersById[x].AvatarColor, net, Labels.Relation(net));
+                    x, Mapping.Name(data.MembersById, x), data.MembersById[x].AvatarColor,
+                    data.MembersById[x].AvatarEmoji, net, Labels.Relation(net));
             }).ToList();
 
             var overall = people.Sum(p => p.NetMinor);
@@ -178,7 +179,8 @@ public static class HouseholdsEndpoints
                 {
                     var net = BalanceCalculator.NetWith(me.Value, x, entries, closures);
                     return new PersonBalanceDto(
-                        x, Mapping.Name(data.MembersById, x), data.MembersById[x].AvatarColor, net, Labels.Relation(net));
+                        x, Mapping.Name(data.MembersById, x), data.MembersById[x].AvatarColor,
+                        data.MembersById[x].AvatarEmoji, net, Labels.Relation(net));
                 })
                 .Where(p => p.NetMinor != 0)
                 .ToList();
@@ -325,7 +327,7 @@ public static class HouseholdsEndpoints
         new(data.Household.Id,
             data.Household.Name,
             data.Household.Currency,
-            data.OrderedMembers.Select(m => new MemberDto(m.Id, m.Name, m.AvatarColor)).ToList(),
+            data.OrderedMembers.Select(m => new MemberDto(m.Id, m.Name, m.AvatarColor, m.AvatarEmoji)).ToList(),
             data.Household.OwnerMemberId,
             data.Household.OwnerMemberId == me,
             data.Household.ArchivedAt);

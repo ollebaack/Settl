@@ -12,8 +12,8 @@ using Settl.Api.Data;
 namespace Settl.Api.Migrations
 {
     [DbContext(typeof(SettlDbContext))]
-    [Migration("20260716193711_AddContactsAndSmsInvites")]
-    partial class AddContactsAndSmsInvites
+    [Migration("20260716184354_AddMemberAvatarEmoji")]
+    partial class AddMemberAvatarEmoji
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -87,24 +87,6 @@ namespace Settl.Api.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
-                });
-
-            modelBuilder.Entity("Settl.Api.Domain.Contact", b =>
-                {
-                    b.Property<Guid>("OwnerMemberId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ContactMemberId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("OwnerMemberId", "ContactMemberId");
-
-                    b.HasIndex("ContactMemberId");
-
-                    b.ToTable("Contacts");
                 });
 
             modelBuilder.Entity("Settl.Api.Domain.Entry", b =>
@@ -191,9 +173,6 @@ namespace Settl.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTimeOffset?>("ArchivedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -206,9 +185,6 @@ namespace Settl.Api.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<Guid>("OwnerMemberId")
-                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -242,27 +218,21 @@ namespace Settl.Api.Migrations
                     b.Property<DateTimeOffset?>("AcceptedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Channel")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("HouseholdId")
+                    b.Property<Guid>("HouseholdId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("InvitedByMemberId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasColumnType("text");
 
                     b.Property<string>("TokenHash")
                         .IsRequired()
@@ -290,6 +260,10 @@ namespace Settl.Api.Migrations
                     b.Property<string>("AvatarColor")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("AvatarEmoji")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -494,25 +468,6 @@ namespace Settl.Api.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Settl.Api.Domain.Contact", b =>
-                {
-                    b.HasOne("Settl.Api.Domain.Member", "ContactMember")
-                        .WithMany()
-                        .HasForeignKey("ContactMemberId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Settl.Api.Domain.Member", "OwnerMember")
-                        .WithMany()
-                        .HasForeignKey("OwnerMemberId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("ContactMember");
-
-                    b.Navigation("OwnerMember");
-                });
-
             modelBuilder.Entity("Settl.Api.Domain.Entry", b =>
                 {
                     b.HasOne("Settl.Api.Domain.Household", "Household")
@@ -574,7 +529,8 @@ namespace Settl.Api.Migrations
                     b.HasOne("Settl.Api.Domain.Household", "Household")
                         .WithMany()
                         .HasForeignKey("HouseholdId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Household");
                 });

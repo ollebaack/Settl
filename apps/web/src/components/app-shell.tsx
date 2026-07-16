@@ -173,6 +173,7 @@ function MobileHeader() {
             members={members.map((m) => ({
               name: m.name,
               avatarColor: m.avatarColor,
+              avatarEmoji: m.avatarEmoji,
               isYou: m.id === me?.id,
             }))}
           />

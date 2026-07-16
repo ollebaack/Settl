@@ -295,7 +295,7 @@ export function AddEntrySheet({ open, onClose }: { open: boolean; onClose: () =>
                 >
                   {otherMembers.map((m) => (
                     <ToggleGroupItem key={m.id} value={m.id} className="gap-2">
-                      <MemberAvatar name={m.name} avatarColor={m.avatarColor} size="sm" />
+                      <MemberAvatar name={m.name} avatarColor={m.avatarColor} avatarEmoji={m.avatarEmoji} size="sm" />
                       {m.name}
                     </ToggleGroupItem>
                   ))}
@@ -315,7 +315,7 @@ export function AddEntrySheet({ open, onClose }: { open: boolean; onClose: () =>
                 >
                   {memberList.map((m) => (
                     <ToggleGroupItem key={m.id} value={m.id} className="gap-2">
-                      <MemberAvatar name={m.name} avatarColor={m.avatarColor} size="sm" />
+                      <MemberAvatar name={m.name} avatarColor={m.avatarColor} avatarEmoji={m.avatarEmoji} size="sm" />
                       {m.name}
                     </ToggleGroupItem>
                   ))}
@@ -354,6 +354,7 @@ export function AddEntrySheet({ open, onClose }: { open: boolean; onClose: () =>
                         <MemberAvatar
                           name={m.name}
                           avatarColor={m.avatarColor}
+                          avatarEmoji={m.avatarEmoji}
                           size="sm"
                         />
                         <span className="text-sm">{m.name}</span>
