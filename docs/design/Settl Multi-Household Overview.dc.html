@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Bricolage Grotesque',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{cursor:pointer;font:inherit;color:inherit;background:none;border:none;padding:0;margin:0;text-align:left}
+[data-theme="mint"]{--bg:#f4f6f2;--card:#ffffff;--ink:#1c2620;--sub:#64715f;--line:#e2e7dd;--accent:#2e7d5b;--soft:#e2f0e6;--pos:#2e7d5b;--neg:#bb5433;--chip:#eaeee6}
+.wrap{background:#e6e4de;padding:30px;display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start;color:var(--ink)}
+.frame{display:flex;flex-direction:column;gap:10px}
+.cap{font-size:12.5px;font-weight:700;color:#4f5e52}
+.cap span{color:#8c9a87;font-weight:500}
+.phone{width:392px;box-sizing:border-box;background:var(--bg);border:1px solid var(--line);border-radius:30px;padding:20px 18px 24px;box-shadow:0 22px 44px -26px rgba(20,30,22,.55)}
+.sheet{width:392px;box-sizing:border-box;background:var(--card);border:1px solid var(--line);border-radius:26px;padding:16px 18px 22px;box-shadow:0 22px 44px -26px rgba(20,30,22,.55)}
+.handle{width:36px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 16px}
+.title{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.sub{font-size:12.5px;color:var(--sub);line-height:1.5}
+.uplabel{font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--sub)}
+.mono{font-family:'Spline Sans Mono',monospace}
+.pos{color:var(--pos)}
+.neg{color:var(--neg)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px}
+.row{display:flex;align-items:center;gap:12px}
+.col{display:flex;flex-direction:column}
+.hhbubble{width:46px;height:46px;flex:none;border-radius:15px;background:var(--soft);color:var(--accent);display:grid;place-items:center;font-size:18px;font-weight:700}
+.hhbubble.sm{width:38px;height:38px;border-radius:12px;font-size:15px}
+.av{width:34px;height:34px;flex:none;border-radius:50%;display:grid;place-items:center;font-size:12.5px;font-weight:700;color:#33352b}
+.av.ring{box-shadow:0 0 0 2px var(--card)}
+.pill{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);background:var(--soft);border-radius:999px;padding:3px 9px}
+.btn{display:block;width:100%;box-sizing:border-box;text-align:center;border-radius:15px;padding:13px 0;font-size:14px;font-weight:700}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-outline{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.chip-btn{background:var(--chip);border-radius:999px;padding:7px 13px;font-size:12px;font-weight:600}
+.addav{width:34px;height:34px;flex:none;border-radius:50%;border:1.5px dashed var(--line);color:var(--sub);display:grid;place-items:center;font-size:16px;font-weight:600}
+.iconbtn{width:38px;height:38px;flex:none;border-radius:12px;background:var(--chip);color:var(--ink);display:grid;place-items:center;font-size:16px;font-weight:700}
+.dashadd{width:100%;box-sizing:border-box;border:1.5px dashed var(--line);border-radius:16px;padding:13px;text-align:center;font-size:13px;font-weight:600;color:var(--sub)}
+.infobox{background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:13px 14px;font-size:13px;line-height:1.5}
+.field{display:flex;align-items:center;gap:9px;background:var(--bg);border:1px solid var(--line);border-radius:13px;padding:12px 13px;font-size:13.5px;color:var(--sub)}
+.flabel{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--sub);margin-bottom:6px}
+.divider{display:flex;align-items:center;gap:10px;color:var(--sub);font-size:11.5px;margin:13px 0}
+.divider .ln{flex:1;height:1px;background:var(--line)}
+.actions{display:flex;flex-direction:column;gap:9px;margin-top:20px}
+.hdr{display:flex;align-items:center;justify-content:space-between}
+.enter{color:var(--sub);font-size:18px;font-weight:600;line-height:1}
+</style>
+</helmet>
+<div data-theme="mint" class="wrap">
+
+  <div style="width:100%;max-width:900px">
+    <div style="font-size:22px;font-weight:700;letter-spacing:-.01em">Flera hushåll — översikt &amp; hem (ADR-0019)</div>
+    <div class="sub" style="margin-top:4px">Wishlist #3. <b>Adaptiv Hem</b>: 0 hushåll → skapa-flödet · <b>exakt 1</b> → vanliga instrumentpanelen (oförändrad) · <b>2+</b> → översikten nedan. Mobil, mint-tema, svensk copy. Håller distinktionen <b>hushåll = rundad kvadrat</b>, <b>person = cirkel</b>. Saldon kommer serverberäknade (<span class="mono" style="font-size:12px">HouseholdListItemDto</span>) — skärmen räknar aldrig själv (ADR-0006).</div>
+  </div>
+
+  <!-- 1 · Overview home, all same currency -->
+  <div class="frame">
+    <div class="cap">1 · Hem — översikt <span>· 2+ hushåll, samma valuta</span></div>
+    <div class="phone">
+      <div class="hdr" style="margin-bottom:16px">
+        <div>
+          <div class="uplabel">Översikt</div>
+          <div class="title" style="font-size:21px;margin-top:2px">Dina hushåll</div>
+        </div>
+        <div class="row" style="gap:8px">
+          <span class="av" style="background:#cfe0d6" aria-label="Ditt konto">O</span>
+        </div>
+      </div>
+
+      <!-- roll-up hero: sum only because every book is SEK -->
+      <div class="card" style="padding:18px 18px 19px;text-align:center">
+        <div class="uplabel">Du ska få totalt</div>
+        <div class="mono pos" style="font-size:34px;font-weight:600;letter-spacing:-.01em;margin-top:6px">+330&nbsp;kr</div>
+        <div class="sub" style="margin-top:4px">över 3 aktiva hushåll · 8 öppna poster</div>
+      </div>
+
+      <div class="uplabel" style="margin:18px 0 8px">Hushåll</div>
+      <div class="col" style="gap:9px">
+        <button class="card row" style="width:100%;padding:12px 14px;gap:13px">
+          <span class="hhbubble">L</span>
+          <span class="col" style="flex:1;min-width:0;gap:2px">
+            <span style="font-size:15px;font-weight:700">Lönnvägen 3</span>
+            <span class="sub" style="font-size:11.5px">Du, Sam, Priya</span>
+          </span>
+          <span class="col" style="align-items:flex-end;gap:2px">
+            <span class="mono pos" style="font-size:14px;font-weight:600">+180&nbsp;kr</span>
+            <span class="sub" style="font-size:10.5px">du ska få</span>
+          </span>
+        </button>
+        <button class="card row" style="width:100%;padding:12px 14px;gap:13px">
+          <span class="hhbubble">F</span>
+          <span class="col" style="flex:1;min-width:0;gap:2px">
+            <span style="font-size:15px;font-weight:700">Fjällresan</span>
+            <span class="sub" style="font-size:11.5px">Du, Sam, Alex, Mia</span>
+          </span>
+          <span class="col" style="align-items:flex-end;gap:2px">
+            <span class="mono neg" style="font-size:14px;font-weight:600">−540&nbsp;kr</span>
+            <span class="sub" style="font-size:10.5px">du är skyldig</span>
+          </span>
+        </button>
+        <button class="card row" style="width:100%;padding:12px 14px;gap:13px">
+          <span class="hhbubble">K</span>
+          <span class="col" style="flex:1;min-width:0;gap:2px">
+            <span style="font-size:15px;font-weight:700">Kontoret</span>
+            <span class="sub" style="font-size:11.5px">Du, Robin, Kim</span>
+          </span>
+          <span class="col" style="align-items:flex-end;gap:2px">
+            <span class="mono pos" style="font-size:14px;font-weight:600">+690&nbsp;kr</span>
+            <span class="sub" style="font-size:10.5px">du ska få</span>
+          </span>
+        </button>
+        <button class="dashadd">+ Nytt hushåll</button>
+      </div>
+
+      <!-- friends / contacts entry — loose affordance, ADR-0017 -->
+      <div class="uplabel" style="margin:20px 0 8px">Vänner</div>
+      <button class="card row" style="width:100%;padding:12px 14px;gap:10px">
+        <span class="av" style="background:#f0dcc3">S</span>
+        <span class="av ring" style="background:#d9e0ee;margin-left:-14px">P</span>
+        <span class="av ring" style="background:#dfe6cf;margin-left:-14px">A</span>
+        <span class="col" style="flex:1;margin-left:6px;gap:2px">
+          <span style="font-size:13.5px;font-weight:700">Lägg till en vän</span>
+          <span class="sub" style="font-size:11.5px">Bjud in via nummer eller mejl</span>
+        </span>
+        <span class="addav">+</span>
+      </button>
+
+      <!-- archived — ADR-0016 -->
+      <div class="uplabel" style="margin:20px 0 8px">Arkiverade</div>
+      <div class="card row" style="padding:11px 13px;opacity:.6;gap:12px">
+        <span class="hhbubble sm" style="filter:grayscale(.4)">K</span>
+        <span class="col" style="flex:1">
+          <span style="font-size:14px;font-weight:600">Kollektivet</span>
+          <span class="sub" style="font-size:11px">Arkiverad 4 jul · SEK</span>
+        </span>
+        <button class="chip-btn" style="color:var(--accent)">Återställ</button>
+      </div>
+      <div class="sub" style="margin-top:9px">Bara ägaren ser återställ-knappen.</div>
+    </div>
+  </div>
+
+  <!-- 2 · Overview home, mixed currencies -->
+  <div class="frame">
+    <div class="cap">2 · Hem — översikt <span>· blandade valutor (ingen summa)</span></div>
+    <div class="phone">
+      <div class="hdr" style="margin-bottom:16px">
+        <div>
+          <div class="uplabel">Översikt</div>
+          <div class="title" style="font-size:21px;margin-top:2px">Dina hushåll</div>
+        </div>
+        <span class="av" style="background:#cfe0d6" aria-label="Ditt konto">O</span>
+      </div>
+
+      <!-- descriptive roll-up: currencies differ, so we never sum -->
+      <div class="card" style="padding:16px 18px">
+        <div class="uplabel">Din ställning</div>
+        <div class="col" style="gap:9px;margin-top:11px">
+          <div class="row" style="justify-content:space-between">
+            <span style="font-size:13.5px">Du ska få i</span>
+            <span class="pos" style="font-size:14px;font-weight:700">2 hushåll</span>
+          </div>
+          <div class="row" style="justify-content:space-between">
+            <span style="font-size:13.5px">Du är skyldig i</span>
+            <span class="neg" style="font-size:14px;font-weight:700">1 hushåll</span>
+          </div>
+        </div>
+        <div class="sub" style="margin-top:11px">Olika valutor — summeras inte. Öppna ett hushåll för dess saldo.</div>
+      </div>
+
+      <div class="uplabel" style="margin:18px 0 8px">Hushåll</div>
+      <div class="col" style="gap:9px">
+        <button class="card row" style="width:100%;padding:12px 14px;gap:13px">
+          <span class="hhbubble">L</span>
+          <span class="col" style="flex:1;min-width:0;gap:2px">
+            <span style="font-size:15px;font-weight:700">Lönnvägen 3</span>
+            <span class="sub" style="font-size:11.5px">Du, Sam, Priya · SEK</span>
+          </span>
+          <span class="col" style="align-items:flex-end;gap:2px">
+            <span class="mono pos" style="font-size:14px;font-weight:600">+180&nbsp;kr</span>
+            <span class="sub" style="font-size:10.5px">du ska få</span>
+          </span>
+        </button>
+        <button class="card row" style="width:100%;padding:12px 14px;gap:13px">
+          <span class="hhbubble">B</span>
+          <span class="col" style="flex:1;min-width:0;gap:2px">
+            <span style="font-size:15px;font-weight:700">Barcelona-veckan</span>
+            <span class="sub" style="font-size:11.5px">Du, Mia, Alex · EUR</span>
+          </span>
+          <span class="col" style="align-items:flex-end;gap:2px">
+            <span class="mono neg" style="font-size:14px;font-weight:600">−42&nbsp;€</span>
+            <span class="sub" style="font-size:10.5px">du är skyldig</span>
+          </span>
+        </button>
+        <button class="card row" style="width:100%;padding:12px 14px;gap:13px">
+          <span class="hhbubble">K</span>
+          <span class="col" style="flex:1;min-width:0;gap:2px">
+            <span style="font-size:15px;font-weight:700">Kontoret</span>
+            <span class="sub" style="font-size:11.5px">Du, Robin, Kim · SEK</span>
+          </span>
+          <span class="col" style="align-items:flex-end;gap:2px">
+            <span class="mono pos" style="font-size:14px;font-weight:600">+690&nbsp;kr</span>
+            <span class="sub" style="font-size:10.5px">du ska få</span>
+          </span>
+        </button>
+      </div>
+      <div class="sub" style="margin-top:13px">Saldot per hushåll är i hushållets egen valuta. Inget kombinerat totalbelopp visas när valutorna skiljer sig.</div>
+    </div>
+  </div>
+
+  <!-- 3 · Single-household collapse -->
+  <div class="frame">
+    <div class="cap">3 · Hem — <span>1 aktivt hushåll = ingen översikt</span></div>
+    <div class="phone">
+      <div class="hdr" style="margin-bottom:16px">
+        <button class="row" style="gap:8px">
+          <span class="hhbubble sm">L</span>
+          <span style="font-size:15px;font-weight:700">Lönnvägen 3</span>
+          <span class="enter" style="font-size:14px;color:var(--sub)">⌄</span>
+        </button>
+        <span class="av" style="background:#cfe0d6" aria-label="Ditt konto">O</span>
+      </div>
+      <div class="card" style="padding:20px 18px;text-align:center">
+        <div class="uplabel">Du ska få totalt</div>
+        <div class="mono pos" style="font-size:34px;font-weight:600;letter-spacing:-.01em;margin-top:6px">+180&nbsp;kr</div>
+        <div class="sub" style="margin-top:4px">3 öppna poster i Lönnvägen 3</div>
+      </div>
+      <div class="col" style="gap:9px;margin-top:16px">
+        <div class="card row" style="padding:12px 13px;gap:12px">
+          <span class="av" style="background:#f0dcc3">S</span>
+          <span class="col" style="flex:1"><span style="font-size:14px;font-weight:600">Sam</span><span class="sub" style="font-size:11.5px">är skyldig dig</span></span>
+          <span class="mono pos" style="font-size:13.5px;font-weight:600">+120&nbsp;kr</span>
+        </div>
+        <div class="card row" style="padding:12px 13px;gap:12px">
+          <span class="av" style="background:#d9e0ee">P</span>
+          <span class="col" style="flex:1"><span style="font-size:14px;font-weight:600">Priya</span><span class="sub" style="font-size:11.5px">är skyldig dig</span></span>
+          <span class="mono pos" style="font-size:13.5px;font-weight:600">+60&nbsp;kr</span>
+        </div>
+      </div>
+      <div class="infobox" style="margin-top:18px">Med bara <b>ett</b> aktivt hushåll är Hem den vanliga instrumentpanelen — översikten dyker upp först vid <b>två eller fler</b>. Ingen extra tapp för den som bara har ett hushåll.</div>
+    </div>
+  </div>
+
+  <!-- 4 · Add-friend sheet (loose, ADR-0017) -->
+  <div class="frame">
+    <div class="cap">4 · Lägg till vän <span>· lös affordance · kontaktmodell grillas separat</span></div>
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="title">Lägg till en vän</div>
+      <div class="sub" style="margin-top:4px">Skicka en inbjudan via telefonnummer eller mejl. Vi avslöjar aldrig om numret redan finns på Settl.</div>
+
+      <div style="margin-top:16px">
+        <div class="flabel">Telefonnummer</div>
+        <div class="field"><span style="color:var(--ink);font-weight:600">🇸🇪 +46</span><span>70 123 45 67</span></div>
+      </div>
+      <div class="divider"><span class="ln"></span>eller<span class="ln"></span></div>
+      <div>
+        <div class="flabel">E-post</div>
+        <div class="field">namn@exempel.se</div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:16px">Skicka inbjudan</button>
+
+      <div class="uplabel" style="margin:22px 0 8px">Dina kontakter</div>
+      <div class="col" style="gap:8px">
+        <div class="card row" style="padding:10px 12px;gap:11px">
+          <span class="av" style="background:#f0dcc3">S</span>
+          <span class="col" style="flex:1"><span style="font-size:13.5px;font-weight:600">Sam</span><span class="sub" style="font-size:11px">Redan i 2 hushåll</span></span>
+          <button class="chip-btn">Bjud in</button>
+        </div>
+        <div class="card row" style="padding:10px 12px;gap:11px">
+          <span class="av" style="background:#dfe6cf">A</span>
+          <span class="col" style="flex:1"><span style="font-size:13.5px;font-weight:600">Alex</span><span class="sub" style="font-size:11px">070 •• •• 88</span></span>
+          <button class="chip-btn">Bjud in</button>
+        </div>
+      </div>
+      <div class="sub" style="margin-top:11px">Kontakter sparas när en inbjudan accepteras och kan återanvändas i alla hushåll (kontaktmodellen grillas separat).</div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{}'>
+  class Component extends DCLogic {
+    renderVals() { return {}; }
+  }
+</script>
+</body>
+</html>
