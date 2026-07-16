@@ -44,6 +44,9 @@ public class SettlDbContext(DbContextOptions<SettlDbContext> options) : Identity
             e.HasKey(x => x.Id);
             e.Property(x => x.Name).IsRequired();
             e.Property(x => x.Currency).IsRequired().HasDefaultValue("SEK");
+            // Owner (ADR-0016): a plain member reference, not a navigation — the owner is
+            // always covered by a HouseholdMembership row, so no extra FK is needed.
+            e.Property(x => x.OwnerMemberId).IsRequired();
         });
 
         b.Entity<HouseholdMembership>(e =>

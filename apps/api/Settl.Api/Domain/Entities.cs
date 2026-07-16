@@ -29,6 +29,15 @@ public class Household
     public string Currency { get; set; } = "SEK";
     public DateTimeOffset CreatedAt { get; set; }
 
+    /// <summary>The single owner (ADR-0016). Always one of this household's current members —
+    /// backfilled to the earliest-<see cref="HouseholdMembership.JoinedAt"/> member for rows
+    /// created before ownership was recorded.</summary>
+    public Guid OwnerMemberId { get; set; }
+
+    /// <summary>Soft-archive marker (ADR-0016). Null = active; set = archived (hidden but
+    /// fully retained and restorable by the owner). Never hard-deleted.</summary>
+    public DateTimeOffset? ArchivedAt { get; set; }
+
     public ICollection<HouseholdMembership> Memberships { get; set; } = new List<HouseholdMembership>();
     public ICollection<Entry> Entries { get; set; } = new List<Entry>();
     public ICollection<RecurringTemplate> RecurringTemplates { get; set; } = new List<RecurringTemplate>();
