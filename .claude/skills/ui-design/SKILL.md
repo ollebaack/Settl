@@ -42,12 +42,17 @@ keeps it current: design in Claude Design, verify it renders, mirror it into
    with `preview_start`, navigate to the `.dc.html`, screenshot, and confirm the DC
    runtime mounted (helmet `<style>` reached `<head>`, theme tokens resolved).
 
-4. **Mirror into `docs/design/`.** Copy the verified `.dc.html` into `docs/design/`
+4. **Confirm with the user — don't mirror unreviewed.** Share the verified render
+   (screenshot) and ask whether the UI change looks good before proceeding. Only
+   continue to the mirror step once the user approves; if they ask for changes, loop
+   back to step 2 and re-verify.
+
+5. **Mirror into `docs/design/`.** Copy the verified `.dc.html` into `docs/design/`
    (plus `support.js` only if it's a new directory). When adding new screens, also write
    a short `<feature>-addendum.md` mapping each screen to its **proposed** API contract,
    matching the existing addenda (`auth-onboarding-addendum.md`, `category-icons-addendum.md`).
 
-5. **Close — flag the follow-ups.** An API-shape change the design implies → regenerate
+6. **Close — flag the follow-ups.** An API-shape change the design implies → regenerate
    `packages/api-client` in the implementing PR (root rule). An important/irreversible
    decision surfaced while designing → `/grill` it before building (ADRs only from grills).
 
