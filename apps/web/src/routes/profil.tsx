@@ -1,9 +1,9 @@
 /**
- * Profil `/profil` — change your name, pick an avatar emoji, and choose your nudge tone
+ * Profil `/profil` — change your name, pick an avatar emoji, and opt into e-post reminders
  * (profile-addendum §2.1, frames 1–2; ADR-0019; implementation-map §2.4, ambiguity #18).
  * Part of the app chrome (AppShell). Renders and calls only (ADR-0006): the avatar is the
  * email-derived `avatarColor` with an optional emoji over it, letter initial as the fallback.
- * Name + emoji + tone persist via PUT /me.
+ * Name + emoji + email opt-in persist via PUT /me. Nudge tone is fixed to the direct voice.
  *
  * Scope note: the design's Konto card also shows a "Byt lösenord" row (§2.3). Password
  * change is out of this feature's scope (no endpoint yet), so that row is intentionally
@@ -18,11 +18,11 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { Switch } from '@/components/ui/switch'
 import { MemberAvatar } from '@/components/member-avatar'
 import { AvatarPickerSheet } from '@/components/sheets/avatar-picker-sheet'
 import { useLogout, useMe, useUpdateMe } from '@/lib/queries'
-import type { MeDto, NudgeTone } from '@/lib/api'
+import type { MeDto } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/profil')({
@@ -34,13 +34,6 @@ export const Route = createFileRoute('/profil')({
 })
 
 const UPLABEL = 'text-[11.5px] font-semibold uppercase tracking-[0.09em] text-muted-foreground'
-
-// The nudge tone only selects copy, never which nudges fire (implementation-map §2.4). The
-// label + one-liner describe each voice; the API is authoritative over the actual nudge text.
-const TONE_COPY: Record<NudgeTone, { label: string; hint: string }> = {
-  direct: { label: 'Rak', hint: 'Tydliga knuffar med belopp och en uppmaning att göra upp.' },
-  gentle: { label: 'Mjuk', hint: 'Vänliga påminnelser utan press.' },
-}
 
 function ProfilePage() {
   const { data: me } = useMe()
@@ -63,14 +56,12 @@ function ProfileForm({ me }: { me: MeDto }) {
   const [swish, setSwish] = useState(
     me.swishNumber?.startsWith('+46') ? me.swishNumber.slice(3) : (me.swishNumber ?? ''),
   )
-  // The API only ever returns 'gentle' | 'direct'; fall back to the default for safety.
-  const [tone, setTone] = useState<NudgeTone>((me.nudgeTone as NudgeTone) ?? 'direct')
-  // Daily nudge-digest email opt-in (reminder-delivery spec). On by default.
-  const [emailsEnabled, setEmailsEnabled] = useState<boolean>(me.nudgeEmailsEnabled ?? true)
+  // Daily nudge-digest email opt-in (reminder-delivery spec). Off by default — an explicit opt-in.
+  const [emailsEnabled, setEmailsEnabled] = useState<boolean>(me.nudgeEmailsEnabled ?? false)
 
   const emoji = me.avatarEmoji ?? null
 
-  /** Persist name + the given emoji + the current tone + email opt-in. Returns true on success. */
+  /** Persist name + the given emoji + the (fixed direct) tone + email opt-in. Returns true on success. */
   async function save(nextEmoji: string | null, successMsg: string): Promise<boolean> {
     const trimmed = name.trim()
     if (!trimmed) {
@@ -82,7 +73,8 @@ function ProfileForm({ me }: { me: MeDto }) {
       await updateMe.mutateAsync({
         name: trimmed,
         avatarEmoji: nextEmoji,
-        nudgeTone: tone,
+        // Nudge tone is fixed to the direct voice — no user-facing choice anymore.
+        nudgeTone: 'direct',
         nudgeEmailsEnabled: emailsEnabled,
         // The form always submits the current value; empty clears it server-side (API validates
         // and stores E.164). Sent on every save so a name/emoji edit never wipes the number.
@@ -230,44 +222,26 @@ function ProfileForm({ me }: { me: MeDto }) {
         </Card>
       </div>
 
-      {/* Nudge tone */}
+      {/* Nudge-email opt-in (reminder-delivery spec) — the daily digest email. Off by default;
+          off is honoured server-side. In-app nudges always use the direct voice. */}
       <div className="flex flex-col gap-1.5">
-        <p className={UPLABEL}>Knuffar</p>
-        <ToggleGroup
-          value={[tone]}
-          onValueChange={(v) => setTone((v[0] as NudgeTone | undefined) ?? tone)}
-          className="w-full rounded-xl bg-muted p-1"
+        <p className={UPLABEL}>Påminnelser via e-post</p>
+        <Label
+          htmlFor="nudge-emails"
+          className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3"
         >
-          {(['direct', 'gentle'] as const).map((t) => (
-            <ToggleGroupItem key={t} value={t} className="flex-1 rounded-lg text-sm">
-              {TONE_COPY[t].label}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
-        <p className="text-xs text-muted-foreground">{TONE_COPY[tone].hint}</p>
-
-        {/* Nudge-email opt-in (reminder-delivery spec). Separate from tone: tone styles in-app
-            nudges, this controls the daily digest email. Off is honoured server-side. */}
-        <div className="mt-3 flex flex-col gap-1.5">
-          <p className={UPLABEL}>Påminnelser via e-post</p>
-          <ToggleGroup
-            value={[emailsEnabled ? 'on' : 'off']}
-            onValueChange={(v) => setEmailsEnabled((v[0] ?? (emailsEnabled ? 'on' : 'off')) === 'on')}
-            className="w-full rounded-xl bg-muted p-1"
-          >
-            <ToggleGroupItem value="on" className="flex-1 rounded-lg text-sm">
-              På
-            </ToggleGroupItem>
-            <ToggleGroupItem value="off" className="flex-1 rounded-lg text-sm">
-              Av
-            </ToggleGroupItem>
-          </ToggleGroup>
-          <p className="text-xs text-muted-foreground">
+          <span className="min-w-0 flex-1 text-[13.5px] font-normal">
             {emailsEnabled
               ? 'Ett dagligt mejl när du har knuffar att ta tag i. Aldrig mer än ett per dag.'
               : 'Du får inga påminnelser via e-post. Knuffar visas fortfarande i appen.'}
-          </p>
-        </div>
+          </span>
+          <Switch
+            id="nudge-emails"
+            aria-label="Påminnelser via e-post"
+            checked={emailsEnabled}
+            onCheckedChange={setEmailsEnabled}
+          />
+        </Label>
       </div>
 
       {/* Actions */}

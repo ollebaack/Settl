@@ -45,9 +45,9 @@ public class SettlDbContext(DbContextOptions<SettlDbContext> options) : Identity
             // Stored as the enum name (like every other domain enum here); the default keeps
             // existing rows on "Direct" — the product default this setting now exposes.
             e.Property(x => x.NudgeTone).HasConversion<string>().IsRequired().HasDefaultValue(NudgeTone.Direct);
-            // Nudge-digest emails default ON (account-activity, ADR-0024); the migration backfills
-            // existing rows to enabled via this default.
-            e.Property(x => x.NudgeEmailsEnabled).IsRequired().HasDefaultValue(true);
+            // Nudge-digest emails default OFF — an explicit opt-in via the profile switch
+            // (reminder-delivery spec). New rows fall to disabled via this default.
+            e.Property(x => x.NudgeEmailsEnabled).IsRequired().HasDefaultValue(false);
             e.Ignore(x => x.Initial);
         });
 

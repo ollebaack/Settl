@@ -49,7 +49,7 @@ public sealed class TestScenario
     /// Gets real Identity credentials (a per-member @test.settl.dev email,
     /// <see cref="SeedIds.DevPassword"/>) so <see cref="SettlApiFactory.ClientAs"/> can log
     /// them in.</summary>
-    public Guid AddMember(string name, string? avatarColor = null)
+    public Guid AddMember(string name, string? avatarColor = null, bool nudgeEmailsEnabled = false)
     {
         var id = Guid.NewGuid();
         var email = $"{id:N}@test.settl.dev";
@@ -63,6 +63,8 @@ public sealed class TestScenario
             Email = email,
             NormalizedEmail = email.ToUpperInvariant(),
             EmailConfirmed = true,
+            // Nudge emails are opt-in (default off); digest tests pass true to exercise delivery.
+            NudgeEmailsEnabled = nudgeEmailsEnabled,
             SecurityStamp = Guid.NewGuid().ToString(),
             ConcurrencyStamp = Guid.NewGuid().ToString()
         };

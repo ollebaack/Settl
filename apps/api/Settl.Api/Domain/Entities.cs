@@ -30,10 +30,9 @@ public class Member : IdentityUser<Guid>
     public NudgeTone NudgeTone { get; set; } = NudgeTone.Direct;
 
     /// <summary>Whether this member receives the daily nudge-digest email (reminder-delivery spec,
-    /// ADR-0024). On by default (account-activity, legitimate interest — not marketing); turned off
-    /// by the one-click email unsubscribe or the profile toggle. Migration backfills existing
-    /// members to enabled.</summary>
-    public bool NudgeEmailsEnabled { get; set; } = true;
+    /// ADR-0024). Off by default — an explicit opt-in the member turns on with the profile switch;
+    /// the one-click email unsubscribe also forces it off. In-app nudges are unaffected.</summary>
+    public bool NudgeEmailsEnabled { get; set; }
 
     public ICollection<HouseholdMembership> Memberships { get; set; } = new List<HouseholdMembership>();
 

@@ -36,8 +36,9 @@ public sealed class NudgeDigestTests
     private static (TestScenario Scenario, Guid A) BigExpenseScenario()
     {
         var s = new TestScenario("Digesthus");
-        var a = s.AddMember("Alex");
-        var b = s.AddMember("Robin");
+        // Both opted in — nudge emails are opt-in (default off), so delivery tests enable them.
+        var a = s.AddMember("Alex", nudgeEmailsEnabled: true);
+        var b = s.AddMember("Robin", nudgeEmailsEnabled: true);
         // 2000 kr, paid by B, equal split → A owes 1000 kr; ≥1500 kr amount → big-expense nudge.
         s.AddEqualExpense("Ny soffa", 200_000, paidBy: b, dateOffset: -1);
         return (s, a);
@@ -66,8 +67,9 @@ public sealed class NudgeDigestTests
     {
         using var factory = new SettlApiFactory();
         var s = new TestScenario("Tysthus");
-        var a = s.AddMember("Alex");
-        s.AddMember("Robin");
+        // Opted in, so the only reason for silence is the absence of nudges — not the opt-out.
+        var a = s.AddMember("Alex", nudgeEmailsEnabled: true);
+        s.AddMember("Robin", nudgeEmailsEnabled: true);
         // No entries, no recurrings, square balances → nothing to say.
         await factory.SeedAsync(s);
 

@@ -11,7 +11,7 @@ public sealed record LoginRequest(string Email, string Password);
 /// tech-debt/0010), so it is display/contact data only and must never be treated as a lookup
 /// key or auth factor. <c>NudgeTone</c> is the member's chosen nudge voice ("gentle"|"direct",
 /// implementation-map §2.4). <c>NudgeEmailsEnabled</c> is the daily-digest email opt-in
-/// (reminder-delivery spec, ADR-0024), on by default.</summary>
+/// (reminder-delivery spec, ADR-0024), off by default.</summary>
 public sealed record MeDto(
     Guid Id, string Name, string AvatarColor, string? AvatarEmoji, string? Email,
     bool EmailConfirmed, string? Phone, bool PhoneVerified, string NudgeTone, bool NudgeEmailsEnabled,
