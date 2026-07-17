@@ -589,6 +589,7 @@ function EntryForm({
                   value={[cadence]}
                   onValueChange={(v) => setCadence(pickSingle<Cadence>(v, cadence))}
                   variant="outline"
+                  className="flex-wrap"
                 >
                   <ToggleGroupItem value="monthly" className="flex-1">
                     Varje månad
