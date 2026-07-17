@@ -319,7 +319,7 @@ public static class HouseholdsEndpoints
 
         // Permanently delete an EMPTY household (owner-only). Unlike archive this is
         // terminal and cascades away memberships and pending invites — but only when the
-        // household has no ledger history to protect (ADR-0020, a carve-out to ADR-0016's
+        // household has no ledger history to protect (ADR-0022, a carve-out to ADR-0016's
         // soft-only rule). Extra members don't block (the client warns first); pending
         // invites are cascade-revoked, not activity.
         app.MapDelete("/households/{id:guid}", async (
@@ -356,7 +356,7 @@ public static class HouseholdsEndpoints
     }
 
     // A household is "empty" (safe to hard-delete) only with no ledger history: no
-    // entries, no recurring templates, no settlements (ADR-0020). Pending invites and
+    // entries, no recurring templates, no settlements (ADR-0022). Pending invites and
     // extra memberships are cascade-removed and don't count.
     private static async Task<bool> HasActivity(SettlDbContext db, Guid householdId, CancellationToken ct) =>
         await db.Entries.AnyAsync(e => e.HouseholdId == householdId, ct)

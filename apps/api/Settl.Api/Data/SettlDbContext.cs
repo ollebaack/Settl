@@ -133,7 +133,7 @@ public class SettlDbContext(DbContextOptions<SettlDbContext> options) : Identity
             e.Property(x => x.Channel).HasConversion<string>().IsRequired();
             e.Property(x => x.TokenHash).IsRequired();
             // HouseholdId is nullable (contact-only invites have none). Cascade so that
-            // hard-deleting an empty household revokes its pending invites too (ADR-0020);
+            // hard-deleting an empty household revokes its pending invites too (ADR-0022);
             // contact-only invites have no household and are unaffected.
             e.HasOne(x => x.Household).WithMany()
                 .HasForeignKey(x => x.HouseholdId).OnDelete(DeleteBehavior.Cascade);

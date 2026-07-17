@@ -1,4 +1,4 @@
-# ADR-0020: Home is the household overview; the book merges dashboard and log
+# ADR-0021: Home is the household overview; the book merges dashboard and log
 
 - **Status:** accepted
 - **Date:** 2026-07-16
