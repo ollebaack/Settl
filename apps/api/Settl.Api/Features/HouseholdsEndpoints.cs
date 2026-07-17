@@ -152,6 +152,67 @@ public static class HouseholdsEndpoints
             .Produces<HouseholdSummaryDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        // Per-person "who paid how much, when" for the Statistik page
+        // (docs/specs/household-statistics.md). Aggregated server-side per ADR-0006 and,
+        // per ADR-0010, in memory (LINQ-to-objects) rather than provider-specific
+        // date-grouping SQL. Range defaults to the trailing 12 whole months.
+        app.MapGet("/households/{id:guid}/stats/contributions", async (
+            Guid id, DateOnly? from, DateOnly? to,
+            ICurrentUserAccessor cu, SettlDbContext db, CancellationToken ct) =>
+        {
+            var me = await cu.GetMemberIdAsync(ct);
+            if (me is null) return Results.Problem("Ingen användare", statusCode: 404);
+
+            var data = await Loaders.LoadHousehold(db, id, ct);
+            // Don't leak existence of households the caller isn't in.
+            if (data is null || !data.MembersById.ContainsKey(me.Value))
+                return Results.Problem("Hushållet hittades inte", statusCode: 404);
+
+            // Default window: the current month plus the 11 before it. Bounds are aligned
+            // to month starts; [rangeFrom, rangeTo) is half-open (rangeTo exclusive).
+            var currentMonth = FirstOfMonth(DateOnly.FromDateTime(DateTime.UtcNow));
+            var rangeTo = to is { } t ? FirstOfMonth(t).AddMonths(1) : currentMonth.AddMonths(1);
+            var rangeFrom = from is { } f ? FirstOfMonth(f) : rangeTo.AddMonths(-12);
+
+            var entries = await Loaders.LoadEntries(db, id, ct);
+
+            // Sum by (payer, month) over both Expense and RecurringPost — recurring posts
+            // are real spend. Entries without a payer (SplitMode.None) can't be attributed.
+            var paid = entries
+                .Where(e => e.PaidByMemberId is not null
+                    && e.Date >= rangeFrom && e.Date < rangeTo)
+                .GroupBy(e => (Member: e.PaidByMemberId!.Value, Month: MonthKey(e.Date)))
+                .ToDictionary(g => g.Key, g => g.Sum(e => e.AmountMinor));
+
+            // Series = members with any contribution in range, in household order.
+            var members = data.OrderedMemberIds
+                .Where(mid => data.MembersById.ContainsKey(mid)
+                    && paid.Keys.Any(k => k.Member == mid))
+                .Select(mid =>
+                {
+                    var m = data.MembersById[mid];
+                    return new ContributionMemberDto(mid, m.Name, m.AvatarColor, m.AvatarEmoji);
+                })
+                .ToList();
+
+            // Continuous, zero-filled month series so the chart axis has no gaps.
+            var buckets = new List<ContributionBucketDto>();
+            for (var month = rangeFrom; month < rangeTo; month = month.AddMonths(1))
+            {
+                var key = MonthKey(month);
+                var perMember = members
+                    .Select(m => new MemberContributionDto(
+                        m.MemberId,
+                        paid.TryGetValue((m.MemberId, key), out var v) ? v : 0))
+                    .ToList();
+                buckets.Add(new ContributionBucketDto(key, perMember));
+            }
+
+            return Results.Ok(new ContributionStatsDto(data.Household.Currency, members, buckets));
+        }).WithName("GetContributionStats")
+            .Produces<ContributionStatsDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
         // ---- Ownership & archival (ADR-0016 / docs/specs/household-ownership.md) ----
 
         // Debt figures + guard flags for the leave/archive confirmation sheets. Debts warn,
@@ -362,6 +423,10 @@ public static class HouseholdsEndpoints
         await db.Entries.AnyAsync(e => e.HouseholdId == householdId, ct)
         || await db.RecurringTemplates.AnyAsync(t => t.HouseholdId == householdId, ct)
         || await db.Settlements.AnyAsync(s => s.HouseholdId == householdId, ct);
+
+    private static DateOnly FirstOfMonth(DateOnly d) => new(d.Year, d.Month, 1);
+
+    private static string MonthKey(DateOnly d) => $"{d.Year:D4}-{d.Month:D2}";
 
     private static long OverallNet(Guid me, HouseholdData data, IReadOnlyList<Entry> entries, ClosureLookup closures) =>
         data.OrderedMemberIds.Where(m => m != me)

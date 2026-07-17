@@ -437,6 +437,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/households/{id}/stats/contributions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetContributionStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/households/{id}/removal-preview": {
         parameters: {
             query?: never;
@@ -675,6 +691,22 @@ export interface components {
             expiresAt: string;
             delivered: boolean;
         };
+        ContributionBucketDto: {
+            month: string;
+            perMember: components["schemas"]["MemberContributionDto"][];
+        };
+        ContributionMemberDto: {
+            /** Format: uuid */
+            memberId: string;
+            name: string;
+            avatarColor: string;
+            avatarEmoji: null | string;
+        };
+        ContributionStatsDto: {
+            currency: string;
+            members: components["schemas"]["ContributionMemberDto"][];
+            buckets: components["schemas"]["ContributionBucketDto"][];
+        };
         CreateContactInviteRequest: {
             channel: string;
             phone: null | string;
@@ -826,6 +858,12 @@ export interface components {
             emailConfirmed: boolean;
             phone: null | string;
             phoneVerified: boolean;
+        };
+        MemberContributionDto: {
+            /** Format: uuid */
+            memberId: string;
+            /** Format: int64 */
+            paidMinor: number | string;
         };
         MemberDto: {
             /** Format: uuid */
@@ -1436,7 +1474,9 @@ export interface operations {
     };
     GetLatestDevInvite: {
         parameters: {
-            query?: never;
+            query?: {
+                email?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1490,7 +1530,9 @@ export interface operations {
     };
     GetLatestDevSmsInvite: {
         parameters: {
-            query?: never;
+            query?: {
+                phone?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2030,6 +2072,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HouseholdSummaryDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetContributionStats: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContributionStatsDto"];
                 };
             };
             /** @description Not Found */
