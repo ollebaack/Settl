@@ -11,7 +11,7 @@
  */
 import { useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ChevronLeftIcon, Loader2Icon } from 'lucide-react'
+import { ChevronLeftIcon, Loader2Icon, SmartphoneIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { RequireAuth } from '@/components/require-auth'
 import { Button } from '@/components/ui/button'
@@ -58,10 +58,10 @@ function ProfileForm({ me }: { me: MeDto }) {
   const [name, setName] = useState(me.name)
   const [nameError, setNameError] = useState('')
   const [sheetOpen, setSheetOpen] = useState(false)
-  // Optional Swish number (swish-settlement-payments spec). Prefill from the stored E.164,
-  // showing the Swedish subscriber part after the +46 chip — same convention as the profile phone.
-  const [swish, setSwish] = useState(
-    me.swishNumber?.startsWith('+46') ? me.swishNumber.slice(3) : (me.swishNumber ?? ''),
+  // The member's single optional number (ADR-0026) — powers "Betala med Swish" today. Prefill from
+  // the stored E.164, showing the Swedish subscriber part after the +46 chip.
+  const [phone, setPhone] = useState(
+    me.phone?.startsWith('+46') ? me.phone.slice(3) : (me.phone ?? ''),
   )
   // The API only ever returns 'gentle' | 'direct'; fall back to the default for safety.
   const [tone, setTone] = useState<NudgeTone>((me.nudgeTone as NudgeTone) ?? 'direct')
@@ -86,7 +86,7 @@ function ProfileForm({ me }: { me: MeDto }) {
         nudgeEmailsEnabled: emailsEnabled,
         // The form always submits the current value; empty clears it server-side (API validates
         // and stores E.164). Sent on every save so a name/emoji edit never wipes the number.
-        swishNumber: swish.trim() || null,
+        phone: phone.trim() || null,
       })
       toast(successMsg)
       return true
@@ -188,31 +188,41 @@ function ProfileForm({ me }: { me: MeDto }) {
         )}
       </div>
 
-      {/* Swish number (swish-settlement-payments spec) — optional, unverified contact data
-          (tech-debt/0010), stored separately from any profile phone. Powers the debtor's "Betala
-          med Swish" action on the settle-up sheet. The +46 chip is cosmetic; the API validates. */}
+      {/* The member's single number (ADR-0026) — optional, unverified contact data (tech-debt/0010).
+          Powers the debtor's "Betala med Swish" action on the settle-up sheet today. The +46 chip is
+          cosmetic; the API validates. When empty, the field gets a gentle accent + Swish nudge so it
+          reads as an invitation, not just another blank input. */}
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="profile-swish" className={UPLABEL}>
-          Swish-nummer{' '}
+        <Label htmlFor="profile-phone" className={UPLABEL}>
+          Ditt nummer{' '}
           <span className="font-normal normal-case tracking-normal">(valfritt)</span>
         </Label>
-        <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-3">
+        <div
+          className={cn(
+            'flex items-center gap-2 rounded-xl border bg-card px-3 transition-colors',
+            phone.trim() ? 'border-border' : 'border-primary/40 bg-primary/5',
+          )}
+        >
           <span className="text-sm font-semibold text-muted-foreground">+46</span>
           <span aria-hidden="true" className="h-5 w-px bg-border" />
           <Input
-            id="profile-swish"
-            aria-label="Ditt Swish-nummer"
+            id="profile-phone"
+            aria-label="Ditt telefonnummer"
             inputMode="tel"
             autoComplete="tel"
             placeholder="73 555 12 34"
-            value={swish}
-            onChange={(e) => setSwish(e.target.value)}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
             className="border-0 bg-transparent px-0 font-mono focus-visible:ring-0"
           />
         </div>
-        <p className="text-xs text-muted-foreground">
-          Låter andra i hushållet betala dig med Swish när ni gör upp. Sparas som det är —
-          inte verifierat.
+        <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+          <SmartphoneIcon aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
+          <span>
+            {phone.trim()
+              ? 'Andra i hushållet kan Swisha dig direkt när ni gör upp. Sparas som det är — inte verifierat.'
+              : 'Lägg till ditt nummer så kan andra Swisha dig med rätt belopp när ni gör upp. Inget verifieras.'}
+          </span>
         </p>
       </div>
 

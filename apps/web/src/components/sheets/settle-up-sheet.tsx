@@ -6,8 +6,9 @@
  * useSettlePreview — the sheet never computes balances (ADR-0006).
  */
 import { useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { QRCodeSVG } from 'qrcode.react'
-import { ChevronDownIcon } from 'lucide-react'
+import { ChevronDownIcon, SmartphoneIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -20,6 +21,7 @@ import { useActiveHousehold } from '@/lib/active-household'
 import { useIsWide } from '@/lib/use-media'
 import {
   useCreateSettlement,
+  useMe,
   useSettlePreview,
   useSettlementHistory,
 } from '@/lib/queries'
@@ -172,6 +174,38 @@ function SettlementHistory({
   )
 }
 
+/**
+ * Nudge shown to the CREDITOR (owesYou) when they haven't saved a number yet: without one, the
+ * debtor gets no "Betala med Swish" button (the API only builds the link from the creditor's
+ * number). One tap to Profile, where the single number lives (ADR-0026). Closes the sheet so the
+ * user lands on the field. Never shown once a number is saved.
+ */
+function AddNumberNudge({ personName, onClose }: { personName: string; onClose: () => void }) {
+  const navigate = useNavigate()
+  return (
+    <div className="flex items-start gap-3 rounded-xl border border-primary/40 bg-primary/5 p-3.5">
+      <SmartphoneIcon aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary" />
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <p className="text-[13.5px] leading-snug">
+          Lägg till ditt nummer så kan {personName} Swisha dig med rätt belopp när ni gör upp.
+        </p>
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          className="w-fit rounded-full"
+          onClick={() => {
+            onClose()
+            void navigate({ to: '/profil' })
+          }}
+        >
+          Lägg till nummer
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 function SettleUpBody({
   preview,
   householdId,
@@ -184,7 +218,10 @@ function SettleUpBody({
   onClose: () => void
 }) {
   const settlement = useCreateSettlement(householdId)
+  const { data: me } = useMe()
   const isSquare = preview.netLabel === 'square'
+  // Creditor with no saved number → the debtor can't Swish them. Prompt them to add one.
+  const showAddNumberNudge = preview.netLabel === 'owesYou' && !me?.phone
 
   const handleSettle = () => {
     if (settlement.isPending) return
@@ -255,6 +292,12 @@ function SettleUpBody({
       {/* Direct Swish launcher when the API offers one (debtor, SEK, creditor has a number). Sits
           next to "mark settled" so the two steps — pay, then settle — read as a pair. */}
       {preview.swishPay && <SwishPayAction swishPay={preview.swishPay} />}
+
+      {/* Flip side: you're the one being owed but have no number saved, so the other person can't
+          Swish you. Nudge to add it. */}
+      {showAddNumberNudge && (
+        <AddNumberNudge personName={preview.memberName} onClose={onClose} />
+      )}
 
       {!isSquare && (
         <Button onClick={handleSettle} disabled={settlement.isPending} className="w-full">

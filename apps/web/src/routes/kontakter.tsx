@@ -1,31 +1,26 @@
 /**
- * Kontakter (/kontakter) — ADR-0019, contacts-addendum screens 1, 5 & 6.
+ * Kontakter (/kontakter) — ADR-0019, contacts-addendum screens 1 & 6.
  *
  * A saved contact is the Member↔Member edge that only exists once an invite is accepted
  * (connection-on-accept). Outstanding invites the user sent sit under "Väntar på svar" as the
  * raw number/email, not a person. "+ Lägg till kontakt" sends a BLIND invite (AddContactSheet) —
- * there is deliberately no user search anywhere. The profile phone at the bottom is optional and
- * stored UNVERIFIED (no OTP — tech-debt/0010); email stays the login.
+ * there is deliberately no user search anywhere.
  *
- * The profile phone lives here (rather than a not-yet-built /profil page) because it is the same
- * feature slice — a member's own contact number — and the addendum ties it to the contacts flow.
+ * The member's own number no longer lives here: it moved to a single field on /profil (ADR-0026),
+ * where it also powers "Betala med Swish". Email stays the login.
  */
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { Loader2Icon } from 'lucide-react'
-import { toast } from 'sonner'
 import { RequireAuth } from '@/components/require-auth'
 import { AddContactSheet } from '@/components/sheets/add-contact-sheet'
 import { MemberAvatar } from '@/components/member-avatar'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState, ErrorState } from '@/components/screen-states'
 import { shortDate } from '@/lib/format'
-import { useContacts, useMe, usePendingContactInvites, useUpdateProfile } from '@/lib/queries'
+import { useContacts, usePendingContactInvites } from '@/lib/queries'
 import type { ContactDto, PendingInviteDto } from '@/lib/api'
-import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/kontakter')({
   component: () => (
@@ -102,8 +97,6 @@ function ContactsPage() {
         + Lägg till kontakt
       </Button>
 
-      <ProfilePhoneCard />
-
       <AddContactSheet open={addOpen} onClose={() => setAddOpen(false)} />
     </div>
   )
@@ -143,68 +136,6 @@ function PendingRow({ invite }: { invite: PendingInviteDto }) {
       <span className="rounded-full bg-muted px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
         Väntar
       </span>
-    </div>
-  )
-}
-
-/** Screen 5: the member's own optional, unverified profile phone (ADR-0019 / tech-debt/0010). */
-function ProfilePhoneCard() {
-  const { data: me } = useMe()
-  const updateProfile = useUpdateProfile()
-  const [local, setLocal] = useState('')
-
-  // Prefill from the stored E.164, showing the Swedish subscriber part after the +46 chip.
-  useEffect(() => {
-    if (!me) return
-    setLocal(me.phone?.startsWith('+46') ? me.phone.slice(3) : (me.phone ?? ''))
-  }, [me])
-
-  if (!me) return null
-
-  async function onSave() {
-    try {
-      await updateProfile.mutateAsync({ phone: local.trim() || null })
-      toast('Nummer sparat')
-    } catch (e) {
-      toast(e instanceof Error ? e.message : 'Något gick fel. Försök igen.')
-    }
-  }
-
-  return (
-    <div className="space-y-2 border-t border-border pt-4">
-      <p className={SECTION_LABEL}>
-        Ditt nummer <span className="font-normal normal-case tracking-normal">(valfritt)</span>
-      </p>
-      <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-3">
-        <span className="text-sm font-semibold text-muted-foreground">+46</span>
-        <span aria-hidden="true" className="h-5 w-px bg-border" />
-        <Input
-          aria-label="Ditt telefonnummer"
-          inputMode="tel"
-          autoComplete="tel"
-          placeholder="73 555 12 34"
-          value={local}
-          onChange={(e) => setLocal(e.target.value)}
-          className="border-0 bg-transparent px-0 font-mono focus-visible:ring-0"
-        />
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="rounded-full bg-muted px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-          Overifierat
-        </span>
-        <span className="text-[11.5px] text-muted-foreground">
-          Visas för dina kontakter. E-post är fortfarande din inloggning.
-        </span>
-      </div>
-      <Button
-        type="button"
-        onClick={onSave}
-        disabled={updateProfile.isPending}
-        className={cn('w-full')}
-      >
-        {updateProfile.isPending && <Loader2Icon className="animate-spin" />}
-        Spara
-      </Button>
     </div>
   )
 }

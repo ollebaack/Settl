@@ -4,8 +4,8 @@ import { API, latestDevSmsInviteToken, loginAs, uniqueSuffix } from './helpers'
 // CONTACTS & BLIND SMS INVITES (ADR-0019). Adds a contact by phone number from /kontakter —
 // which sends a blind SMS invite that reveals nothing about registration — then accepts it as a
 // brand-new account and confirms the reciprocal contact edge. Uses unique data (phone, email,
-// name) so it never collides with the shared seeded e2e database, and does the profile-phone
-// check as the freshly-created invitee (a unique account) to avoid mutating shared seed members.
+// name) so it never collides with the shared seeded e2e database. The member's own number now
+// lives on /profil (ADR-0026) and is covered by profile.spec.ts.
 test('add a contact by phone, accept the SMS invite, and see the connection', async ({ page }) => {
   await loginAs(page, 'Du')
 
@@ -59,20 +59,4 @@ test('add a contact by phone, accept the SMS invite, and see the connection', as
   expect(theirContacts.ok()).toBeTruthy()
   const list = (await theirContacts.json()) as Array<{ name: string }>
   expect(list.some((c) => c.name === 'Du')).toBeTruthy()
-
-  // Save an optional, unverified profile phone (this invitee is unique, so no shared-state race).
-  const myLocal = `73${String(Date.now()).slice(-7)}`
-  await expect(page.getByText('Overifierat')).toBeVisible()
-  await page.getByRole('textbox', { name: 'Ditt telefonnummer' }).fill(myLocal)
-  // Gate the reload on the save landing server-side. The "Nummer sparat" toast
-  // auto-dismisses within seconds and can't be reliably caught under CI load, and
-  // reloading before the PATCH resolves would drop the write. Persistence across
-  // the reload is the durable proof the number saved.
-  const saved = page.waitForResponse(
-    (r) => r.url().endsWith('/me') && r.request().method() === 'PATCH' && r.ok(),
-  )
-  await page.getByRole('button', { name: 'Spara' }).click()
-  await saved
-  await page.reload()
-  await expect(page.getByRole('textbox', { name: 'Ditt telefonnummer' })).toHaveValue(myLocal)
 })

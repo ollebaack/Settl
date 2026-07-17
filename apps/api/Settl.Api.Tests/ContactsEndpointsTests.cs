@@ -214,31 +214,32 @@ public class ContactsEndpointsTests
     }
 
     [Fact]
-    public async Task PatchMe_stores_phone_as_unverified_e164_and_clears_it()
+    public async Task PutMe_stores_phone_as_unverified_e164_and_clears_it()
     {
         using var factory = new SettlApiFactory();
         await factory.SeedCanonicalAsync();
         var du = factory.ClientAs(SeedIds.Du);
 
-        var set = await du.PatchAsJsonAsync("/me", new UpdateProfileRequest("073-555 12 34"), Web);
+        // The member's single number (ADR-0026) is written through PUT /me alongside name/avatar.
+        var set = await du.PutAsJsonAsync("/me", new UpdateMeRequest("Du", null, Phone: "073-555 12 34"), Web);
         Assert.Equal(HttpStatusCode.OK, set.StatusCode);
         var me = await set.Content.ReadFromJsonAsync<MeDto>(Web);
         Assert.Equal("+46735551234", me!.Phone);
         Assert.False(me.PhoneVerified);
 
-        var cleared = await du.PatchAsJsonAsync("/me", new UpdateProfileRequest(null), Web);
+        var cleared = await du.PutAsJsonAsync("/me", new UpdateMeRequest("Du", null, Phone: null), Web);
         var after = await cleared.Content.ReadFromJsonAsync<MeDto>(Web);
         Assert.Null(after!.Phone);
     }
 
     [Fact]
-    public async Task PatchMe_invalid_phone_returns_400()
+    public async Task PutMe_invalid_phone_returns_400()
     {
         using var factory = new SettlApiFactory();
         await factory.SeedCanonicalAsync();
         var du = factory.ClientAs(SeedIds.Du);
 
-        var res = await du.PatchAsJsonAsync("/me", new UpdateProfileRequest("nope"), Web);
+        var res = await du.PutAsJsonAsync("/me", new UpdateMeRequest("Du", null, Phone: "nope"), Web);
         Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
     }
 }

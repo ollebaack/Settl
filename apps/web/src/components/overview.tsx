@@ -12,16 +12,17 @@
  * the same-currency roll-up, which the addendum (§5.2) explicitly assigns to the
  * client.
  */
+import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useQueries } from '@tanstack/react-query'
-import { Loader2Icon, PlusIcon } from 'lucide-react'
+import { Loader2Icon, PlusIcon, SmartphoneIcon, XIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { HouseholdBadge } from '@/components/household-badge'
 import { useActiveHousehold } from '@/lib/active-household'
 import { useSheet } from '@/lib/sheet'
 import { apiGet, type HouseholdListItemDto, type HouseholdSummaryDto } from '@/lib/api'
-import { queryKeys, useHouseholdsWithArchived, useRestoreHousehold } from '@/lib/queries'
+import { queryKeys, useHouseholdsWithArchived, useMe, useRestoreHousehold } from '@/lib/queries'
 import { formatSignedMoney, shortDate } from '@/lib/format'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -73,6 +74,8 @@ export function Overview({ households }: { households: HouseholdListItemDto[] })
         </h1>
       </header>
 
+      <AddNumberBanner owedSomewhere={households.some((h) => h.netLabel === 'owed')} />
+
       {singleCurrency ? (
         <SingleCurrencyHero households={households} currency={households[0].currency} single={single} />
       ) : (
@@ -111,6 +114,71 @@ export function Overview({ households }: { households: HouseholdListItemDto[] })
 
       <ArchivedSection />
     </div>
+  )
+}
+
+// --- "Add your number" reminder (ADR-0026) ----------------------------------
+
+const ADD_NUMBER_BANNER_KEY = 'settl:add-number-banner-dismissed'
+
+/**
+ * Gentle, dismissible nudge to save a number so people can Swish you back. Shown only when it is
+ * actually useful — you're owed money in at least one book AND have no number saved yet. Adding one
+ * (or dismissing) removes it; dismissal persists so it never nags. The single number lives on
+ * /profil (ADR-0026), where it powers "Betala med Swish".
+ */
+function AddNumberBanner({ owedSomewhere }: { owedSomewhere: boolean }) {
+  const navigate = useNavigate()
+  const { data: me } = useMe()
+  const [dismissed, setDismissed] = useState(
+    () => typeof window !== 'undefined' && localStorage.getItem(ADD_NUMBER_BANNER_KEY) === '1',
+  )
+
+  if (!owedSomewhere || !me || me.phone || dismissed) return null
+
+  const dismiss = () => {
+    setDismissed(true)
+    try {
+      localStorage.setItem(ADD_NUMBER_BANNER_KEY, '1')
+    } catch {
+      // Private-mode / storage-disabled: dismiss for this session only, no rethrow.
+    }
+  }
+
+  return (
+    <Card
+      size="sm"
+      className="flex flex-row items-start gap-3 border-primary/40 bg-primary/5 p-3.5"
+    >
+      <span
+        aria-hidden="true"
+        className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/15 text-primary"
+      >
+        <SmartphoneIcon className="size-5" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[13.5px] font-bold">Lägg till ditt nummer</p>
+        <p className="mt-0.5 text-[12px] text-muted-foreground">
+          Du har pengar att få. Med ditt nummer sparat kan andra Swisha dig direkt när ni gör upp.
+        </p>
+        <Button
+          type="button"
+          size="sm"
+          className="mt-2.5 rounded-full"
+          onClick={() => void navigate({ to: '/profil' })}
+        >
+          Lägg till nummer
+        </Button>
+      </div>
+      <button
+        type="button"
+        aria-label="Dölj"
+        onClick={dismiss}
+        className="-mr-1 -mt-1 grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <XIcon className="size-4" />
+      </button>
+    </Card>
   )
 }
 

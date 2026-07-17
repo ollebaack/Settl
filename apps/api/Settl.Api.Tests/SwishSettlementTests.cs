@@ -28,68 +28,52 @@ public class SwishSettlementTests
     // ---------- Profile write (PUT /me) ----------
 
     [Fact]
-    public async Task Put_me_stores_swish_number_normalised_to_e164()
+    public async Task Put_me_stores_phone_normalised_to_e164()
     {
         using var factory = new SettlApiFactory();
         await factory.SeedCanonicalAsync();
         var client = factory.ClientAs(SeedIds.Du);
 
-        // Typed behind the UI's +46 chip as a Swedish national number.
+        // Typed behind the UI's +46 chip as a Swedish national number. This single number
+        // (ADR-0026) is what powers the Swish payee.
         var res = await client.PutAsJsonAsync("/me",
-            new UpdateMeRequest("Du", null, SwishNumber: "070-123 45 67"), Web);
+            new UpdateMeRequest("Du", null, Phone: "070-123 45 67"), Web);
         Assert.Equal(HttpStatusCode.OK, res.StatusCode);
 
         var updated = await res.Content.ReadFromJsonAsync<MeDto>(Web);
-        Assert.Equal("+46701234567", updated!.SwishNumber);
+        Assert.Equal("+46701234567", updated!.Phone);
 
         // Persisted — a fresh read reflects it.
         var me = await client.GetFromJsonAsync<MeDto>("/me", Web);
-        Assert.Equal("+46701234567", me!.SwishNumber);
+        Assert.Equal("+46701234567", me!.Phone);
     }
 
     [Fact]
-    public async Task Put_me_empty_swish_number_clears_it()
+    public async Task Put_me_empty_phone_clears_it()
     {
         using var factory = new SettlApiFactory();
         await factory.SeedCanonicalAsync();
         var client = factory.ClientAs(SeedIds.Du);
 
-        await client.PutAsJsonAsync("/me", new UpdateMeRequest("Du", null, SwishNumber: "0701234567"), Web);
-        var res = await client.PutAsJsonAsync("/me", new UpdateMeRequest("Du", null, SwishNumber: "   "), Web);
+        await client.PutAsJsonAsync("/me", new UpdateMeRequest("Du", null, Phone: "0701234567"), Web);
+        var res = await client.PutAsJsonAsync("/me", new UpdateMeRequest("Du", null, Phone: "   "), Web);
         Assert.Equal(HttpStatusCode.OK, res.StatusCode);
 
         var updated = await res.Content.ReadFromJsonAsync<MeDto>(Web);
-        Assert.Null(updated!.SwishNumber);
+        Assert.Null(updated!.Phone);
     }
 
     [Fact]
-    public async Task Put_me_rejects_unparseable_swish_number()
+    public async Task Put_me_rejects_unparseable_phone()
     {
         using var factory = new SettlApiFactory();
         await factory.SeedCanonicalAsync();
         var client = factory.ClientAs(SeedIds.Du);
 
         var res = await client.PutAsJsonAsync("/me",
-            new UpdateMeRequest("Du", null, SwishNumber: "not-a-number"), Web);
+            new UpdateMeRequest("Du", null, Phone: "not-a-number"), Web);
         Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
-        Assert.Equal("Ogiltigt Swish-nummer", await DetailAsync(res));
-    }
-
-    [Fact]
-    public async Task Put_me_swish_number_is_independent_of_profile_phone()
-    {
-        using var factory = new SettlApiFactory();
-        await factory.SeedCanonicalAsync();
-        var client = factory.ClientAs(SeedIds.Du);
-
-        // Set a profile phone (PATCH /me) and a DIFFERENT Swish number (PUT /me); neither derives
-        // from the other.
-        await client.PatchAsJsonAsync("/me", new UpdateProfileRequest("0701111111"), Web);
-        await client.PutAsJsonAsync("/me", new UpdateMeRequest("Du", null, SwishNumber: "0702222222"), Web);
-
-        var me = await client.GetFromJsonAsync<MeDto>("/me", Web);
-        Assert.Equal("+46701111111", me!.Phone);
-        Assert.Equal("+46702222222", me.SwishNumber);
+        Assert.Equal("Ogiltigt telefonnummer", await DetailAsync(res));
     }
 
     // ---------- swishPay on settle-preview ----------
@@ -113,7 +97,7 @@ public class SwishSettlementTests
             await factory.WithDb(async db =>
             {
                 var m = await db.Members.FindAsync(creditor);
-                m!.SwishNumber = creditorSwish;
+                m!.PhoneNumber = creditorSwish;
                 await db.SaveChangesAsync();
             });
 
@@ -150,7 +134,7 @@ public class SwishSettlementTests
         await factory.WithDb(async db =>
         {
             var m = await db.Members.FindAsync(debtor);
-            m!.SwishNumber = "+46709999999";
+            m!.PhoneNumber = "+46709999999";
             await db.SaveChangesAsync();
         });
         var client = factory.ClientAs(creditor);

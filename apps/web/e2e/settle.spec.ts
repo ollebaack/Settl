@@ -51,11 +51,73 @@ test('settle up with a person closes the pair', async ({ page }) => {
   await expect(page.getByText(`Uppgjort med ${samMember.name} — rent bord`)).toBeVisible()
 })
 
+// ADD-YOUR-NUMBER NUDGE (ADR-0026). The flip side of Swish pay: when you are OWED by someone and
+// have no number saved, the debtor can't Swish you — so the settle-up sheet nudges you to add one,
+// deep-linking to the single number field on /profil. Isolated throwaway book; Du has no number.
+test('nudges the creditor to add a number, linking to profile', async ({ page }) => {
+  const du = await loginAs(page, 'Du')
+
+  const suffix = `${test.info().project.name}-${uniqueSuffix()}`
+  const household = await createHousehold(page.request, `E2E Nudge ${suffix}`)
+  const token = await inviteAndGetToken(page.request, household.id, 'sam@settl.dev')
+
+  const sam = await loginAs(page, 'Sam')
+  await acceptInvite(page.request, token)
+  await loginAs(page, 'Du')
+
+  const members = await getMembers(page.request, household.id)
+  const samMember = members.find((m) => m.id === sam)!
+
+  // Sam owes Du → Du is the creditor (owesYou) with no number saved.
+  await createOneOwesAll(page.request, household.id, 'E2E nudge-skuld', 50000, sam, du)
+
+  await pinHousehold(page, household.id)
+  await page.goto(`/hushall/${household.id}`)
+  await page.getByTestId('person-row').first().click()
+
+  const sheet = page.getByLabel(`Gör upp med ${samMember.name}`)
+  await expect(sheet.getByText(`${samMember.name} är skyldig dig`)).toBeVisible()
+
+  // The creditor-side nudge, and tapping it lands on the profile number field.
+  await sheet.getByRole('button', { name: 'Lägg till nummer' }).click()
+  await expect(page).toHaveURL((url) => url.pathname === '/profil')
+  await expect(page.locator('#profile-phone')).toBeVisible()
+})
+
+// HOME "ADD YOUR NUMBER" BANNER (ADR-0026). On the overview, when you're owed money in a book and
+// have no number saved, a dismissible banner invites you to add one so people can Swish you back.
+// It links to /profil and dismissing it removes it. Isolated throwaway book; Du has no number.
+test('home banner invites the owed user to add a number, and dismisses', async ({ page }) => {
+  const du = await loginAs(page, 'Du')
+
+  const suffix = `${test.info().project.name}-${uniqueSuffix()}`
+  const household = await createHousehold(page.request, `E2E Banner ${suffix}`)
+  const token = await inviteAndGetToken(page.request, household.id, 'sam@settl.dev')
+
+  const sam = await loginAs(page, 'Sam')
+  await acceptInvite(page.request, token)
+  await loginAs(page, 'Du')
+
+  // Sam owes Du → Du is owed in at least one book (netLabel 'owed').
+  await createOneOwesAll(page.request, household.id, 'E2E banner-skuld', 50000, sam, du)
+
+  await page.goto('/')
+  const banner = page.getByText('Lägg till ditt nummer').first()
+  await expect(banner).toBeVisible()
+
+  // Dismissing removes it and it stays gone across a reload (persisted, never nags).
+  await page.getByRole('button', { name: 'Dölj' }).click()
+  await expect(page.getByText('Lägg till ditt nummer')).toHaveCount(0)
+  await page.reload()
+  await expect(page.getByText('Lägg till ditt nummer')).toHaveCount(0)
+})
+
 // SWISH PAY (swish-settlement-payments spec). When the acting user OWES someone in a SEK book
-// and that creditor has saved a Swish number, the settle-up sheet offers a "Betala med Swish"
+// and that creditor has saved a number, the settle-up sheet offers a "Betala med Swish"
 // launcher next to "mark settled". Fully isolated: a throwaway book + a freshly-invited creditor
-// account whose Swish number is set via the API, so no seeded member is mutated.
-test('offers Betala med Swish when the creditor has a Swish number', async ({ page }) => {
+// account whose number is set via the API (ADR-0026 — the single number doubles as the Swish
+// payee), so no seeded member is mutated.
+test('offers Betala med Swish when the creditor has a number', async ({ page }) => {
   const du = await loginAs(page, 'Du')
 
   const suffix = `${test.info().project.name}-${uniqueSuffix()}`
@@ -66,11 +128,11 @@ test('offers Betala med Swish when the creditor has a Swish number', async ({ pa
   const token = await inviteAndGetToken(page.request, household.id, creditorEmail)
   await acceptInvite(page.request, token, { name: 'Swishmottagare', password: 'Password123!' })
 
-  // As the creditor, save a Swish number (PUT /me is AuthenticatedOnly).
-  const putSwish = await page.request.put(`${API}/me`, {
-    data: { name: 'Swishmottagare', avatarEmoji: null, swishNumber: '0701234567' },
+  // As the creditor, save a number (PUT /me is AuthenticatedOnly) — it powers the Swish payee.
+  const putPhone = await page.request.put(`${API}/me`, {
+    data: { name: 'Swishmottagare', avatarEmoji: null, phone: '0701234567' },
   })
-  expect(putSwish.ok(), 'creditor saves swish number').toBeTruthy()
+  expect(putPhone.ok(), 'creditor saves number').toBeTruthy()
 
   await loginAs(page, 'Du')
   const members = await getMembers(page.request, household.id)
