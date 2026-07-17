@@ -3,7 +3,7 @@
 > **Update (2026-07-16):** the design iteration went further than "merge" — `Lån` is
 > **removed as a feature** (redundant with `Allt på en`), so every created entry is an
 > `expense`. The model-side teardown (dropping the `iou` `EntryType` + `FromMemberId`/
-> `ToMemberId`) was grilled and recorded as **[ADR-0020](../adr/0020-remove-iou-entry-type.md)**,
+> `ToMemberId`) was grilled and recorded as **[ADR-0021](../adr/0021-remove-iou-entry-type.md)**,
 > which amends ADR-0007 and supersedes the "keep both models / intent decides / `Rent lån`
 > toggle" mechanism described in the sections below. The settled *UI* is in
 > [add-entry-addendum.md](../design/add-entry-addendum.md); the sheet renders in

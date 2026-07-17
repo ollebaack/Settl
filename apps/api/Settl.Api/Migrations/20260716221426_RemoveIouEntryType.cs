@@ -11,7 +11,7 @@ namespace Settl.Api.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Defensive backfill (ADR-0020): convert any surviving IOU rows into their
+            // Defensive backfill (ADR-0021): convert any surviving IOU rows into their
             // balance-equivalent "Allt på en" amount-split expense BEFORE the columns drop,
             // so a stray row can't silently lose its debt. The debtor (FromMemberId) owes the
             // whole amount; the creditor (ToMemberId) becomes the payer. Type/SplitMode are
