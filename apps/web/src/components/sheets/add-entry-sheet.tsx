@@ -481,7 +481,7 @@ function EntryForm({
                 Lika
               </ToggleGroupItem>
               <ToggleGroupItem value="whole" className="flex-1">
-                Allt på en
+                Allt
               </ToggleGroupItem>
               <ToggleGroupItem value="percent" className="flex-1">
                 %

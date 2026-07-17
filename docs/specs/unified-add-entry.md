@@ -1,7 +1,7 @@
 # Unified add-entry flow (merge Lån into Utgift) — spec
 
 > **Update (2026-07-16):** the design iteration went further than "merge" — `Lån` is
-> **removed as a feature** (redundant with `Allt på en`), so every created entry is an
+> **removed as a feature** (redundant with `Allt`), so every created entry is an
 > `expense`. The model-side teardown (dropping the `iou` `EntryType` + `FromMemberId`/
 > `ToMemberId`) was grilled and recorded as **[ADR-0020](../adr/0020-remove-iou-entry-type.md)**,
 > which amends ADR-0007 and supersedes the "keep both models / intent decides / `Rent lån`
@@ -14,18 +14,18 @@
 Collapse the `Ny post` sheet's three tabs (`Utgift / Lån / Återkommande`) down to
 **two** — `Utgift` (which now also covers loans) and `Återkommande`. A loan (`iou`) is
 no longer its own tab: it's the informal-debt *flavour* of an expense, reached through
-the existing `Allt på en` split preset. Both entry types stay in the model
+the existing `Allt` split preset. Both entry types stay in the model
 ([ADR-0007](../adr/0007-ledger-data-model.md)); which one an entry becomes is decided by
 **intent, not by the split math** (the balance math is already identical). Extends the
 add-entry screen in [implementation-map.md](../design/implementation-map.md) §2.6 and the
-`Allt på en` preset from [ADR-0018](../adr/0018-ledger-editing-affordances.md) §2.1. The
+`Allt` preset from [ADR-0018](../adr/0018-ledger-editing-affordances.md) §2.1. The
 merged form's layout is designed in a follow-up `ui-design` pass; this spec fixes its
 shape and behaviour.
 
 Provenance: decided via `/grill` on 2026-07-16. Spec only, no companion ADR — the grill
 chose to record the model-adjacent call (deprecate the `Lån` tab, keep both entry types)
 here rather than as a standalone decision. It rests on existing ADRs 0007 (entry model)
-and 0018 (`Allt på en`), which it extends rather than reverses; nothing here needs a
+and 0018 (`Allt`), which it extends rather than reverses; nothing here needs a
 migration or a schema change, so by `docs/README.md`'s bar it is not ADR-worthy.
 
 ## Problem
@@ -34,13 +34,13 @@ There are **two UI paths to record the exact same debt**, and the newer one ship
 days ago:
 
 1. The **`Lån` tab** — directional `fromMemberId → toMemberId`, full amount, one debt.
-2. **`Utgift` → `Allt på en`** — an expense with a zero payer share; ADR-0018 §2.1 itself
+2. **`Utgift` → `Allt`** — an expense with a zero payer share; ADR-0018 §2.1 itself
    flags this as "intentional overlap [that] must not double-count."
 
 Downstream they are already **one thing**: `BalanceCalculator` collapses both to `Debt`
 records ([BalanceCalculator.cs:54](../../apps/api/Settl.Api/Domain/BalanceCalculator.cs#L54)).
 The duplication surfaces as UX confusion — including a reachable **no-op entry**: in
-`Allt på en` the "who owes the whole amount" picker renders the full member list
+`Allt` the "who owes the whole amount" picker renders the full member list
 ([add-entry-sheet.tsx:599](../../apps/web/src/components/sheets/add-entry-sheet.tsx#L599))
 and defaults to the first member regardless of who paid
 ([add-entry-sheet.tsx:327](../../apps/web/src/components/sheets/add-entry-sheet.tsx#L327)),
@@ -52,23 +52,23 @@ default.
 - **`Ny post` drops to two tabs:** `Utgift` and `Återkommande`. The `Lån` tab is removed
   from the type picker ([add-entry-sheet.tsx:478](../../apps/web/src/components/sheets/add-entry-sheet.tsx#L478)).
   `Återkommande` stays separate — it's a *template* (`POST /recurring`), not a ledger entry.
-- **The loan case moves inside `Allt på en`.** The `Delning` editor
-  (`Lika / % / kr / Allt på en`) becomes the single home for "who owes what." Choosing
-  `Allt på en` reveals who bears the whole amount plus the direction sense that the old
+- **The loan case moves inside `Allt`.** The `Delning` editor
+  (`Lika / % / kr / Allt`) becomes the single home for "who owes what." Choosing
+  `Allt` reveals who bears the whole amount plus the direction sense that the old
   `Lån` branch carried (`Jag är skyldig` / `Skyldig mig`, `Med`).
 - **Emit rule — intent decides the type, not the split shape:**
   - `Lika / % / kr` → **`expense`** (unchanged).
-  - `Allt på en` for a **real purchase someone paid for** → **`expense`** with a zero
+  - `Allt` for a **real purchase someone paid for** → **`expense`** with a zero
     payer share (ADR-0018 behaviour preserved; reads back `Du betalade · {namn} står för
     allt`, keeps category).
-  - `Allt på en` marked as a **bare debt with no purchase** ("jag lånade ut 500", "jag är
+  - `Allt` marked as a **bare debt with no purchase** ("jag lånade ut 500", "jag är
     skyldig dig 200") → **`iou`**, with `from`/`to` derived from payer + who-owes. Renders
     as today's `Lån till/från {namn}`, `Informellt lån — inget kvitto behövs`.
-- **Fixes the no-op bug as a side effect:** in `Allt på en`, the "who owes the whole
+- **Fixes the no-op bug as a side effect:** in `Allt`, the "who owes the whole
   amount" picker **excludes the payer** and defaults to the first non-payer, so
   payer == ower is unreachable. In a two-person household this auto-resolves to the only
   valid choice.
-- **No double-count:** an `Allt på en` entry is *either* an expense *or* an iou, never
+- **No double-count:** an `Allt` entry is *either* an expense *or* an iou, never
   both — the existing ADR-0018 §2.1 invariant, now structural rather than a caution.
 - **No API, DTO, or schema change; no migration.** `POST /entries` already accepts both
   `type: "expense"` and `type: "iou"`; the merge is entirely a web-form change. Existing
@@ -81,22 +81,22 @@ default.
   the only file that changes:
   - Remove the `Lån` tab; the `iou` branch (`Åt vilket håll` / `Med`,
     [lines 511–546](../../apps/web/src/components/sheets/add-entry-sheet.tsx#L511)) moves
-    into the `Allt på en` sub-panel
+    into the `Allt` sub-panel
     ([lines 590–611](../../apps/web/src/components/sheets/add-entry-sheet.tsx#L590)).
-  - `buildSplit()` / `onSave()` gain the intent branch: `Allt på en` + "bare loan"
+  - `buildSplit()` / `onSave()` gain the intent branch: `Allt` + "bare loan"
     signal → build the `iou` `CreateEntryRequest` (`fromMemberId`/`toMemberId` derived
     from payer + ower) instead of an `amount` split; everything else unchanged.
-  - The `Allt på en` ower picker filters out the payer and defaults to the first
+  - The `Allt` ower picker filters out the payer and defaults to the first
     non-payer.
 - Entry detail, ledger filters, and `BalanceCalculator` are untouched — both types
   already render and net correctly.
-- Built from a `ui-design` pass; the visual layout (how `Allt på en` presents payer,
+- Built from a `ui-design` pass; the visual layout (how `Allt` presents payer,
   ower, direction, and the loan-vs-purchase signal in one coherent panel) is produced
   there and mirrored into `docs/design/`.
 
 ## Out of scope / open questions
 
-- **The loan-vs-purchase signal inside `Allt på en`** — the one micro-UX detail the
+- **The loan-vs-purchase signal inside `Allt`** — the one micro-UX detail the
   design pass must nail: how the user marks "this is a bare loan, no purchase" (leading
   candidate: a small `Rent lån — inget köp` toggle that hides title/category and stores
   the `iou`; direction *derived* from payer + ower rather than a separate toggle). The
@@ -111,10 +111,10 @@ default.
 
 - **Collapse the model too** — remove `iou`, migrate existing rows. Reverses a
   just-shipped decision for no balance-math gain.
-- **Always emit `iou` for `Allt på en`** (delete the ADR-0018 expense sugar) — a paid
+- **Always emit `iou` for `Allt`** (delete the ADR-0018 expense sugar) — a paid
   purchase where one person owes everything would lose its `Du betalade` + category
   framing and read as `Lån`.
-- **Always emit `expense`** (direction toggle merely presets payer + `Allt på en`) —
+- **Always emit `expense`** (direction toggle merely presets payer + `Allt`) —
   leaves the `iou` type dead and vestigial, contradicting "keep the model."
 - **A top-level `Delad utgift / Lån` segmented control** — clearer for a pure loan but
   keeps two forms in a trenchcoat; the merge into the `Delning` editor is more genuinely
