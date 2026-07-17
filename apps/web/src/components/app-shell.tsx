@@ -29,7 +29,7 @@ import { cn } from '@/lib/utils'
 import { inDays, shortDate } from '@/lib/format'
 import { useSheet } from '@/lib/sheet'
 import { useActiveHousehold } from '@/lib/active-household'
-import { useMe, useMembers, useNudges, useSummary } from '@/lib/queries'
+import { useMe, useMembers, useNudges, useNudgeTone, useSummary } from '@/lib/queries'
 import type { NudgeActionDto, NudgeDto } from '@/lib/api'
 
 /** Uppercase tracked eyebrow used by the desktop right-rail section headers. */
@@ -232,7 +232,7 @@ function RightRail() {
   const { openSheet } = useSheet()
   const runAction = useNudgeAction()
   const summary = useSummary(householdId)
-  const nudges = useNudges(householdId, 'direct')
+  const nudges = useNudges(householdId, useNudgeTone())
 
   const upcoming = summary.data?.upcoming ?? []
   const nudgeList = nudges.data ?? []

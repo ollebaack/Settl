@@ -858,6 +858,7 @@ export interface components {
             emailConfirmed: boolean;
             phone: null | string;
             phoneVerified: boolean;
+            nudgeTone: string;
         };
         MemberContributionDto: {
             /** Format: uuid */
@@ -1050,6 +1051,7 @@ export interface components {
         UpdateMeRequest: {
             name: string;
             avatarEmoji: null | string;
+            nudgeTone?: null | string;
         };
         UpdateProfileRequest: {
             phone: null | string;

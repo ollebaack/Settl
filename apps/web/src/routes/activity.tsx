@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { EmptyState, ErrorState, LoadingState, NoHouseholdState } from '@/components/screen-states'
 import { useActiveHousehold } from '@/lib/active-household'
-import { useNudges } from '@/lib/queries'
+import { useNudges, useNudgeTone } from '@/lib/queries'
 import { useSheet } from '@/lib/sheet'
-import type { NudgeActionDto, NudgeDto, NudgeTone } from '@/lib/api'
+import type { NudgeActionDto, NudgeDto } from '@/lib/api'
 
 export const Route = createFileRoute('/activity')({
   component: () => (
@@ -16,10 +16,9 @@ export const Route = createFileRoute('/activity')({
   ),
 })
 
-// Tone comes from a setting; direct is the default (implementation-map §2.4,
-// ambiguity #18). Nudge title/body text is localised (tone-selected) by the API
-// and rendered as-is.
-const TONE: NudgeTone = 'direct'
+// Tone comes from the member's profile setting; direct is the default (implementation-map
+// §2.4, ambiguity #18). Nudge title/body text is localised (tone-selected) by the API and
+// rendered as-is.
 
 const EMPTY_COPY =
   'Lugnt just nu. Settl knuffar när en stor utgift läggs till, ett saldo växer eller hyran närmar sig.'
@@ -30,7 +29,7 @@ function ActivityPage() {
   const { householdId, households, isLoading: householdsLoading } = useActiveHousehold()
   const { openSheet } = useSheet()
   const navigate = useNavigate()
-  const nudgesQuery = useNudges(householdId, TONE)
+  const nudgesQuery = useNudges(householdId, useNudgeTone())
 
   if (!householdsLoading && households.length === 0) {
     return <NoHouseholdState onCreate={() => openSheet('newHousehold')} className="mt-6" />
