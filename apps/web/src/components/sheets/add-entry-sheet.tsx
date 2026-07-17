@@ -585,21 +585,18 @@ function EntryForm({
             <>
               <div className="flex flex-col gap-2">
                 <Label className={FIELD_LABEL}>Upprepas</Label>
+                {/* Natural-width chips that wrap (design: flex-wrap, no forced columns).
+                    Forcing equal `flex-1` columns squeezed "Varannan vecka" narrower than
+                    its label on <380px phones, clipping the text. */}
                 <ToggleGroup
                   value={[cadence]}
                   onValueChange={(v) => setCadence(pickSingle<Cadence>(v, cadence))}
                   variant="outline"
                   className="flex-wrap"
                 >
-                  <ToggleGroupItem value="monthly" className="flex-1">
-                    Varje månad
-                  </ToggleGroupItem>
-                  <ToggleGroupItem value="biweekly" className="flex-1">
-                    Varannan vecka
-                  </ToggleGroupItem>
-                  <ToggleGroupItem value="weekly" className="flex-1">
-                    Varje vecka
-                  </ToggleGroupItem>
+                  <ToggleGroupItem value="monthly">Varje månad</ToggleGroupItem>
+                  <ToggleGroupItem value="biweekly">Varannan vecka</ToggleGroupItem>
+                  <ToggleGroupItem value="weekly">Varje vecka</ToggleGroupItem>
                 </ToggleGroup>
               </div>
 
