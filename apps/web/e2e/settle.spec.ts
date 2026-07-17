@@ -55,13 +55,7 @@ test('settle up with a person closes the pair', async ({ page }) => {
 // and that creditor has saved a Swish number, the settle-up sheet offers a "Betala med Swish"
 // launcher next to "mark settled". Fully isolated: a throwaway book + a freshly-invited creditor
 // account whose Swish number is set via the API, so no seeded member is mutated.
-test('offers Betala med Swish when the creditor has a Swish number', async ({ page }, testInfo) => {
-  // Mobile-first product (playwright.config: "desktop is the scale-up check"): the tap-through
-  // link is the primary Swish path and mobile is the viewport that renders it. The desktop QR
-  // encodes the same server-built swishPay.uri — covered by the API tests + manual verification —
-  // so this runs on mobile only, keeping the desktop project's footprint identical to main.
-  test.skip(testInfo.project.name !== 'mobile', 'Swish tap-link is the mobile path; desktop QR covered elsewhere')
-
+test('offers Betala med Swish when the creditor has a Swish number', async ({ page }) => {
   const du = await loginAs(page, 'Du')
 
   const suffix = `${test.info().project.name}-${uniqueSuffix()}`

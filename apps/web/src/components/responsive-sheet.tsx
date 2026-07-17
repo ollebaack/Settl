@@ -44,7 +44,11 @@ export function ResponsiveSheet({
   if (wide) {
     return (
       <Dialog open={open} onOpenChange={(o) => onOpenChange(o)}>
-        <DialogContent className={cn('sm:max-w-[480px]', className)}>
+        {/* Cap the dialog at the viewport and scroll the body — otherwise a tall sheet (e.g. the
+            household switcher with many books, or a long settle-up) overflows the centered popup
+            and its bottom actions land outside the viewport, unreachable. Mirrors the mobile
+            drawer's scrollable body. */}
+        <DialogContent className={cn('flex max-h-[85dvh] flex-col sm:max-w-[480px]', className)}>
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
             {description ? (
@@ -53,7 +57,7 @@ export function ResponsiveSheet({
               <DialogDescription className="sr-only">{title}</DialogDescription>
             )}
           </DialogHeader>
-          {children}
+          <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">{children}</div>
         </DialogContent>
       </Dialog>
     )

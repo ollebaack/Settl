@@ -96,11 +96,7 @@ test('toggles the nudge-email preference off and persists it', async ({ page, re
   await expect(page.getByText('Du får inga påminnelser via e-post', { exact: false })).toBeVisible()
 })
 
-test('sets a Swish number and persists it normalised', async ({ page, request }, testInfo) => {
-  // Viewport-agnostic field; run once (mobile) to keep the desktop project's footprint identical
-  // to main (mobile-first product — playwright.config).
-  test.skip(testInfo.project.name !== 'mobile', 'profile field is viewport-agnostic; runs on mobile')
-
+test('sets a Swish number and persists it normalised', async ({ page, request }) => {
   await freshVerifiedAccount(page, request)
 
   await page.goto('/profil')
