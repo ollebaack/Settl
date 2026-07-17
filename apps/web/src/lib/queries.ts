@@ -506,7 +506,7 @@ export function useRestoreHousehold(householdId: string | undefined) {
   })
 }
 
-/** Permanently delete an empty household (owner-only, no ledger activity). ADR-0020. */
+/** Permanently delete an empty household (owner-only, no ledger activity). ADR-0022. */
 export function useDeleteHousehold(householdId: string | undefined) {
   const qc = useQueryClient()
   return useMutation({

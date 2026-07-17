@@ -2,7 +2,7 @@
  * Ny post / Redigera post — create or edit an expense or a recurring template.
  * Implementation-map §2.6 + flow §4 + ledger-editing addendum §2.1–2.2. Split editor
  * (Lika / Allt på en / % / kr) where "Allt på en" puts the whole amount on one person
- * (ADR-0020 removed the separate IOU type), with LIVE, color-coded validation; the API is authoritative
+ * (ADR-0021 removed the separate IOU type), with LIVE, color-coded validation; the API is authoritative
  * (ADR-0006) so client pre-checks raise the exact toast copy and API error details
  * are surfaced too. Edit mode reuses the same form, prefilled from the entry /
  * template (PUT /entries/{id} · PATCH /recurring/{id}).
