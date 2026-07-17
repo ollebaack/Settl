@@ -34,7 +34,7 @@ means except asking whoever invited them.
   - Reglerad — a post whose balance is settled; derived, not user-set.
   - "Du är skyldig totalt" / "Du ska få totalt" — net balance across the
     whole household, not per person.
-  - Aktivitet / Knuffar — the reminders feed and the reminders themselves.
+  - Aktivitet / Notiser — the reminders feed and the reminders themselves.
   - Hushåll — the group whose ledger you're viewing; a person can belong to
     more than one.
 

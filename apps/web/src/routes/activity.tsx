@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { BellIcon, ReceiptTextIcon, RepeatIcon, TrendingUpIcon, type LucideIcon } from 'lucide-react'
 import { RequireAuth } from '@/components/require-auth'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { EmptyState, ErrorState, LoadingState, NoHouseholdState } from '@/components/screen-states'
+import { ErrorState, LoadingState, NoHouseholdState } from '@/components/screen-states'
 import { useActiveHousehold } from '@/lib/active-household'
 import { useNudges, useNudgeTone } from '@/lib/queries'
 import { useSheet } from '@/lib/sheet'
@@ -20,10 +21,17 @@ export const Route = createFileRoute('/activity')({
 // §2.4, ambiguity #18). Nudge title/body text is localised (tone-selected) by the API and
 // rendered as-is.
 
-const EMPTY_COPY =
-  'Lugnt just nu. Settl knuffar när en stor utgift läggs till, ett saldo växer eller hyran närmar sig.'
-const FOOTER_COPY =
-  'Inget dagligt tjat — knuffar skickas vid händelser: en stor utgift, ett saldo som passerar en gräns eller en återkommande kostnad som snart bokförs.'
+// The three event triggers (implementation-map §2.4 / ambiguity #5). Rendered as a
+// scannable "why do I get these" reference instead of the old run-on footer sentence.
+const TRIGGERS: { icon: LucideIcon; title: string; detail: string }[] = [
+  { icon: ReceiptTextIcon, title: 'En stor utgift läggs till', detail: 'Från 1500 kr och uppåt.' },
+  { icon: TrendingUpIcon, title: 'Ett saldo blir stort', detail: 'När det passerar 750 kr.' },
+  {
+    icon: RepeatIcon,
+    title: 'En återkommande kostnad närmar sig',
+    detail: 'Några dagar innan den bokförs.',
+  },
+]
 
 function ActivityPage() {
   const { householdId, households, isLoading: householdsLoading } = useActiveHousehold()
@@ -57,7 +65,7 @@ function ActivityPage() {
   return (
     <div className="flex flex-col gap-4">
       <header>
-        <h1 className="font-heading text-[19px] font-bold tracking-tight">Knuffar</h1>
+        <h1 className="font-heading text-[19px] font-bold tracking-tight">Notiser</h1>
         <p className="mt-0.5 text-[12.5px] text-muted-foreground">
           Settl säger bara till när något händer.
         </p>
@@ -69,10 +77,35 @@ function ActivityPage() {
         onAction={runAction}
       />
 
-      <p className="px-5 text-center text-xs leading-relaxed text-muted-foreground text-balance">
-        {FOOTER_COPY}
-      </p>
+      <NudgeTriggers />
     </div>
+  )
+}
+
+/** Scannable reference for the three events that produce a notification. */
+function NudgeTriggers() {
+  return (
+    <Card size="sm" className="gap-0">
+      <p className="px-(--card-spacing) text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+        Du hör av oss när
+      </p>
+      <ul className="mt-3 flex flex-col gap-3 px-(--card-spacing)">
+        {TRIGGERS.map(({ icon: Icon, title, detail }) => (
+          <li key={title} className="flex items-start gap-3">
+            <span
+              aria-hidden="true"
+              className="grid size-7 flex-none place-items-center rounded-full bg-muted text-muted-foreground"
+            >
+              <Icon className="size-3.5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[13px] font-[650] text-foreground">{title}</p>
+              <p className="text-[12px] leading-snug text-muted-foreground">{detail}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </Card>
   )
 }
 
@@ -96,7 +129,18 @@ function ActivityBody({
 
   const nudges = query.data ?? []
   if (nudges.length === 0) {
-    return <EmptyState className="py-12">{EMPTY_COPY}</EmptyState>
+    return (
+      <div className="flex flex-col items-center gap-2 px-6 py-10 text-center">
+        <span
+          aria-hidden="true"
+          className="grid size-11 place-items-center rounded-full bg-muted text-muted-foreground"
+        >
+          <BellIcon className="size-5" />
+        </span>
+        <p className="text-[13.5px] font-[650] text-foreground">Allt lugnt</p>
+        <p className="text-sm text-muted-foreground">Inga notiser att ta tag i just nu.</p>
+      </div>
+    )
   }
 
   return (

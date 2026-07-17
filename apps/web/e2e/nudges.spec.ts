@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { getHouseholdId, loginAs, pinHousehold } from './helpers'
 
-// NUDGES (Knuffar, §2.4): the activity view shows nudge cards. Two seeded
+// NUDGES (Notiser, §2.4): the activity view shows nudge cards. Two seeded
 // triggers are stable across the suite: the rent recurring-due nudge and the
 // big-expense ("Begagnad soffa") nudge. (Uses .first() because the desktop shell
 // also mirrors nudges in the right rail.)
@@ -11,7 +11,7 @@ test('activity view shows the rent and big-expense nudges', async ({ page }) => 
   await pinHousehold(page, household)
   await page.goto('/activity')
 
-  await expect(page.getByRole('heading', { name: 'Knuffar' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Notiser' })).toBeVisible()
 
   // Recurring-due nudge for the rent template (direct tone: "{titel} dras {när}").
   await expect(page.getByText(/Hyra dras/).first()).toBeVisible()

@@ -38,7 +38,7 @@ const UPLABEL = 'text-[11.5px] font-semibold uppercase tracking-[0.09em] text-mu
 // The nudge tone only selects copy, never which nudges fire (implementation-map §2.4). The
 // label + one-liner describe each voice; the API is authoritative over the actual nudge text.
 const TONE_COPY: Record<NudgeTone, { label: string; hint: string }> = {
-  direct: { label: 'Rak', hint: 'Tydliga knuffar med belopp och en uppmaning att göra upp.' },
+  direct: { label: 'Rak', hint: 'Tydliga notiser med belopp och en uppmaning att göra upp.' },
   gentle: { label: 'Mjuk', hint: 'Vänliga påminnelser utan press.' },
 }
 
@@ -232,7 +232,7 @@ function ProfileForm({ me }: { me: MeDto }) {
 
       {/* Nudge tone */}
       <div className="flex flex-col gap-1.5">
-        <p className={UPLABEL}>Knuffar</p>
+        <p className={UPLABEL}>Notiser</p>
         <ToggleGroup
           value={[tone]}
           onValueChange={(v) => setTone((v[0] as NudgeTone | undefined) ?? tone)}
@@ -264,8 +264,8 @@ function ProfileForm({ me }: { me: MeDto }) {
           </ToggleGroup>
           <p className="text-xs text-muted-foreground">
             {emailsEnabled
-              ? 'Ett dagligt mejl när du har knuffar att ta tag i. Aldrig mer än ett per dag.'
-              : 'Du får inga påminnelser via e-post. Knuffar visas fortfarande i appen.'}
+              ? 'Ett dagligt mejl när du har notiser att ta tag i. Aldrig mer än ett per dag.'
+              : 'Du får inga påminnelser via e-post. Notiser visas fortfarande i appen.'}
           </p>
         </div>
       </div>

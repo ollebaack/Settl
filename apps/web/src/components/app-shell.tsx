@@ -183,7 +183,7 @@ function MobileHeader() {
         )}
         <Link
           to="/activity"
-          aria-label="Knuffar"
+          aria-label="Notiser"
           className="relative grid size-9 place-items-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
         >
           <BellIcon className="size-5" />
@@ -223,7 +223,7 @@ function useNudgeAction() {
 
 /**
  * Persistent desktop right rail (≥980px): upcoming auto-posts ("På gång") and
- * compact nudges ("Knuffar"). Mirrors the canonical desktop layout's third
+ * compact nudges ("Notiser"). Mirrors the canonical desktop layout's third
  * column; hidden on mobile where the same content lives on Home / the activity
  * route. Renders and calls only (ADR-0006).
  */
@@ -272,7 +272,7 @@ function RightRail() {
       )}
 
       <div>
-        <p className={RAIL_LABEL}>Knuffar</p>
+        <p className={RAIL_LABEL}>Notiser</p>
         <div className="mt-2.5 flex flex-col gap-2">
           {nudgeList.length > 0 ? (
             nudgeList.map((nudge, i) => (
@@ -280,8 +280,8 @@ function RightRail() {
             ))
           ) : (
             <p className="rounded-[14px] border-[1.5px] border-dashed border-border p-4 text-xs leading-relaxed text-muted-foreground">
-              Lugnt just nu. Knuffar skickas vid händelser — en stor utgift, ett växande saldo
-              eller hyra på gång.
+              Allt lugnt. Du hör av oss vid en stor utgift, ett saldo som blir stort eller en
+              återkommande kostnad som snart bokförs.
             </p>
           )}
         </div>
