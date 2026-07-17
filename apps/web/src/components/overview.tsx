@@ -54,11 +54,11 @@ export function Overview({ households }: { households: HouseholdListItemDto[] })
   // Client detects >1 distinct currency across active books (ADR-0019 §2.2).
   const distinctCurrencies = new Set(households.map((h) => h.currency))
   const singleCurrency = distinctCurrencies.size === 1
-  // With one book the overview is thinner (ADR-0020): the hero is scoped to it
+  // With one book the overview is thinner (ADR-0021): the hero is scoped to it
   // and its card is an "Öppna" affordance rather than repeating the net.
   const single = households.length === 1
 
-  // Tapping a book sets it active and lands on the Hushållet tab (ADR-0020).
+  // Tapping a book sets it active and lands on the Hushållet tab (ADR-0021).
   const enter = (h: HouseholdListItemDto) => {
     setHouseholdId(h.id)
     navigate({ to: '/hushallet' })
@@ -231,7 +231,7 @@ function HouseholdCard({
       </div>
       {single ? (
         // The hero already carries this book's net, so the card is just an
-        // "enter" affordance (ADR-0020 / addendum §2.1).
+        // "enter" affordance (ADR-0021 / addendum §2.1).
         <span className="shrink-0 rounded-full bg-primary px-3 py-1.5 text-[13px] font-semibold text-primary-foreground">
           Öppna
         </span>

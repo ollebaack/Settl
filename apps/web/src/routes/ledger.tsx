@@ -1,5 +1,5 @@
 /**
- * `/ledger` — retired (ADR-0020). The standalone Loggbok tab was folded into the
+ * `/ledger` — retired (ADR-0021). The standalone Loggbok tab was folded into the
  * merged Hushållet page, so this route only redirects old deep links (and the
  * former "Visa alla" link) to `/hushallet`, where the log now lives.
  */

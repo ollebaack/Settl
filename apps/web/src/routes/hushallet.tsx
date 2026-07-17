@@ -1,5 +1,5 @@
 /**
- * `/hushallet` — the Hushållet tab (ADR-0020): the merged book page for the
+ * `/hushallet` — the Hushållet tab (ADR-0021): the merged book page for the
  * ACTIVE household, with a back-to-overview affordance. Picking a book on the
  * overview sets it active and lands here; the same <HouseholdBook> also backs
  * the `/hushall/$id` drill-in. If the user has no household, fall back to `/`

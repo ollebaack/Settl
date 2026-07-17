@@ -104,7 +104,7 @@ export async function createExpense(
 }
 
 /**
- * One person owes the whole amount (the "Allt på en" split; ADR-0021 removed the
+ * One person owes the whole amount (the "Allt på en" split; ADR-0020 removed the
  * separate IOU type). `owerMemberId` owes `payerMemberId` the full amount — the payer
  * fronted it and takes a zero share.
  */

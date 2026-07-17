@@ -1,4 +1,4 @@
-# ADR-0021: Remove the IOU entry type (loans are amount-split expenses)
+# ADR-0020: Remove the IOU entry type (loans are amount-split expenses)
 
 - **Status:** accepted
 - **Date:** 2026-07-16

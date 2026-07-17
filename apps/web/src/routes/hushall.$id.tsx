@@ -1,6 +1,6 @@
 /**
  * `/hushall/$id` — a single book entered by id (e.g. a deep link, or the
- * overview drill-in). `/` is the overview (ADR-0020), so a focused book needs a
+ * overview drill-in). `/` is the overview (ADR-0021), so a focused book needs a
  * home distinct from it; this reuses the shared <HouseholdBook> (the same merged
  * page as the Hushållet tab) and adds a back-to-overview affordance. Entering a
  * book here makes it the active household so the rest of the app chrome
