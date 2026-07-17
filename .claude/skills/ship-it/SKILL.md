@@ -109,8 +109,25 @@ stale is left behind.
 
 ## Report
 
-When done, give the user the PR URL, the merge commit, the CD run link, the live-site
-check result, and what was cleaned up (or the exact command left for them to run if the
-worktree couldn't be removed from inside itself). If you stopped at a blocker (red CI you
-couldn't fix, protected merge, deploy that didn't roll out, uncommitted changes blocking
-cleanup), say so plainly with the specific failing step.
+Finish with a **short, scannable summary** the user can read at a glance — not a wall of
+prose. Lead with a status emoji and a one-line headline of what shipped, then a few
+compact lines for the essentials. Keep it tight: this is a "what just happened" glance,
+not a log.
+
+On success, use `🚀` and cover, one short line each: what shipped (the PR title/number),
+CI result, the merge commit, the deploy result + live-site status code, and cleanup (what
+was done, or the exact command left for the user if the worktree couldn't be removed from
+inside itself). For example:
+
+> 🚀 **Shipped #38** — ship-it verifies PR state on non-zero merge exit
+> - **CI:** api · web · e2e all green
+> - **Merged:** `aaa4b62` (squash)
+> - **Deploy:** CD green, `https://settlapp.se` → 200 ✅
+> - **Cleanup:** remote branch + ref pruned · run `git worktree remove …` from the main checkout
+
+If you stopped at a blocker (red CI you couldn't fix, protected merge, deploy that didn't
+roll out, uncommitted changes blocking cleanup), lead with `🛑` instead, name the exact
+failing step in the headline, and say what's needed to unblock. Add a `⚠️` line for
+anything shipped-but-noteworthy (e.g. a deploy SHA that differs because a later merge
+superseded it). Put full URLs and any longer detail below the summary if the user needs
+them — keep the headline block clean.
