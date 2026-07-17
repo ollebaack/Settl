@@ -3,8 +3,10 @@
  * user switcher this app used before real auth).
  */
 import { useNavigate } from '@tanstack/react-router'
-import { LogOutIcon, Settings2Icon, UserIcon, UsersIcon } from 'lucide-react'
+import { LogOutIcon, Settings2Icon, SmartphoneIcon, UserIcon, UsersIcon } from 'lucide-react'
 import { toast } from 'sonner'
+import { canGuideInstall } from '@/lib/pwa'
+import { openInstallSheet } from '@/lib/install-prompt'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -71,6 +73,13 @@ export function AccountMenu({ className }: { className?: string }) {
             <Settings2Icon />
             Hantera hushåll
           </DropdownMenuItem>
+          {/* iOS Safari only — Add to Home Screen guidance (ADR-0027). */}
+          {canGuideInstall() && (
+            <DropdownMenuItem onClick={openInstallSheet}>
+              <SmartphoneIcon />
+              Lägg till på hemskärmen
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem onClick={onLogout}>
             <LogOutIcon />
             Logga ut
