@@ -1,3 +1,6 @@
+using System.Net;
+using System.Net.Sockets;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
 // ADR-0010: Postgres replaces SQLite in both dev and prod, ahead of ADR-0004's original
@@ -73,14 +76,34 @@ else
     // being able to re-test signup/invite flows with the same email repeatedly instead
     // of hitting "already exists".
 
+    // HMR's WebSocket breaks through Aspire's proxy (ADR-0008, microsoft/aspire#14470 —
+    // still open), so the Vite endpoint must stay proxyless. But a proxyless endpoint needs
+    // an explicit port — Aspire won't allocate one, and even `--isolated` won't randomize it
+    // (verified: DCP throws "needs to specify a port ... since it isn't using a proxy").
+    // Pinning a constant would just move the cross-worktree collision, so grab a fresh free
+    // ephemeral port per run instead: different every launch, so parallel worktrees never
+    // clash (ADR-0023). AddViteApp passes this to Vite via the PORT env var.
+    var webListener = new TcpListener(IPAddress.Loopback, 0);
+    webListener.Start();
+    var webPort = ((IPEndPoint)webListener.LocalEndpoint).Port;
+    webListener.Stop();
+
+    // The browser SPA can only read VITE_-prefixed env vars (Aspire's service-discovery
+    // vars are server-side only), so the web can't learn the API's port from WithReference
+    // alone — it would fall back to api.ts's hardcoded http://localhost:5000 default. Inject
+    // the API's *resolved* origin explicitly (ADR-0023): this is what makes a dynamic API
+    // port work end-to-end, including under `aspire run --isolated`, where the API port is
+    // randomized per worktree so multiple agents' stacks coexist without collisions.
     builder.AddViteApp("web", "../../web")
         .WithPnpm()
         .WithReference(api)
         .WaitFor(api)
+        .WithEnvironment("VITE_API_BASE_URL", api.GetEndpoint("http"))
         .WithEndpoint("http", endpoint =>
         {
-            endpoint.Port = 5173;
             endpoint.IsProxied = false;
+            endpoint.Port = webPort;
+            endpoint.TargetPort = webPort;
         });
 }
 

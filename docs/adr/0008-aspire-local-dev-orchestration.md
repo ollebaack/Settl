@@ -1,6 +1,6 @@
 # ADR-0008: .NET Aspire orchestrates local dev startup
 
-- **Status:** accepted
+- **Status:** accepted (fixed-port consequence revised by [ADR-0023](0023-per-worktree-dynamic-dev-ports.md))
 - **Date:** 2026-07-12
 
 ## Context
