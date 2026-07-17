@@ -8,11 +8,11 @@ import {
   uniqueSuffix,
 } from './helpers'
 
-// ADAPTIVE HOME + MULTI-HOUSEHOLD OVERVIEW (ADR-0019). `/` adapts to the count
-// of the user's active households: exactly 1 → that book's dashboard; 2+ → the
-// overview. "Du" belongs to two seeded books.
+// MULTI-HOUSEHOLD OVERVIEW as always-home (ADR-0020). `/` is always the overview,
+// regardless of household count: one book → a thinner single-book overview; 2+ →
+// the roll-up. "Du" belongs to two seeded books.
 
-test('single active household → the dashboard, not the overview', async ({ page }) => {
+test('single active household → the single-book overview (not a collapse)', async ({ page }) => {
   // A fresh account with exactly one household — fully isolated so other specs'
   // shared-DB mutations (e.g. inviting a seeded member elsewhere) can't flip it
   // to multi-household.
@@ -27,9 +27,13 @@ test('single active household → the dashboard, not the overview', async ({ pag
 
   await page.goto('/')
 
-  // Frame 3: today's dashboard, verbatim — no overview chrome.
-  await expect(page.getByText(`öppna poster i ${name}`)).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Dina hushåll', level: 1 })).toHaveCount(0)
+  // ADR-0020: still the overview, singular — title "Ditt hushåll", the book as a
+  // card with an "Öppna" affordance, and a hero scoped to that book.
+  await expect(page.getByRole('heading', { name: 'Ditt hushåll', level: 1 })).toBeVisible()
+  const card = page.getByTestId('household-card').filter({ hasText: name })
+  await expect(card).toBeVisible()
+  await expect(card.getByText('Öppna')).toBeVisible()
+  await expect(page.getByText(`i ${name}`)).toBeVisible()
 })
 
 test.describe('overview (2+ households, single currency)', () => {

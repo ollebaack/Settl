@@ -8,11 +8,11 @@ import type { ReactNode } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import {
   BellIcon,
+  BookOpenIcon,
   ChevronDownIcon,
   HomeIcon,
   PlusIcon,
   RepeatIcon,
-  ScrollTextIcon,
   type LucideIcon,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -44,7 +44,7 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { to: '/', label: 'Hem', mobileLabel: 'Hem', icon: HomeIcon },
-  { to: '/ledger', label: 'Loggbok', mobileLabel: 'Loggbok', icon: ScrollTextIcon },
+  { to: '/hushallet', label: 'Hushållet', mobileLabel: 'Hushållet', icon: BookOpenIcon },
   { to: '/recurring', label: 'På repeat', mobileLabel: 'Repeat', icon: RepeatIcon },
   { to: '/activity', label: 'Aktivitet', mobileLabel: 'Aktivitet', icon: BellIcon },
 ]

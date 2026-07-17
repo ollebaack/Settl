@@ -54,11 +54,14 @@ export function Overview({ households }: { households: HouseholdListItemDto[] })
   // Client detects >1 distinct currency across active books (ADR-0019 §2.2).
   const distinctCurrencies = new Set(households.map((h) => h.currency))
   const singleCurrency = distinctCurrencies.size === 1
+  // With one book the overview is thinner (ADR-0020): the hero is scoped to it
+  // and its card is an "Öppna" affordance rather than repeating the net.
+  const single = households.length === 1
 
-  // Tapping a book sets the active household and enters its dashboard.
+  // Tapping a book sets it active and lands on the Hushållet tab (ADR-0020).
   const enter = (h: HouseholdListItemDto) => {
     setHouseholdId(h.id)
-    navigate({ to: '/hushall/$id', params: { id: h.id }, search: {} })
+    navigate({ to: '/hushallet' })
   }
 
   return (
@@ -66,12 +69,12 @@ export function Overview({ households }: { households: HouseholdListItemDto[] })
       <header>
         <p className={SECTION_LABEL}>Översikt</p>
         <h1 className="mt-0.5 font-heading text-2xl font-semibold tracking-tight">
-          Dina hushåll
+          {single ? 'Ditt hushåll' : 'Dina hushåll'}
         </h1>
       </header>
 
       {singleCurrency ? (
-        <SingleCurrencyHero households={households} currency={households[0].currency} />
+        <SingleCurrencyHero households={households} currency={households[0].currency} single={single} />
       ) : (
         <MixedCurrencyHero households={households} />
       )}
@@ -84,6 +87,7 @@ export function Overview({ households }: { households: HouseholdListItemDto[] })
               key={h.id}
               household={h}
               showCurrency={!singleCurrency}
+              single={single}
               onEnter={() => enter(h)}
             />
           ))}
@@ -120,9 +124,11 @@ export function Overview({ households }: { households: HouseholdListItemDto[] })
 function SingleCurrencyHero({
   households,
   currency,
+  single,
 }: {
   households: HouseholdListItemDto[]
   currency: string
+  single: boolean
 }) {
   const summaries = useQueries({
     queries: households.map((h) => ({
@@ -139,9 +145,14 @@ function SingleCurrencyHero({
   const intentClass =
     total > 0 ? 'text-success' : total < 0 ? 'text-destructive' : 'text-muted-foreground'
 
-  const sub = allLoaded
-    ? `över ${households.length} aktiva hushåll · ${openCount} öppna poster`
-    : `över ${households.length} aktiva hushåll`
+  // One book → scope the sub-line to it; 2+ → the cross-household roll-up.
+  const sub = single
+    ? allLoaded
+      ? `i ${households[0].name} · ${openCount} öppna poster`
+      : `i ${households[0].name}`
+    : allLoaded
+      ? `över ${households.length} aktiva hushåll · ${openCount} öppna poster`
+      : `över ${households.length} aktiva hushåll`
 
   return (
     <Card className="items-center gap-1.5 px-5 py-6 text-center">
@@ -186,10 +197,12 @@ function MixedCurrencyHero({ households }: { households: HouseholdListItemDto[] 
 function HouseholdCard({
   household,
   showCurrency,
+  single,
   onEnter,
 }: {
   household: HouseholdListItemDto
   showCurrency: boolean
+  single: boolean
   onEnter: () => void
 }) {
   const memberLine = showCurrency
@@ -216,17 +229,25 @@ function HouseholdCard({
         <p className="truncate text-[15px] font-bold">{household.name}</p>
         <p className="truncate text-[11.5px] text-muted-foreground">{memberLine}</p>
       </div>
-      <div className="flex shrink-0 flex-col items-end gap-0.5">
-        <span
-          className={cn(
-            'font-mono tabular-nums text-sm font-semibold',
-            netTextClass(household.netLabel),
-          )}
-        >
-          {formatSignedMoney(household.netMinor, household.currency)}
+      {single ? (
+        // The hero already carries this book's net, so the card is just an
+        // "enter" affordance (ADR-0020 / addendum §2.1).
+        <span className="shrink-0 rounded-full bg-primary px-3 py-1.5 text-[13px] font-semibold text-primary-foreground">
+          Öppna
         </span>
-        <span className="text-[10.5px] text-muted-foreground">{netSub(household.netLabel)}</span>
-      </div>
+      ) : (
+        <div className="flex shrink-0 flex-col items-end gap-0.5">
+          <span
+            className={cn(
+              'font-mono tabular-nums text-sm font-semibold',
+              netTextClass(household.netLabel),
+            )}
+          >
+            {formatSignedMoney(household.netMinor, household.currency)}
+          </span>
+          <span className="text-[10.5px] text-muted-foreground">{netSub(household.netLabel)}</span>
+        </div>
+      )}
     </Card>
   )
 }

@@ -1,19 +1,23 @@
 import { test, expect } from '@playwright/test'
 import { getHouseholdId, loginAs, pinHousehold } from './helpers'
 
-// LEDGER (Loggboken, §2.2): title, filter pills switch the list, day-group headers.
-// Assertions about entry presence are scoped to the main feed, because on the
-// desktop shell the right rail also renders nudges/upcoming that mention entries.
-test.describe('Ledger', () => {
+// LOGGBOK, now folded into the merged Hushållet page (ADR-0020): the old
+// `/ledger` tab redirects to `/hushallet`, where the filterable, day-grouped log
+// lives below the hero + balances. Assertions about entry presence are scoped to
+// the main feed, because on the desktop shell the right rail also renders
+// nudges/upcoming that mention entries.
+test.describe('Loggbok (in the Hushållet page)', () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'Du')
     const household = await getHouseholdId(page.request, 'Lönnvägen 3')
     await pinHousehold(page, household)
+    // The retired /ledger route redirects into the merged page.
     await page.goto('/ledger')
-    await expect(page.getByRole('heading', { name: 'Loggboken' })).toBeVisible()
+    await expect(page).toHaveURL(/\/hushallet$/)
+    await expect(page.getByRole('button', { name: 'Alla', exact: true })).toBeVisible()
   })
 
-  test('renders the title, filter pills and day-group headers', async ({ page }) => {
+  test('renders the filter pills, entries and day-group headers', async ({ page }) => {
     for (const label of ['Alla', 'Utgifter', 'Repeat']) {
       await expect(page.getByRole('button', { name: label, exact: true })).toBeVisible()
     }
@@ -23,9 +27,22 @@ test.describe('Ledger', () => {
     await expect(feed.getByRole('heading', { level: 2 }).first()).toBeVisible()
   })
 
-  test('the "Utgifter" filter shows only expenses', async ({ page }) => {
+  test('the "Repeat" filter shows recurring entries and hides one-off expenses', async ({
+    page,
+  }) => {
+    const feed = page.getByRole('main')
+    await expect(feed.getByText('Begagnad soffa')).toBeVisible()
+
+    await page.getByRole('button', { name: 'Repeat', exact: true }).click()
+
+    await expect(feed.getByText('Hyra')).toBeVisible()
+    await expect(feed.getByText('Begagnad soffa')).toHaveCount(0)
+  })
+
+  test('the "Utgifter" filter shows expenses and hides recurring', async ({ page }) => {
     const feed = page.getByRole('main')
     await page.getByRole('button', { name: 'Utgifter', exact: true }).click()
     await expect(feed.getByText('Begagnad soffa')).toBeVisible()
+    await expect(feed.getByText('Hyra')).toHaveCount(0)
   })
 })
