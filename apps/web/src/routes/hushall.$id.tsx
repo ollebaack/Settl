@@ -2,13 +2,13 @@
  * `/hushall/$id` — a single book entered by id (e.g. a deep link, or the
  * overview drill-in). `/` is the overview (ADR-0021), so a focused book needs a
  * home distinct from it; this reuses the shared <HouseholdBook> (the same merged
- * page as the Hushållet tab) and adds a back-to-overview affordance. Entering a
- * book here makes it the active household so the rest of the app chrome
+ * page as the Hushållet tab). Back to the overview is the "Hem" tab, so no extra
+ * in-page affordance. Entering a book here makes it the active household so the
+ * rest of the app chrome
  * (switcher, FAB, right rail, sheets) follows it as usual.
  */
 import { useEffect } from 'react'
-import { Link, Navigate, createFileRoute } from '@tanstack/react-router'
-import { ArrowLeftIcon } from 'lucide-react'
+import { Navigate, createFileRoute } from '@tanstack/react-router'
 import { RequireAuth } from '@/components/require-auth'
 import { HouseholdBook } from '@/components/household-book'
 import { LoadingState } from '@/components/screen-states'
@@ -45,17 +45,5 @@ function HouseholdRoute() {
     return <Navigate to="/" search={{}} />
   }
 
-  return (
-    <div className="flex flex-col gap-4">
-      <Link
-        to="/"
-        search={{}}
-        className="inline-flex w-fit items-center gap-1.5 rounded text-[13px] font-semibold text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <ArrowLeftIcon className="size-4" />
-        Översikt
-      </Link>
-      <HouseholdBook householdId={id} />
-    </div>
-  )
+  return <HouseholdBook householdId={id} />
 }
