@@ -43,11 +43,21 @@ public static class MetaEndpoints
             if (!AccountHelpers.TryNormalizeAvatarEmoji(req.AvatarEmoji, out var emoji, out var emojiError))
                 return Results.Problem(emojiError ?? "Ogiltig emoji", statusCode: StatusCodes.Status400BadRequest);
 
+            // Nudge tone (implementation-map §2.4): null leaves it unchanged; a present value must
+            // be a known tone — the API is authoritative over the enum, not the client (ADR-0006).
+            Domain.NudgeTone? tone = null;
+            if (req.NudgeTone is not null)
+            {
+                tone = Contract.TryParseNudgeTone(req.NudgeTone);
+                if (tone is null) return Results.Problem("Ogiltig ton", statusCode: StatusCodes.Status400BadRequest);
+            }
+
             var m = await db.Members.FirstOrDefaultAsync(x => x.Id == id, ct);
             if (m is null) return Results.Problem("Ingen användare hittades", statusCode: StatusCodes.Status404NotFound);
 
             m.Name = name;
             m.AvatarEmoji = emoji;
+            if (tone is not null) m.NudgeTone = tone.Value;
             await db.SaveChangesAsync(ct);
 
             return Results.Ok(m.ToMeDto());

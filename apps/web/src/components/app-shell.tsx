@@ -7,6 +7,7 @@
 import type { ReactNode } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import {
+  BarChart3Icon,
   BellIcon,
   BookOpenIcon,
   ChevronDownIcon,
@@ -28,7 +29,7 @@ import { cn } from '@/lib/utils'
 import { inDays, shortDate } from '@/lib/format'
 import { useSheet } from '@/lib/sheet'
 import { useActiveHousehold } from '@/lib/active-household'
-import { useMe, useMembers, useNudges, useSummary } from '@/lib/queries'
+import { useMe, useMembers, useNudges, useNudgeTone, useSummary } from '@/lib/queries'
 import type { NudgeActionDto, NudgeDto } from '@/lib/api'
 
 /** Uppercase tracked eyebrow used by the desktop right-rail section headers. */
@@ -46,7 +47,7 @@ const NAV: NavItem[] = [
   { to: '/', label: 'Hem', mobileLabel: 'Hem', icon: HomeIcon },
   { to: '/hushallet', label: 'Hushållet', mobileLabel: 'Hushållet', icon: BookOpenIcon },
   { to: '/recurring', label: 'På repeat', mobileLabel: 'Repeat', icon: RepeatIcon },
-  { to: '/activity', label: 'Aktivitet', mobileLabel: 'Aktivitet', icon: BellIcon },
+  { to: '/statistik', label: 'Statistik', mobileLabel: 'Statistik', icon: BarChart3Icon },
 ]
 
 const HELPER_TEXT =
@@ -155,6 +156,8 @@ function MobileHeader() {
   const { household, householdId } = useActiveHousehold()
   const { data: members } = useMembers(householdId)
   const { data: me } = useMe()
+  const { data: nudges } = useNudges(householdId)
+  const hasNudges = (nudges?.length ?? 0) > 0
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-border bg-background/90 px-4 py-3 backdrop-blur min-[980px]:hidden">
@@ -178,6 +181,19 @@ function MobileHeader() {
             }))}
           />
         )}
+        <Link
+          to="/activity"
+          aria-label="Knuffar"
+          className="relative grid size-9 place-items-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <BellIcon className="size-5" />
+          {hasNudges && (
+            <span
+              aria-hidden="true"
+              className="absolute right-1.5 top-1.5 size-2 rounded-full bg-primary ring-2 ring-background"
+            />
+          )}
+        </Link>
         <AccountMenu />
       </div>
     </header>
@@ -216,7 +232,7 @@ function RightRail() {
   const { openSheet } = useSheet()
   const runAction = useNudgeAction()
   const summary = useSummary(householdId)
-  const nudges = useNudges(householdId, 'direct')
+  const nudges = useNudges(householdId, useNudgeTone())
 
   const upcoming = summary.data?.upcoming ?? []
   const nudgeList = nudges.data ?? []

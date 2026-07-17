@@ -37,6 +37,15 @@ public static class Loaders
             .Where(c => c.Settlement.HouseholdId == householdId)
             .ToListAsync(ct));
 
+    /// <summary>Closures tagged with their settlement's timestamp, for balance-timeline replay
+    /// (ADR-0023, <see cref="BalanceCalculator.MostRecentThresholdCrossing"/>).</summary>
+    public static async Task<List<PairClosure>> LoadClosureEvents(SettlDbContext db, Guid householdId, CancellationToken ct) =>
+        await db.SettlementClosures
+            .Where(c => c.Settlement.HouseholdId == householdId)
+            .Select(c => new PairClosure(
+                c.EntryId, c.DebtorMemberId, c.CreditorMemberId, c.Settlement.SettledAt))
+            .ToListAsync(ct);
+
     public static async Task<Dictionary<Guid, string>> LoadTemplateTitles(SettlDbContext db, Guid householdId, CancellationToken ct) =>
         await db.RecurringTemplates
             .Where(t => t.HouseholdId == householdId)

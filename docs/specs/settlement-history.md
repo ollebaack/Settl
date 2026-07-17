@@ -1,85 +1,63 @@
 # Settlement history — spec
 
-A read-only **"Tidigare uppgörelser med {namn}"** section on the Settle-up sheet
-([apps/web/src/components/sheets/settle-up-sheet.tsx](../../apps/web/src/components/sheets/settle-up-sheet.tsx),
-implementation-map §2.8) that shows the settlements already recorded between the acting user
-and the person the sheet is about. Today a settlement is a first-class event
-([ADR-0007](../adr/0007-ledger-data-model.md)) but the only way to inspect one after the fact
-is per-entry, in entry detail — there's no "what did we square, and when" view for a pair. This
-surfaces that history from data we already store, so a pair can see their past clean-slates
-without re-deriving anything client-side (ADR-0006).
+Show people what they've already settled. Settlements are first-class events in the ledger
+(ADR-0007) but the app never surfaces them after the fact — there's no "we cleared 934 kr on
+the 12th" record. This adds a read-only per-person history to the Settle-up sheet, turning
+existing data into a trust-building surface. Built on the existing `Settlement` +
+`SettlementClosure` model; the Settle-up UI is `apps/web/src/components/sheets/settle-up-sheet.tsx`.
 
-Provenance: decided via `/grill` on 2026-07-17. No companion ADR — it reuses the existing
-ledger model (ADR-0007) and adds no new decision surface; it's a read view over data we already
-persist. This spec is the artifact.
+Provenance: decided via `/grill` on 2026-07-17. Not ADR-worthy — no hard-to-reverse or
+architectural decision, just the shape of a read model over data that already exists.
 
 ## Problem
 
-`GET /households/{id}/settle-preview` shows only the *open* net and contributing entries for a
-pair. Once a settlement closes those debts they vanish from the preview (they're no longer open)
-and the settlement event itself is only reachable entry-by-entry via entry detail. There is no
-pairwise, chronological "these are the times we settled up" view, even though every settlement is
-already a first-class `Settlement` + `SettlementClosure` record.
+When two people settle, `POST /households/{id}/settlements` records one `Settlement` event
+with a `SettlementClosure` per closed pair-debt, and affected entries flip to `reglerad`
+(derived). But the event itself is then invisible: the Settle-up sheet only shows the
+*current* net and open contributing entries, and entry detail shows a single entry's settled
+state. Nobody can answer "when did we last square up, and for how much?" — the moment that
+gives a shared-ledger app its trust payoff is thrown away.
 
 ## Scope (v1)
 
-- Read-only section below the current net + open entries on the Settle-up sheet. Pairwise only,
-  scoped to the person the sheet is about (`?sheet=settle&person=…`).
-- One row per settlement event, newest first: settled date, net amount cleared, who initiated it,
-  and the count of entries that settlement closed for the pair.
-- Tap a row to reveal the entries that settlement closed for the pair (title, date, amount).
-- Empty state when the pair has never settled: muted "Inga tidigare uppgörelser än".
-- **No** reopening/undo from history — reopening stays in entry detail as today (ADR-0007). This
-  section never mutates.
-- **No** new data model — reuses `Settlement` + `SettlementClosure` (ADR-0007).
-- Pairwise only — no household-wide settlement log in v1.
+- **Placement:** a **"Tidigare uppgörelser med {namn}"** section on the Settle-up sheet, below
+  the current net + open entries. Pairwise only — scoped to the person the sheet is about.
+- **One row per settlement event**, newest first: settled date, net amount cleared in that
+  event, who initiated it, and a count of entries closed. Tapping a row reveals the entries
+  that settlement closed (title, date, amount).
+- **Read-only.** Reopening stays exactly where it is today — in entry detail (delete the
+  settlement per ADR-0007). No undo-from-history in v1.
+- **No** whole-household settlement log, no export, no filtering — pairwise list only.
 
 ## Data model
 
-None. Reuses `Settlement` (who initiated, when) and `SettlementClosure` (which entry + which
-debtor→creditor pair each event closed). Amounts are derived from the closed entries' frozen
-shares via `BalanceCalculator.Debts`, never stored on the closure.
+None. Reuses `Settlement` and `SettlementClosure` as-is (ADR-0007). No new tables, columns,
+or migration.
 
 ## API surface
 
-`GET /households/{id}/settlements?person={memberId}` — the settlement events that closed at
-least one debt in the acting-user ↔ `person` pair, newest first. Business logic in the API
-(ADR-0006); money = integer minor units; timestamps UTC.
-
-```
-SettlementHistoryItemDto[] where each item =
-  { id, settledAt, netClearedMinor, initiatedByMemberId, closedEntryCount, entries[] }
-  entries[] = { id, title, date, amountMinor }
-```
-
-- `netClearedMinor` — signed toward the viewer across the pair debts this event closed:
-  `> 0` the person owed you, `< 0` you owed the person (same convention as `settle-preview`'s
-  net). Purely informational; the UI renders the magnitude.
-- `amountMinor` (per entry) — the magnitude of that entry's pair debt this event closed.
-- `closedEntryCount` — distinct entries this event closed for the pair (`= entries.length`).
-- Settlements that closed no pair debt (e.g. a settlement that only touched a third party) are
-  omitted. `entries[]` is newest-first by entry date.
-- 404 for an unknown household or `person`; mirrors `settle-preview`'s guards.
-
-New DTOs (`SettlementHistoryItemDto`, `SettlementHistoryEntryDto`) change the OpenAPI shape →
-regenerate `packages/api-client` in the same PR (root rule).
+- New read endpoint: **`GET /households/{id}/settlements?person={memberId}`** →
+  the settlement events touching the acting user ↔ `person` pair, each as
+  `{ id, settledAt, netClearedMinor, initiatedByMemberId, closedEntryCount, entries[] }`
+  where `entries[]` is `{ id, title, date, amountMinor }` for the tap-to-expand detail.
+  Money in integer minor units, timestamps UTC (project rules); amounts server-derived from
+  the closures (ADR-0006 — the SPA renders, never computes). Add a `WebApplicationFactory`
+  integration test (API rule). Regenerate `packages/api-client` in the same PR (root rule).
 
 ## Web surface
 
-New query hook `useSettlementHistory(householdId, person)` in
-[apps/web/src/lib/queries.ts](../../apps/web/src/lib/queries.ts), keyed by household + person,
-enabled only when a person is selected (mirrors `useSettlePreview`), and invalidated alongside the
-rest of a household's ledger state after a settlement is recorded.
-
-The Settle-up sheet renders the section below the open-entries list, using the existing `<Money>`
-formatter and the `Card` row conventions from implementation-map §2.8 / the "Tidigare perioder"
-pattern in §2.6. Section header **"Tidigare uppgörelser med {namn}"** (uppercase section label);
-each row shows the settled date, the net cleared, and an initiator + count sub-line
-("Du gjorde upp · N poster" / "{namn} gjorde upp · N poster"); tapping a row expands the closed
-entries. Empty state: muted "Inga tidigare uppgörelser än".
+- Extend `apps/web/src/components/sheets/settle-up-sheet.tsx` with the history section and a
+  new query hook in `apps/web/src/lib/queries.ts` (keyed by household + person, enabled when
+  a person is selected). Rows use the existing `<Money>` formatter and row conventions from
+  the design (`docs/design/implementation-map.md` §2.8). Empty state: a muted "Inga tidigare
+  uppgörelser än" when the pair has never settled. Confirm final Swedish wording with design.
 
 ## Out of scope / open questions
 
-- Household-wide (non-pairwise) settlement history.
-- Undo/reopen from the history section (stays in entry detail, ADR-0007).
-- Filtering/paging the history — v1 shows the full pair history (settlements per pair are few).
+- **Whole-household history view** (a book-level log of every settlement) — deferred; revisit
+  if a per-person list proves too narrow.
+- **Undo a whole settlement event from history** — deliberately excluded; reopening one event
+  un-settles every entry it closed, which needs a loud confirm and an ADR-0007 locking review.
+  Consider as a separate grill if requested.
+- Exact copy for the section header, initiator phrasing ("Du gjorde upp" vs "{namn} gjorde
+  upp"), and the empty state — design to confirm.

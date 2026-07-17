@@ -109,6 +109,13 @@ export function shortDate(iso: string): string {
   return `${d.getDate()} ${SV_MONTHS[d.getMonth()]}`
 }
 
+/** `2025-07` → `jul 25`: Swedish month abbrev + 2-digit year, from a `yyyy-MM` bucket key. */
+export function monthLabel(yyyyMm: string): string {
+  const m = /^(\d{4})-(\d{2})/.exec(yyyyMm)
+  if (!m) return yyyyMm
+  return `${SV_MONTHS[Number(m[2]) - 1]} ${m[1].slice(2)}`
+}
+
 /** Relative day phrase: `idag` / `imorgon` / `om N dagar` (and past variants). */
 export function inDays(iso: string): string {
   const n = daysFromToday(iso)

@@ -20,6 +20,7 @@ import {
   type ConfirmEmailRequest,
   type ContactDto,
   type ContactInviteResultDto,
+  type ContributionStatsDto,
   type CreateContactInviteRequest,
   type CreateEntryRequest,
   type CreateHouseholdRequest,
@@ -89,6 +90,8 @@ export const queryKeys = {
   nudgesAll: (id: string | undefined) => ['household', id, 'nudges'] as const,
   nudges: (id: string | undefined, tone: NudgeTone) =>
     ['household', id, 'nudges', tone] as const,
+  contributionStats: (id: string | undefined) =>
+    ['household', id, 'stats', 'contributions'] as const,
   householdInvites: (id: string | undefined) => ['household', id, 'invites'] as const,
   contacts: ['contacts'] as const,
   pendingContactInvites: ['contacts', 'pending'] as const,
@@ -130,6 +133,14 @@ export function useMe() {
   })
 }
 
+/** The acting member's chosen nudge tone, falling back to 'direct' (the product default,
+ * ambiguity #18) while /me is still loading or for members who never changed it. The API only
+ * ever returns 'gentle' | 'direct', so the narrowing cast is safe. */
+export function useNudgeTone(): NudgeTone {
+  const { data: me } = useMe()
+  return (me?.nudgeTone as NudgeTone | undefined) ?? 'direct'
+}
+
 export function useInvitePreview(token: string | undefined) {
   return useQuery({
     queryKey: queryKeys.invitePreview(token),
@@ -162,19 +173,38 @@ export function useHouseholdInvites(id: string | undefined) {
   })
 }
 
+/**
+ * Gated on auth (`enabled: !!me`): ActiveHouseholdProvider (main.tsx) mounts this
+ * app-wide, above the router, so without the gate it fires on the initial
+ * UNauthenticated load and 401s. That 401 wedged Home's skeleton after login — the
+ * query lingered in a fetching/error state that login's `invalidateQueries()`
+ * couldn't turn back into a clean `isPending`, so Home either span forever or
+ * flashed the "no household" create sheet before the data arrived. Staying disabled
+ * until `me` is present means the first real fetch runs post-login, `pending ->
+ * success`, so `isPending` honestly gates the skeleton. Login sets `me` directly
+ * (see useLogin), so the gate opens the moment auth succeeds. `retry: false` matches
+ * useMe: a 401 here is an auth state, not a flaky fetch.
+ */
 export function useHouseholds() {
+  const { data: me } = useMe()
   return useQuery({
     queryKey: queryKeys.households,
     queryFn: () => apiGet<HouseholdListItemDto[]>('/households'),
+    enabled: !!me,
+    retry: false,
   })
 }
 
-/** Active + archived households — for the switcher's "Arkiverade" section (ADR-0016). */
+/** Active + archived households — for the switcher's "Arkiverade" section (ADR-0016).
+ * Gated on auth for the same 401-on-unauthenticated-load reason as `useHouseholds`. */
 export function useHouseholdsWithArchived() {
+  const { data: me } = useMe()
   return useQuery({
     queryKey: queryKeys.householdsWithArchived,
     queryFn: () =>
       apiGet<HouseholdListItemDto[]>('/households?includeArchived=true'),
+    enabled: !!me,
+    retry: false,
   })
 }
 
@@ -282,6 +312,17 @@ export function useNudges(id: string | undefined, tone: NudgeTone = 'direct') {
     queryKey: queryKeys.nudges(id, tone),
     queryFn: () =>
       apiGet<NudgeDto[]>(`/households/${id}/nudges${buildQuery({ tone })}`),
+    enabled: !!id,
+  })
+}
+
+// Per-person "who paid how much, when" for the Statistik page. Server aggregates
+// by month (ADR-0006); v1 uses the endpoint's default trailing-12-month window.
+export function useContributionStats(id: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.contributionStats(id),
+    queryFn: () =>
+      apiGet<ContributionStatsDto>(`/households/${id}/stats/contributions`),
     enabled: !!id,
   })
 }

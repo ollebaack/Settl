@@ -99,6 +99,64 @@ public class MeEndpointTests
     }
 
     [Fact]
+    public async Task Me_tone_defaults_to_direct()
+    {
+        using var factory = new SettlApiFactory();
+        await factory.SeedCanonicalAsync();
+        var client = factory.ClientAs(SeedIds.Du);
+
+        var me = await client.GetFromJsonAsync<MeDto>("/me", Web);
+
+        Assert.Equal("direct", me!.NudgeTone);
+    }
+
+    [Fact]
+    public async Task Put_me_sets_tone()
+    {
+        using var factory = new SettlApiFactory();
+        await factory.SeedCanonicalAsync();
+        var client = factory.ClientAs(SeedIds.Du);
+
+        var res = await client.PutAsJsonAsync("/me", new UpdateMeRequest("Alex", null, "gentle"), Web);
+        Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+
+        var updated = await res.Content.ReadFromJsonAsync<MeDto>(Web);
+        Assert.Equal("gentle", updated!.NudgeTone);
+
+        // Persisted — a fresh read reflects the change.
+        var me = await client.GetFromJsonAsync<MeDto>("/me", Web);
+        Assert.Equal("gentle", me!.NudgeTone);
+    }
+
+    [Fact]
+    public async Task Put_me_null_tone_leaves_it_unchanged()
+    {
+        using var factory = new SettlApiFactory();
+        await factory.SeedCanonicalAsync();
+        var client = factory.ClientAs(SeedIds.Du);
+
+        await client.PutAsJsonAsync("/me", new UpdateMeRequest("Alex", null, "gentle"), Web);
+        // A later save that omits the tone (name/emoji-only edit) must not reset it.
+        var res = await client.PutAsJsonAsync("/me", new UpdateMeRequest("Alex", "🦊"), Web);
+        Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+
+        var updated = await res.Content.ReadFromJsonAsync<MeDto>(Web);
+        Assert.Equal("gentle", updated!.NudgeTone);
+    }
+
+    [Fact]
+    public async Task Put_me_rejects_unknown_tone()
+    {
+        using var factory = new SettlApiFactory();
+        await factory.SeedCanonicalAsync();
+        var client = factory.ClientAs(SeedIds.Du);
+
+        var res = await client.PutAsJsonAsync("/me", new UpdateMeRequest("Alex", null, "loud"), Web);
+        Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+        Assert.Equal("Ogiltig ton", await DetailAsync(res));
+    }
+
+    [Fact]
     public async Task Put_me_blank_name_returns_400()
     {
         using var factory = new SettlApiFactory();
