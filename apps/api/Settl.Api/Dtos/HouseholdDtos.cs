@@ -77,3 +77,30 @@ public sealed record HouseholdSummaryDto(
     int OpenCount,
     IReadOnlyList<PersonBalanceDto> People,
     IReadOnlyList<UpcomingDto> Upcoming);
+
+/// <summary>
+/// Per-person "who paid how much, when" for a single household, bucketed by month
+/// (docs/specs/household-statistics.md). Aggregated server-side per ADR-0006. Buckets
+/// are a continuous, zero-filled month series so the chart axis has no gaps;
+/// <see cref="Members"/> lists only the members with any contribution in range, each
+/// appearing as one chart series. Money stays integer minor units.
+/// </summary>
+public sealed record ContributionStatsDto(
+    string Currency,
+    IReadOnlyList<ContributionMemberDto> Members,
+    IReadOnlyList<ContributionBucketDto> Buckets);
+
+public sealed record ContributionMemberDto(
+    Guid MemberId,
+    string Name,
+    string AvatarColor,
+    string? AvatarEmoji);
+
+/// <summary><see cref="Month"/> is the bucket key as "yyyy-MM" (a stable axis label).</summary>
+public sealed record ContributionBucketDto(
+    string Month,
+    IReadOnlyList<MemberContributionDto> PerMember);
+
+public sealed record MemberContributionDto(
+    Guid MemberId,
+    long PaidMinor);

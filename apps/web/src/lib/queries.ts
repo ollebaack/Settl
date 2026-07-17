@@ -20,6 +20,7 @@ import {
   type ConfirmEmailRequest,
   type ContactDto,
   type ContactInviteResultDto,
+  type ContributionStatsDto,
   type CreateContactInviteRequest,
   type CreateEntryRequest,
   type CreateHouseholdRequest,
@@ -85,6 +86,8 @@ export const queryKeys = {
   nudgesAll: (id: string | undefined) => ['household', id, 'nudges'] as const,
   nudges: (id: string | undefined, tone: NudgeTone) =>
     ['household', id, 'nudges', tone] as const,
+  contributionStats: (id: string | undefined) =>
+    ['household', id, 'stats', 'contributions'] as const,
   householdInvites: (id: string | undefined) => ['household', id, 'invites'] as const,
   contacts: ['contacts'] as const,
   pendingContactInvites: ['contacts', 'pending'] as const,
@@ -261,6 +264,17 @@ export function useNudges(id: string | undefined, tone: NudgeTone = 'direct') {
     queryKey: queryKeys.nudges(id, tone),
     queryFn: () =>
       apiGet<NudgeDto[]>(`/households/${id}/nudges${buildQuery({ tone })}`),
+    enabled: !!id,
+  })
+}
+
+// Per-person "who paid how much, when" for the Statistik page. Server aggregates
+// by month (ADR-0006); v1 uses the endpoint's default trailing-12-month window.
+export function useContributionStats(id: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.contributionStats(id),
+    queryFn: () =>
+      apiGet<ContributionStatsDto>(`/households/${id}/stats/contributions`),
     enabled: !!id,
   })
 }
