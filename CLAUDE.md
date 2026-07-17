@@ -15,7 +15,7 @@ flexible splits, pure-ledger settlement. Brief: `docs/specs/product-brief.md`.
 
 - `pnpm dev` — Aspire AppHost via `aspire run --isolated`; starts API + web + Postgres
   together with **randomized per-run ports** so multiple worktrees run at once without
-  collisions (ADR-0023). Requires the `aspire` CLI (`dotnet tool install -g Aspire.Cli`).
+  collisions (ADR-0025). Requires the `aspire` CLI (`dotnet tool install -g Aspire.Cli`).
   **Find your ports:** `aspire run` prints the dashboard URL on startup; the dashboard's
   resource list shows the resolved web + API URLs (the web auto-learns the API port). The
   web origin is dynamic, so dev CORS accepts any localhost origin (prod stays pinned).
