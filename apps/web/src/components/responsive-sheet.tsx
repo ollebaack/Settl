@@ -57,7 +57,9 @@ export function ResponsiveSheet({
               <DialogDescription className="sr-only">{title}</DialogDescription>
             )}
           </DialogHeader>
-          <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">{children}</div>
+          {/* pb-1 so the last card's ring + rounded corner clear the overflow clip edge instead
+              of being shaved off; matches the mobile drawer's bottom breathing room. */}
+          <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-1">{children}</div>
         </DialogContent>
       </Dialog>
     )
