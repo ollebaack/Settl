@@ -8,7 +8,7 @@ import {
   uniqueSuffix,
 } from './helpers'
 
-// DELETE EMPTY HOUSEHOLD (ADR-0020). Empty households — created by mistake — can be
+// DELETE EMPTY HOUSEHOLD (ADR-0022). Empty households — created by mistake — can be
 // hard-deleted by the owner; a household with any ledger activity can only be archived.
 // Each test uses its own freshly-registered owner so the deletion is isolated from the
 // shared seed data.

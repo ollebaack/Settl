@@ -1,5 +1,5 @@
 /**
- * Ta bort hushåll (ADR-0020 / docs/specs/household-ownership.md). Owner-only, terminal,
+ * Ta bort hushåll (ADR-0022 / docs/specs/household-ownership.md). Owner-only, terminal,
  * and only for an EMPTY household (no entries, recurring templates, or settlements) — a
  * carve-out to ADR-0016's soft-only archive rule, for cleaning up mistakes. Extra members
  * don't block: they're warned, then lose access. Emptiness is DERIVED server-side via

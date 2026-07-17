@@ -10,7 +10,7 @@ using Settl.Api.Tests.Infrastructure;
 namespace Settl.Api.Tests;
 
 /// <summary>
-/// Integration tests for hard-deleting empty households (ADR-0020 /
+/// Integration tests for hard-deleting empty households (ADR-0022 /
 /// docs/specs/household-ownership.md) — a carve-out to ADR-0016's soft-only rule. Owner-only;
 /// only when there is no ledger activity; extra members and pending invites don't block and
 /// are cascade-removed. Canonical seed: Lönnvägen 3 (owner Du, has entries) and Familjen.
@@ -78,7 +78,7 @@ public class HouseholdDeleteTests
         var du = factory.ClientAs(SeedIds.Du);
         var id = await CreateEmptyHouseholdAsync(factory, SeedIds.Du);
 
-        // A template but no posted entries still counts as activity (ADR-0020 empty def).
+        // A template but no posted entries still counts as activity (ADR-0022 empty def).
         await factory.WithDb(async db =>
         {
             db.RecurringTemplates.Add(new RecurringTemplate
@@ -137,7 +137,7 @@ public class HouseholdDeleteTests
         var du = factory.ClientAs(SeedIds.Du);
         var id = await CreateEmptyHouseholdAsync(factory, SeedIds.Du);
 
-        // Owner overrides extra members (ADR-0020): Sam has joined, and there's a pending invite.
+        // Owner overrides extra members (ADR-0022): Sam has joined, and there's a pending invite.
         var inviteId = Guid.NewGuid();
         await factory.WithDb(async db =>
         {
