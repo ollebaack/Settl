@@ -21,7 +21,6 @@ import { Separator } from '@/components/ui/separator'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { AccountMenu } from '@/components/account-menu'
 import { DevBar } from '@/components/dev-bar'
-import { MemberAvatarStack } from '@/components/member-avatar'
 import { HouseholdBadge } from '@/components/household-badge'
 import { GhostCard } from '@/components/ghost-card'
 import { Money } from '@/components/money'
@@ -29,7 +28,7 @@ import { cn } from '@/lib/utils'
 import { inDays, shortDate } from '@/lib/format'
 import { useSheet } from '@/lib/sheet'
 import { useActiveHousehold } from '@/lib/active-household'
-import { useMe, useMembers, useNudges, useNudgeTone, useSummary } from '@/lib/queries'
+import { useNudges, useNudgeTone, useSummary } from '@/lib/queries'
 import type { NudgeActionDto, NudgeDto } from '@/lib/api'
 
 /** Uppercase tracked eyebrow used by the desktop right-rail section headers. */
@@ -151,11 +150,18 @@ function NavLink({ item }: { item: NavItem }) {
 
 // --- Mobile top header ------------------------------------------------------
 
+/**
+ * Mobile top header (title-integrated). The active household's name IS the
+ * screen title on the left (tap → household switcher sheet); the right side is
+ * deliberately slim — the bell and the acting user's account avatar only. The
+ * member roster and the balance are NOT repeated here: members live on the
+ * household cards / Hushållet screen, the balance in the page's net hero. This
+ * removes the old header's duplication (the acting user appeared both in a
+ * decorative member stack and as the account button) and its fake tap-target.
+ */
 function MobileHeader() {
   const { openSheet } = useSheet()
   const { household, householdId } = useActiveHousehold()
-  const { data: members } = useMembers(householdId)
-  const { data: me } = useMe()
   const { data: nudges } = useNudges(householdId)
   const hasNudges = (nudges?.length ?? 0) > 0
 
@@ -164,33 +170,25 @@ function MobileHeader() {
       <button
         type="button"
         onClick={() => openSheet('households')}
-        className="flex items-center gap-2 rounded-full bg-muted px-3 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="-ml-1.5 flex items-center gap-2.5 rounded-xl px-1.5 py-1.5 text-left outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <HouseholdBadge name={household?.name} />
-        <span className="max-w-[160px] truncate font-medium">{household?.name ?? 'Settl'}</span>
-        <ChevronDownIcon className="size-4 text-muted-foreground" />
+        <HouseholdBadge name={household?.name} size="md" />
+        <span className="max-w-[190px] truncate text-lg font-semibold tracking-tight">
+          {household?.name ?? 'Settl'}
+        </span>
+        <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
       </button>
-      <div className="flex items-center gap-1.5">
-        {members && members.length > 0 && (
-          <MemberAvatarStack
-            members={members.map((m) => ({
-              name: m.name,
-              avatarColor: m.avatarColor,
-              avatarEmoji: m.avatarEmoji,
-              isYou: m.id === me?.id,
-            }))}
-          />
-        )}
+      <div className="flex items-center gap-0.5">
         <Link
           to="/activity"
           aria-label="Notiser"
-          className="relative grid size-9 place-items-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          className="relative grid size-10 place-items-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
         >
           <BellIcon className="size-5" />
           {hasNudges && (
             <span
               aria-hidden="true"
-              className="absolute right-1.5 top-1.5 size-2 rounded-full bg-primary ring-2 ring-background"
+              className="absolute right-2 top-2 size-2 rounded-full bg-primary ring-2 ring-background"
             />
           )}
         </Link>
