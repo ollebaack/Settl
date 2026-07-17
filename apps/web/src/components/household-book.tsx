@@ -11,9 +11,11 @@
  * overview. All server state comes from the shared TanStack Query hooks, scoped
  * to one household; the screen renders and calls, never computes (ADR-0006).
  */
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { Search, X } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Money, type MoneyIntent } from '@/components/money'
 import { MemberAvatar } from '@/components/member-avatar'
@@ -25,8 +27,16 @@ import { useActiveHousehold } from '@/lib/active-household'
 import { useSheet } from '@/lib/sheet'
 import { useIsWide } from '@/lib/use-media'
 import { dayGroupLabel, inDays, shortDate } from '@/lib/format'
+import { CATEGORY_LABEL } from '@/lib/categories'
 import { cn } from '@/lib/utils'
-import type { EntryDto, EntryFilter, MemberDto, PersonBalanceDto, UpcomingDto } from '@/lib/api'
+import type {
+  EntryCategory,
+  EntryDto,
+  EntryFilter,
+  MemberDto,
+  PersonBalanceDto,
+  UpcomingDto,
+} from '@/lib/api'
 
 /** Coerce an int64-as-`number | string` (openapi) field to a number. */
 function toNum(value: number | string): number {
@@ -60,6 +70,31 @@ interface DayGroup {
   entries: EntryDto[]
 }
 
+/**
+ * The searchable text of an entry: its title, the recurring template it came
+ * from, its (Swedish) category label, and the names of everyone it's split
+ * between. A render-layer filter over the already-loaded log — no balances or
+ * statuses are recomputed here (ADR-0006).
+ */
+function entryHaystack(entry: EntryDto): string {
+  return [
+    entry.title,
+    entry.templateTitle ?? '',
+    CATEGORY_LABEL[entry.category as EntryCategory] ?? '',
+    ...entry.shares.map((s) => s.name),
+  ]
+    .join(' ')
+    .toLowerCase()
+}
+
+/** Every whitespace-separated token must appear somewhere in the haystack
+ * (case-insensitive AND), so "anna mat" narrows to Anna's grocery entries. */
+function matchesQuery(entry: EntryDto, tokens: string[]): boolean {
+  if (tokens.length === 0) return true
+  const hay = entryHaystack(entry)
+  return tokens.every((t) => hay.includes(t))
+}
+
 /** Group already-date-desc-sorted entries into ordered per-day buckets. */
 function groupByDay(entries: EntryDto[]): DayGroup[] {
   const groups: DayGroup[] = []
@@ -80,10 +115,21 @@ export function HouseholdBook({ householdId }: { householdId: string }) {
   const wide = useIsWide()
   const { openSheet } = useSheet()
   const [filter, setFilter] = useState<EntryFilter>('all')
+  const [query, setQuery] = useState('')
 
   const summary = useSummary(householdId)
   const members = useMembers(householdId)
   const entriesQuery = useEntries(householdId, { type: filter })
+
+  // Search is a client-side text filter over the already-loaded, type-filtered
+  // log — instant, no per-keystroke refetch, and no server round-trip.
+  const trimmedQuery = query.trim()
+  const filteredEntries = useMemo(() => {
+    const tokens = trimmedQuery.toLowerCase().split(/\s+/).filter(Boolean)
+    const list = entriesQuery.data ?? []
+    return tokens.length ? list.filter((e) => matchesQuery(e, tokens)) : list
+  }, [entriesQuery.data, trimmedQuery])
+  const groups = useMemo(() => groupByDay(filteredEntries), [filteredEntries])
 
   if (summary.isPending) {
     return <LoadingState hero rows={3} />
@@ -160,10 +206,37 @@ export function HouseholdBook({ householdId }: { householdId: string }) {
       <section>
         <div className="flex items-baseline justify-between">
           <p className={SECTION_LABEL}>Loggbok</p>
-          {!entriesQuery.isPending && (entriesQuery.data?.length ?? 0) > 0 && (
+          {!entriesQuery.isPending && filteredEntries.length > 0 && (
             <span className="text-[11.5px] text-muted-foreground">
-              {entriesQuery.data?.length} poster
+              {filteredEntries.length} poster
             </span>
+          )}
+        </div>
+
+        {/* Search — instant, client-side text filter (title, kategori, namn) */}
+        <div className="relative mt-2.5">
+          <Search
+            aria-hidden="true"
+            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            type="text"
+            inputMode="search"
+            aria-label="Sök i loggboken"
+            placeholder="Sök i loggboken"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="px-9"
+          />
+          {query && (
+            <button
+              type="button"
+              aria-label="Rensa sök"
+              onClick={() => setQuery('')}
+              className="absolute right-2.5 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <X className="size-3.5" />
+            </button>
           )}
         </div>
 
@@ -191,10 +264,11 @@ export function HouseholdBook({ householdId }: { householdId: string }) {
 
         <LedgerBody
           filter={filter}
+          query={trimmedQuery}
           isLoading={entriesQuery.isLoading}
           isError={entriesQuery.isError}
           error={entriesQuery.error}
-          groups={groupByDay(entriesQuery.data ?? [])}
+          groups={groups}
           members={members.data}
           onRetry={() => entriesQuery.refetch()}
           onOpenEntry={(id) => openSheet('entry', { id })}
@@ -295,6 +369,7 @@ function UpcomingCard({ item, onGo }: { item: UpcomingDto; onGo: () => void }) {
 
 function LedgerBody({
   filter,
+  query,
   isLoading,
   isError,
   error,
@@ -304,6 +379,7 @@ function LedgerBody({
   onOpenEntry,
 }: {
   filter: EntryFilter
+  query: string
   isLoading: boolean
   isError: boolean
   error: unknown
@@ -330,7 +406,11 @@ function LedgerBody({
   }
 
   if (groups.length === 0) {
-    return <EmptyState className="mt-4">{EMPTY_COPY[filter]}</EmptyState>
+    return (
+      <EmptyState className="mt-4">
+        {query ? `Inga träffar för “${query}”` : EMPTY_COPY[filter]}
+      </EmptyState>
+    )
   }
 
   return (
