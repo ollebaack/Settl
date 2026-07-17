@@ -37,7 +37,7 @@ test('add a contact by phone, accept the SMS invite, and see the connection', as
 
   // Accept the blind invite as a brand-new person (their own email becomes the identity).
   // Clear Du's session first: a logged-in user would instead accept as themselves.
-  const token = await latestDevSmsInviteToken(page.request)
+  const token = await latestDevSmsInviteToken(page.request, e164)
   const inviteeName = `Kontakt ${suffix}`
   await page.context().clearCookies()
   await page.goto(`/accept-invite?token=${token}`)

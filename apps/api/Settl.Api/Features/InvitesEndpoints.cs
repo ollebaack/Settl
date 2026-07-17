@@ -203,10 +203,12 @@ public static class InvitesEndpoints
         // real inbox. The raw invite token is never persisted (only its hash is), so this
         // reads the in-memory store DevEmailSender populates, not the database — all 404
         // whenever Resend is configured.
-        app.MapGet("/dev/invites/latest", (IHostEnvironment env, DevEmailLinkStore store) =>
+        app.MapGet("/dev/invites/latest", (IHostEnvironment env, DevEmailLinkStore store, string? email) =>
         {
             if (!env.IsDevelopment()) return Results.NotFound();
-            var url = store.LastInviteAcceptUrl;
+            // `email` scopes the lookup to one invitee so parallel e2e workers don't race on the
+            // single most-recent slot; omit it for manual local dev ("just give me the last one").
+            var url = email is not null ? store.InviteAcceptUrlFor(email) : store.LastInviteAcceptUrl;
             return url is null ? Results.NotFound() : Results.Ok(new { acceptUrl = url });
         }).WithName("GetLatestDevInvite")
             .AllowAnonymous();
@@ -227,10 +229,11 @@ public static class InvitesEndpoints
         }).WithName("GetLatestDevPasswordReset")
             .AllowAnonymous();
 
-        app.MapGet("/dev/sms-invites/latest", (IHostEnvironment env, DevEmailLinkStore store) =>
+        app.MapGet("/dev/sms-invites/latest", (IHostEnvironment env, DevEmailLinkStore store, string? phone) =>
         {
             if (!env.IsDevelopment()) return Results.NotFound();
-            var url = store.LastSmsInviteAcceptUrl;
+            // `phone` (E.164) scopes the lookup to one invitee — see /dev/invites/latest.
+            var url = phone is not null ? store.SmsInviteAcceptUrlFor(phone) : store.LastSmsInviteAcceptUrl;
             return url is null ? Results.NotFound() : Results.Ok(new { acceptUrl = url });
         }).WithName("GetLatestDevSmsInvite")
             .AllowAnonymous();

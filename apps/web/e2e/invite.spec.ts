@@ -34,7 +34,7 @@ test('invite a new email, accept it, and see the shared household', async ({ pag
   await expect(page.getByText(`Inbjudan skickad till ${inviteEmail}`)).toBeVisible()
   await expect(page.getByText(`${inviteEmail} — väntar på svar`)).toBeVisible()
 
-  const token = await latestDevInviteToken(page.request)
+  const token = await latestDevInviteToken(page.request, inviteEmail)
 
   // Accept as the brand-new invitee — this replaces Du's session with theirs
   // (the accept endpoint signs the newly created account in).

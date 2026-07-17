@@ -27,7 +27,7 @@ public sealed class DevSmsSender(ILogger<DevSmsSender> logger, DevEmailLinkStore
     {
         logger.LogInformation("[dev sms] Invite for {ToPhone} from {InviterName} ({Household}): {AcceptUrl}",
             toPhoneE164, inviterName, householdName ?? "kontakt", acceptUrl);
-        linkStore.RecordSmsInvite(acceptUrl);
+        linkStore.RecordSmsInvite(toPhoneE164, acceptUrl);
         return Task.CompletedTask;
     }
 }
