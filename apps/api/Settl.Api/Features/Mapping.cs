@@ -84,7 +84,9 @@ public static class Mapping
             yourShare,
             RecurrenceCalculator.MonthlyNormalizedMinor(template.AmountMinor, template.Cadence),
             RecurrenceCalculator.CycleProgress(template.NextPostDate, template.Cadence, today, template.Active),
-            contributing);
+            contributing,
+            template.EndDate,
+            RecurrenceCalculator.IsEnded(template.NextPostDate, template.EndDate));
     }
 
     private static int IndexOf(IReadOnlyList<Guid> order, Guid id)

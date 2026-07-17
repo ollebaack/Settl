@@ -13,7 +13,9 @@ public sealed record RecurringDto(
     long YourShareMinor,
     long MonthlyNormalizedMinor,
     double CycleProgress,
-    IReadOnlyList<Guid> ContributingMemberIds);
+    IReadOnlyList<Guid> ContributingMemberIds,
+    DateOnly? EndDate,
+    bool Ended);
 
 public sealed record RecurringListDto(
     long RecTotalMinor,
@@ -43,7 +45,13 @@ public sealed record CreateRecurringRequest(
     string Cadence,
     DateOnly NextPostDate,
     Guid PaidByMemberId,
-    SplitInput Split);
+    SplitInput Split,
+    // Termination (recurring-end-date spec). One mutually-exclusive mode resolved to a single
+    // EndDate server-side: "never"/null → no end; "date" → uses EndDate; "count" → resolves
+    // EndAfterCount to the Nth post date. Only the resolved date is stored.
+    string? EndMode = null,
+    DateOnly? EndDate = null,
+    int? EndAfterCount = null);
 
 public sealed record UpdateRecurringRequest(
     bool? Active,
@@ -52,4 +60,8 @@ public sealed record UpdateRecurringRequest(
     string? Cadence,
     DateOnly? NextPostDate,
     Guid? PaidByMemberId,
-    SplitInput? Split);
+    SplitInput? Split,
+    // Null EndMode leaves the end date unchanged; "never" clears it, "date"/"count" set it.
+    string? EndMode = null,
+    DateOnly? EndDate = null,
+    int? EndAfterCount = null);

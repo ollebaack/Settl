@@ -50,6 +50,7 @@ import type {
 type EntryTab = 'expense' | 'recurring'
 type SplitMode = 'equal' | 'percent' | 'amount' | 'whole'
 type Cadence = 'monthly' | 'biweekly' | 'weekly'
+type EndMode = 'never' | 'date' | 'count'
 type FormMode = 'create' | 'editEntry' | 'editRecurring'
 
 const TITLE_PLACEHOLDER: Record<EntryTab, string> = {
@@ -111,6 +112,9 @@ interface FormState {
   wholeMemberId: string | null
   cadence: Cadence
   date: string
+  endMode: EndMode
+  endDate: string
+  endCount: string
 }
 
 const EMPTY_STATE: FormState = {
@@ -123,6 +127,9 @@ const EMPTY_STATE: FormState = {
   wholeMemberId: null,
   cadence: 'monthly',
   date: todayIso(),
+  endMode: 'never',
+  endDate: '',
+  endCount: '',
 }
 
 /** Split mode the API stored maps 1:1 to the editor modes (an "Allt på en" entry reads
@@ -175,6 +182,11 @@ function stateFromRecurring(detail: RecurringDetailDto): FormState {
     vals: valsFromShares(splitMode, template.amountMinor, shares),
     cadence: (template.cadence as Cadence) ?? 'monthly',
     date: template.nextPostDate,
+    // Count resolves to a date at save, so there's nothing to reconstruct — an existing end
+    // shows as a fixed date; edit it or clear it back to "Aldrig".
+    endMode: template.endDate ? 'date' : 'never',
+    endDate: template.endDate ?? '',
+    endCount: '',
   }
 }
 
@@ -283,6 +295,9 @@ function EntryForm({
   const [wholeMemberId, setWholeMemberId] = useState<string | null>(initial.wholeMemberId)
   const [cadence, setCadence] = useState<Cadence>(initial.cadence)
   const [date, setDate] = useState(initial.date)
+  const [endMode, setEndMode] = useState<EndMode>(initial.endMode)
+  const [endDate, setEndDate] = useState(initial.endDate)
+  const [endCount, setEndCount] = useState(initial.endCount)
 
   const isEdit = mode !== 'create'
   const submitting =
@@ -336,6 +351,17 @@ function EntryForm({
     return { mode: splitMode, values }
   }
 
+  /** Termination fields for the recurring request — the API resolves count → a stored date. */
+  function buildEndFields(): Pick<
+    CreateRecurringRequest,
+    'endMode' | 'endDate' | 'endAfterCount'
+  > {
+    if (endMode === 'date') return { endMode: 'date', endDate: endDate || null, endAfterCount: null }
+    if (endMode === 'count')
+      return { endMode: 'count', endDate: null, endAfterCount: parseInt(endCount, 10) || null }
+    return { endMode: 'never', endDate: null, endAfterCount: null }
+  }
+
   async function onSave() {
     if (totalMinor <= 0) {
       toast('Ange ett belopp först')
@@ -360,6 +386,21 @@ function EntryForm({
         return
       }
     }
+    // Recurring termination pre-checks (the API is authoritative, but catch the obvious cases).
+    if (type === 'recurring' || mode === 'editRecurring') {
+      if (endMode === 'date' && !endDate) {
+        toast('Välj ett slutdatum')
+        return
+      }
+      if (endMode === 'date' && endDate < date) {
+        toast('Slutdatumet kan inte vara före första bokföringen')
+        return
+      }
+      if (endMode === 'count' && (parseInt(endCount, 10) || 0) < 1) {
+        toast('Ange hur många gånger den ska bokföras')
+        return
+      }
+    }
 
     try {
       if (mode === 'editRecurring' && editId) {
@@ -371,6 +412,7 @@ function EntryForm({
           nextPostDate: date,
           paidByMemberId: payer ?? null,
           split: buildSplit(),
+          ...buildEndFields(),
         }
         await updateRecurring.mutateAsync({ recId: editId, body })
         toast('Ändrad')
@@ -402,6 +444,7 @@ function EntryForm({
           nextPostDate: date,
           paidByMemberId: payer as string,
           split: buildSplit(),
+          ...buildEndFields(),
         }
         await createRecurring.mutateAsync(body)
         toast(`På repeat — bokförs först ${shortDate(date)}`)
@@ -608,6 +651,48 @@ function EntryForm({
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                 />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label className={FIELD_LABEL}>Slutar</Label>
+                <ToggleGroup
+                  value={[endMode]}
+                  onValueChange={(v) => setEndMode(pickSingle<EndMode>(v, endMode))}
+                  variant="outline"
+                  className="flex-wrap"
+                >
+                  <ToggleGroupItem value="never">Aldrig</ToggleGroupItem>
+                  <ToggleGroupItem value="date">Datum</ToggleGroupItem>
+                  <ToggleGroupItem value="count">Efter antal</ToggleGroupItem>
+                </ToggleGroup>
+
+                {endMode === 'date' && (
+                  <Input
+                    id="recurring-end-date"
+                    type="date"
+                    aria-label="Slutdatum"
+                    min={date}
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+                )}
+
+                {endMode === 'count' && (
+                  <div className="relative">
+                    <Input
+                      id="recurring-end-count"
+                      inputMode="numeric"
+                      placeholder="12"
+                      aria-label="Antal gånger"
+                      value={endCount}
+                      onChange={(e) => setEndCount(e.target.value)}
+                      className="pr-16"
+                    />
+                    <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs text-muted-foreground">
+                      gånger
+                    </span>
+                  </div>
+                )}
               </div>
 
               <p className="text-xs text-muted-foreground">

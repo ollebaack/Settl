@@ -109,13 +109,20 @@ function RecurringDetailBody({
 
   const hasHistory = postedEntries.length > 0
   const toggling = updateRecurring.isPending
+  const ended = template.ended
 
-  const nextTitle = template.active
-    ? `Nästa: ${template.title} — ${shortDate(template.nextPostDate)}`
-    : 'Pausad — ingen kommande bokföring'
-  const nextWhen = template.active
-    ? `Bokförs automatiskt ${inDays(template.nextPostDate)}`
-    : 'Återuppta för att schemalägga nästa period'
+  const nextTitle = ended
+    ? `Avslutad${template.endDate ? ` — ${shortDate(template.endDate)}` : ''}`
+    : template.active
+      ? `Nästa: ${template.title} — ${shortDate(template.nextPostDate)}`
+      : 'Pausad — ingen kommande bokföring'
+  const nextWhen = ended
+    ? 'Inga fler bokföringar — redigera slutdatumet för att återuppta'
+    : template.active
+      ? `Bokförs automatiskt ${inDays(template.nextPostDate)}${
+          template.endDate ? ` · slutar ${shortDate(template.endDate)}` : ''
+        }`
+      : 'Återuppta för att schemalägga nästa period'
 
   const setActive = (next: boolean, onDone?: () => void) => {
     updateRecurring.mutate(
@@ -162,7 +169,7 @@ function RecurringDetailBody({
     <div className="flex flex-col">
       <div className="flex items-center gap-2">
         <Badge variant="secondary" className="uppercase tracking-wide">
-          På repeat
+          {ended ? 'Avslutad' : 'På repeat'}
         </Badge>
         <span className="text-xs text-muted-foreground">{cadLabel}</span>
 
@@ -275,9 +282,11 @@ function RecurringDetailBody({
         </p>
       )}
 
-      <Button variant="outline" className="mt-4 w-full" disabled={toggling} onClick={onToggle}>
-        {template.active ? 'Pausa autobokföring' : 'Återuppta autobokföring'}
-      </Button>
+      {!ended && (
+        <Button variant="outline" className="mt-4 w-full" disabled={toggling} onClick={onToggle}>
+          {template.active ? 'Pausa autobokföring' : 'Återuppta autobokföring'}
+        </Button>
+      )}
 
       <ConfirmDialog
         open={confirmOpen}

@@ -83,8 +83,10 @@ public sealed class RecurringPostingService(
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var now = DateTimeOffset.UtcNow;
 
+        // Ended templates (cursor past an inclusive EndDate) are excluded here so they aren't
+        // re-selected every tick; DuePosts also gates on EndDate as a belt-and-suspenders.
         var templates = await db.RecurringTemplates
-            .Where(t => t.Active && t.NextPostDate <= today)
+            .Where(t => t.Active && t.NextPostDate <= today && (t.EndDate == null || t.NextPostDate <= t.EndDate))
             .Include(t => t.Shares)
             .Include(t => t.Household).ThenInclude(h => h.Memberships)
             .ToListAsync(ct);
@@ -103,7 +105,7 @@ public sealed class RecurringPostingService(
                 var order = MembershipOrder.Order(template.Household.Memberships);
 
                 foreach (var postDate in RecurrenceCalculator.DuePosts(
-                             template.Active, template.NextPostDate, template.Cadence, today))
+                             template.Active, template.NextPostDate, template.Cadence, today, template.EndDate))
                 {
                     var exists = await db.Entries.AnyAsync(
                         e => e.RecurringTemplateId == template.Id && e.Date == postDate, ct);

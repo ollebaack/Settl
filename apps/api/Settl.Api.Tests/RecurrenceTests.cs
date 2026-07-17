@@ -160,6 +160,113 @@ public class RecurrenceTests
     }
 
     [Fact]
+    public void DuePosts_stops_at_an_inclusive_end_date()
+    {
+        var today = new DateOnly(2026, 7, 12);
+        // Weekly from today-14; end date == today-7 → posts today-14 and today-7, then stops
+        // (the today cycle is past the end date). End date is INCLUSIVE.
+        var due = RecurrenceCalculator.DuePosts(
+            active: true, nextPostDate: today.AddDays(-14), Cadence.Weekly, today, endDate: today.AddDays(-7)).ToList();
+
+        Assert.Equal(new[] { today.AddDays(-14), today.AddDays(-7) }, due);
+    }
+
+    [Fact]
+    public void DuePosts_posts_the_cycle_landing_exactly_on_the_end_date()
+    {
+        var today = new DateOnly(2026, 7, 12);
+        // End date equals today (a due cycle) → that cycle still posts (inclusive boundary).
+        var due = RecurrenceCalculator.DuePosts(
+            active: true, nextPostDate: today.AddDays(-7), Cadence.Weekly, today, endDate: today).ToList();
+
+        Assert.Equal(new[] { today.AddDays(-7), today }, due);
+    }
+
+    [Fact]
+    public void DuePosts_is_empty_when_next_post_is_already_past_the_end_date()
+    {
+        var today = new DateOnly(2026, 7, 12);
+        var due = RecurrenceCalculator.DuePosts(
+            active: true, nextPostDate: today.AddDays(-1), Cadence.Weekly, today, endDate: today.AddDays(-8)).ToList();
+        Assert.Empty(due);
+    }
+
+    [Fact]
+    public void DuePosts_with_null_end_date_is_unbounded_as_before()
+    {
+        var today = new DateOnly(2026, 7, 12);
+        var due = RecurrenceCalculator.DuePosts(
+            active: true, nextPostDate: today.AddDays(-14), Cadence.Weekly, today, endDate: null).ToList();
+        Assert.Equal(new[] { today.AddDays(-14), today.AddDays(-7), today }, due);
+    }
+
+    // --------------------------------------------------------------- NthPostDate
+
+    [Fact]
+    public void NthPostDate_first_post_is_the_next_post_itself()
+    {
+        var start = new DateOnly(2026, 1, 1);
+        Assert.Equal(start, RecurrenceCalculator.NthPostDate(start, Cadence.Monthly, 1));
+    }
+
+    [Fact]
+    public void NthPostDate_resolves_efter_n_ganger_to_the_nth_cycle_inclusive()
+    {
+        var start = new DateOnly(2026, 1, 1);
+        // "Efter 12 gånger" monthly, first post Jan 1 → 12th post is Dec 1 (start + 11 months).
+        Assert.Equal(new DateOnly(2026, 12, 1), RecurrenceCalculator.NthPostDate(start, Cadence.Monthly, 12));
+    }
+
+    [Fact]
+    public void NthPostDate_weekly_counts_whole_cycles()
+    {
+        var start = new DateOnly(2026, 1, 1);
+        // 3rd weekly post = start + 14 days.
+        Assert.Equal(new DateOnly(2026, 1, 15), RecurrenceCalculator.NthPostDate(start, Cadence.Weekly, 3));
+    }
+
+    [Fact]
+    public void NthPostDate_rejects_counts_below_one()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => RecurrenceCalculator.NthPostDate(new DateOnly(2026, 1, 1), Cadence.Monthly, 0));
+    }
+
+    [Fact]
+    public void NthPostDate_resolved_end_date_posts_exactly_n_cycles()
+    {
+        var start = new DateOnly(2026, 1, 1);
+        var end = RecurrenceCalculator.NthPostDate(start, Cadence.Monthly, 12);
+        // Feed the resolved end date back through DuePosts with a far-future "today" → 12 posts.
+        var due = RecurrenceCalculator.DuePosts(
+            active: true, nextPostDate: start, Cadence.Monthly, today: new DateOnly(2030, 1, 1), endDate: end).ToList();
+        Assert.Equal(12, due.Count);
+        Assert.Equal(start, due[0]);
+        Assert.Equal(end, due[^1]);
+    }
+
+    // ------------------------------------------------------------------ IsEnded
+
+    [Fact]
+    public void IsEnded_is_false_when_no_end_date()
+    {
+        Assert.False(RecurrenceCalculator.IsEnded(new DateOnly(2026, 1, 1), null));
+    }
+
+    [Fact]
+    public void IsEnded_is_false_while_cursor_is_on_or_before_the_end_date()
+    {
+        Assert.False(RecurrenceCalculator.IsEnded(new DateOnly(2026, 12, 1), new DateOnly(2026, 12, 1)));
+        Assert.False(RecurrenceCalculator.IsEnded(new DateOnly(2026, 11, 1), new DateOnly(2026, 12, 1)));
+    }
+
+    [Fact]
+    public void IsEnded_is_true_once_cursor_passes_the_end_date()
+    {
+        Assert.True(RecurrenceCalculator.IsEnded(new DateOnly(2027, 1, 1), new DateOnly(2026, 12, 1)));
+    }
+
+    [Fact]
     public void DuePosts_terminates_over_a_large_backlog()
     {
         // Weekly from Jan 1 to Mar 1 2025 (59 days). Offsets 0,7,..,56 fit; 63 does not → 9 posts.
@@ -451,5 +558,40 @@ public class RecurrenceTests
         var next = await factory.WithDb(db =>
             db.RecurringTemplates.Where(t => t.Id == template.Id).Select(t => t.NextPostDate).SingleAsync());
         Assert.Equal(pausedNext, next);
+    }
+
+    [Fact]
+    public async Task PostDueCycles_stops_at_the_end_date_and_leaves_the_template_ended()
+    {
+        using var factory = new SettlApiFactory();
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        var scenario = new TestScenario();
+        scenario.AddMember("A");
+        scenario.AddMember("B");
+        // Weekly, two cycles behind (due today-14, today-7, today). End date == today-7 clips the
+        // backlog to two posts (today-14, today-7); the today cycle is past the inclusive end.
+        var template = scenario.AddRecurring(
+            "Kurs", 50000, scenario.MemberIds[0], Cadence.Weekly, nextPostOffset: -14);
+        template.EndDate = today.AddDays(-7);
+        await factory.SeedAsync(scenario);
+
+        await NewService(factory).PostDueCycles(CancellationToken.None);
+
+        var posts = await factory.WithDb(db => db.Entries
+            .Where(e => e.RecurringTemplateId == template.Id).OrderBy(e => e.Date).ToListAsync());
+        Assert.Equal(new[] { today.AddDays(-14), today.AddDays(-7) }, posts.Select(p => p.Date).ToArray());
+
+        // Cursor advanced one cadence past the last posted date → today, which is past EndDate.
+        var reloaded = await factory.WithDb(db =>
+            db.RecurringTemplates.Where(t => t.Id == template.Id).SingleAsync());
+        Assert.Equal(today, reloaded.NextPostDate);
+        Assert.True(RecurrenceCalculator.IsEnded(reloaded.NextPostDate, reloaded.EndDate));
+
+        // A second run posts nothing more — the ended template is excluded from selection.
+        await NewService(factory).PostDueCycles(CancellationToken.None);
+        var count = await factory.WithDb(db =>
+            db.Entries.CountAsync(e => e.RecurringTemplateId == template.Id));
+        Assert.Equal(2, count);
     }
 }

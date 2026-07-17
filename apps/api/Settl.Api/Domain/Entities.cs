@@ -119,6 +119,16 @@ public class RecurringTemplate
     public long AmountMinor { get; set; }
     public Cadence Cadence { get; set; }
     public DateOnly NextPostDate { get; set; }
+
+    /// <summary>Optional inclusive last-post boundary (recurring-end-date spec). Null = "Aldrig"
+    /// (runs forever — the original behaviour). A cycle posts while
+    /// <see cref="NextPostDate"/> ≤ <c>EndDate</c>; once the cursor passes it the template is
+    /// <b>ended</b>. "Ended" is DERIVED from this + the cursor
+    /// (<see cref="RecurrenceCalculator.IsEnded"/>), never stored — <see cref="Active"/> still
+    /// means only "paused". "Efter N gånger" is resolved to a date at save time, so only the date
+    /// is persisted (no live counter).</summary>
+    public DateOnly? EndDate { get; set; }
+
     public Guid PaidByMemberId { get; set; }
     public SplitMode SplitMode { get; set; }
     public bool Active { get; set; } = true;
