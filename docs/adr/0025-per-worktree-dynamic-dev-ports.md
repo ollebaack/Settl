@@ -1,4 +1,4 @@
-# ADR-0023: Per-worktree dynamic dev ports via Aspire isolated mode
+# ADR-0025: Per-worktree dynamic dev ports via Aspire isolated mode
 
 - **Status:** accepted
 - **Date:** 2026-07-17

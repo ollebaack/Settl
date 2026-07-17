@@ -82,7 +82,7 @@ else
     // (verified: DCP throws "needs to specify a port ... since it isn't using a proxy").
     // Pinning a constant would just move the cross-worktree collision, so grab a fresh free
     // ephemeral port per run instead: different every launch, so parallel worktrees never
-    // clash (ADR-0023). AddViteApp passes this to Vite via the PORT env var.
+    // clash (ADR-0025). AddViteApp passes this to Vite via the PORT env var.
     var webListener = new TcpListener(IPAddress.Loopback, 0);
     webListener.Start();
     var webPort = ((IPEndPoint)webListener.LocalEndpoint).Port;
@@ -91,7 +91,7 @@ else
     // The browser SPA can only read VITE_-prefixed env vars (Aspire's service-discovery
     // vars are server-side only), so the web can't learn the API's port from WithReference
     // alone — it would fall back to api.ts's hardcoded http://localhost:5000 default. Inject
-    // the API's *resolved* origin explicitly (ADR-0023): this is what makes a dynamic API
+    // the API's *resolved* origin explicitly (ADR-0025): this is what makes a dynamic API
     // port work end-to-end, including under `aspire run --isolated`, where the API port is
     // randomized per worktree so multiple agents' stacks coexist without collisions.
     builder.AddViteApp("web", "../../web")

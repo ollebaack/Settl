@@ -169,7 +169,7 @@ builder.Services.AddCors(options =>
         if (builder.Environment.IsDevelopment())
         {
             // The web dev server runs on a random per-worktree port under `aspire run
-            // --isolated` (ADR-0023), and e2e can bind arbitrary ports too. Cookie auth uses
+            // --isolated` (ADR-0025), and e2e can bind arbitrary ports too. Cookie auth uses
             // AllowCredentials(), which forbids AllowAnyOrigin(), so instead of pinning one
             // port we reflect any loopback origin (localhost/127.0.0.1/::1). Development-only —
             // production keeps a strict single-origin allow-list below.
