@@ -21,6 +21,12 @@ public class Member : IdentityUser<Guid>
     /// now exposed as a per-user setting. Selects nudge copy only, never which nudges fire.</summary>
     public NudgeTone NudgeTone { get; set; } = NudgeTone.Direct;
 
+    /// <summary>Whether this member receives the daily nudge-digest email (reminder-delivery spec,
+    /// ADR-0024). On by default (account-activity, legitimate interest — not marketing); turned off
+    /// by the one-click email unsubscribe or the profile toggle. Migration backfills existing
+    /// members to enabled.</summary>
+    public bool NudgeEmailsEnabled { get; set; } = true;
+
     public ICollection<HouseholdMembership> Memberships { get; set; } = new List<HouseholdMembership>();
 
     /// <summary>Derived, not stored.</summary>
@@ -208,4 +214,28 @@ public class Contact
     public Member ContactMember { get; set; } = null!;
 
     public DateTimeOffset CreatedAt { get; set; }
+}
+
+/// <summary>
+/// One row per nudge already emailed to a member — the persisted, de-duplicated delivery record
+/// the reminder-delivery spec (ADR-0024) introduces to pay down tech-debt/0002. It is a
+/// delivery-dedup log, NOT a mirror of nudge state: <see cref="NudgeKey"/> is a stable identity
+/// derived entirely from the nudge's own fields (<see cref="NudgeCalculator.EmittableNudge.Key"/>),
+/// so the daily digest can ask "have we already emailed this?" without coordinating with the
+/// derive-on-read crossing logic (ADR-0023). A standing condition keeps one key and is emailed
+/// once; a fresh crossing / new cycle yields a new key and re-fires.
+/// </summary>
+public class EmittedNudge
+{
+    public Guid Id { get; set; }
+
+    /// <summary>The recipient — who was emailed. Uniqueness is per (member, key).</summary>
+    public Guid MemberId { get; set; }
+    public Member Member { get; set; } = null!;
+
+    /// <summary>The derivable nudge identity (e.g. <c>balance:{memberId}:{crossedOn}</c>).</summary>
+    public string NudgeKey { get; set; } = "";
+
+    /// <summary>When the digest carrying this nudge was sent (UTC).</summary>
+    public DateTimeOffset SentAt { get; set; }
 }

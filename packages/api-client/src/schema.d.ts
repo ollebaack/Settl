@@ -661,6 +661,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/nudges/unsubscribe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["UnsubscribeNudgesPage"];
+        put?: never;
+        post: operations["UnsubscribeNudges"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -859,6 +875,7 @@ export interface components {
             phone: null | string;
             phoneVerified: boolean;
             nudgeTone: string;
+            nudgeEmailsEnabled: boolean;
         };
         MemberContributionDto: {
             /** Format: uuid */
@@ -1052,6 +1069,7 @@ export interface components {
             name: string;
             avatarEmoji: null | string;
             nudgeTone?: null | string;
+            nudgeEmailsEnabled?: null | boolean;
         };
         UpdateProfileRequest: {
             phone: null | string;
@@ -2886,6 +2904,53 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    UnsubscribeNudgesPage: {
+        parameters: {
+            query?: {
+                token?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UnsubscribeNudges: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Settl.Api.Dtos;
 
 namespace Settl.Api.Domain;
@@ -8,6 +9,12 @@ namespace Settl.Api.Domain;
 /// </summary>
 public static class NudgeCalculator
 {
+    /// <summary>A nudge paired with its stable delivery identity (reminder-delivery spec). The
+    /// <see cref="Key"/> is derived entirely from the nudge's own subject fields, so the digest
+    /// can de-duplicate sends against the emitted-nudge log with no shared crossing state
+    /// (ADR-0023). The HTTP read path drops the key and returns just <see cref="Nudge"/>.</summary>
+    public sealed record EmittableNudge(string Key, NudgeDto Nudge);
+
     public const int RecurringDueDays = 5;
     public const int BigExpenseWindowDays = 7;
     public const long BigExpenseThresholdMinor = 150_000; // 1500 kr
@@ -29,7 +36,21 @@ public static class NudgeCalculator
     /// crossing is not news.</summary>
     public sealed record BalanceInput(Guid MemberId, string Name, long NetMinor, DateOnly? CrossedOn);
 
+    /// <summary>The read path (GET /nudges): the nudges only, identities dropped.</summary>
     public static IReadOnlyList<NudgeDto> Build(
+        string tone,
+        DateOnly today,
+        IEnumerable<RecurringDueInput> activeRecurrings,
+        IEnumerable<BigExpenseInput> expenses,
+        IEnumerable<BalanceInput> balances) =>
+        BuildEmittable(tone, today, activeRecurrings, expenses, balances)
+            .Select(e => e.Nudge)
+            .ToList();
+
+    /// <summary>The delivery path (daily digest): each nudge paired with its stable identity key
+    /// so the digest can de-duplicate sends against the emitted-nudge log. Same nudges, same order
+    /// as <see cref="Build"/> — the key derivation is the only addition.</summary>
+    public static IReadOnlyList<EmittableNudge> BuildEmittable(
         string tone,
         DateOnly today,
         IEnumerable<RecurringDueInput> activeRecurrings,
@@ -37,7 +58,7 @@ public static class NudgeCalculator
         IEnumerable<BalanceInput> balances)
     {
         var direct = tone != "gentle";
-        var nudges = new List<NudgeDto>();
+        var nudges = new List<EmittableNudge>();
 
         // 1. Recurring due — active template with 0 ≤ daysUntil(next) ≤ 5.
         foreach (var r in activeRecurrings)
@@ -47,14 +68,17 @@ public static class NudgeCalculator
 
             var when = SwedishDates.InDays(r.NextPostDate, today);
             var share = Money.FormatKr(r.YourShareMinor);
-            nudges.Add(new NudgeDto(
-                Kind: "recurringDue",
-                Title: direct ? $"{r.Title} dras {when}" : $"{r.Title} bokförs {when}",
-                Body: direct
-                    ? $"Din del är {share}. Den bokförs automatiskt."
-                    : $"Din del ({share}) hamnar i loggboken automatiskt — inget att göra.",
-                When: "på gång",
-                Actions: [new NudgeActionDto("Visa", "viewRecurring", r.RecurringId)]));
+            nudges.Add(new EmittableNudge(
+                // Re-fires each cycle: the key advances with NextPostDate.
+                $"recurringDue:{r.RecurringId}:{Iso(r.NextPostDate)}",
+                new NudgeDto(
+                    Kind: "recurringDue",
+                    Title: direct ? $"{r.Title} dras {when}" : $"{r.Title} bokförs {when}",
+                    Body: direct
+                        ? $"Din del är {share}. Den bokförs automatiskt."
+                        : $"Din del ({share}) hamnar i loggboken automatiskt — inget att göra.",
+                    When: "på gång",
+                    Actions: [new NudgeActionDto("Visa", "viewRecurring", r.RecurringId)])));
         }
 
         // 2. Big expense — non-Iou, unsettled, ≥1500 kr, within last 7 days.
@@ -69,14 +93,17 @@ public static class NudgeCalculator
             var actions = new List<NudgeActionDto> { new("Visa", "viewEntry", e.EntryId) };
             if (!e.PayerIsMe) actions.Add(new NudgeActionDto("Gör upp", "settle", e.PayerId));
 
-            nudges.Add(new NudgeDto(
-                Kind: "bigExpense",
-                Title: $"Stor utgift: {e.Title}",
-                Body: direct
-                    ? $"{e.PayerName} la till {amount}. Din del är {share} — gör upp när du kan."
-                    : $"{e.PayerName} la till {amount}. Din del är {share}. Ingen brådska.",
-                When: SwedishDates.Short(e.Date),
-                Actions: actions));
+            nudges.Add(new EmittableNudge(
+                // One entry, one nudge — emailed once ever.
+                $"bigExpense:{e.EntryId}",
+                new NudgeDto(
+                    Kind: "bigExpense",
+                    Title: $"Stor utgift: {e.Title}",
+                    Body: direct
+                        ? $"{e.PayerName} la till {amount}. Din del är {share} — gör upp när du kan."
+                        : $"{e.PayerName} la till {amount}. Din del är {share}. Ingen brådska.",
+                    When: SwedishDates.Short(e.Date),
+                    Actions: actions)));
         }
 
         // 3. Balance — fire ONCE when |net with X| crosses 750 kr, not continuously while above
@@ -96,16 +123,23 @@ public static class NudgeCalculator
             else
                 title = $"Er nota med {b.Name} växer";
 
-            nudges.Add(new NudgeDto(
-                Kind: "balance",
-                Title: title,
-                Body: direct
-                    ? "Saldot passerade 750 kr — dags att göra upp."
-                    : "Ert saldo passerade 750 kr. Kanske ett bra tillfälle att göra upp.",
-                When: SwedishDates.Short(crossedOn),
-                Actions: [new NudgeActionDto("Gör upp", "settle", b.MemberId)]));
+            nudges.Add(new EmittableNudge(
+                // Anchored on the crossing date: a standing balance keeps one key (emailed once);
+                // a settle-below-then-recross yields a new crossedOn → a new key that re-fires.
+                $"balance:{b.MemberId}:{Iso(crossedOn)}",
+                new NudgeDto(
+                    Kind: "balance",
+                    Title: title,
+                    Body: direct
+                        ? "Saldot passerade 750 kr — dags att göra upp."
+                        : "Ert saldo passerade 750 kr. Kanske ett bra tillfälle att göra upp.",
+                    When: SwedishDates.Short(crossedOn),
+                    Actions: [new NudgeActionDto("Gör upp", "settle", b.MemberId)])));
         }
 
         return nudges;
     }
+
+    /// <summary>Culture-invariant yyyy-MM-dd for the identity keys — never locale-formatted.</summary>
+    private static string Iso(DateOnly date) => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 }

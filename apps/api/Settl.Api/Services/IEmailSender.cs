@@ -13,7 +13,18 @@ public interface IEmailSender
 
     Task SendVerificationEmailAsync(string toEmail, string confirmUrl, CancellationToken ct = default);
     Task SendPasswordResetEmailAsync(string toEmail, string resetUrl, CancellationToken ct = default);
+
+    /// <summary>The daily nudge digest (reminder-delivery spec, ADR-0024). <paramref name="lines"/>
+    /// is the member's un-sent nudges, tone already baked into the copy; <paramref name="unsubscribeUrl"/>
+    /// is the tokenised one-click opt-out reachable without login.</summary>
+    Task SendNudgeDigestEmailAsync(
+        string toEmail, string memberName, IReadOnlyList<NudgeDigestLine> lines, string unsubscribeUrl,
+        CancellationToken ct = default);
 }
+
+/// <summary>One nudge as it appears in the digest email — the render-facing subset of a nudge,
+/// so <see cref="IEmailSender"/> doesn't depend on the API DTOs.</summary>
+public sealed record NudgeDigestLine(string Title, string Body, string When);
 
 /// <summary>
 /// Sends via Resend's HTTP API directly (one JSON POST) — no Resend SDK package, since
@@ -48,6 +59,12 @@ public sealed class ResendEmailSender(HttpClient http, IConfiguration config, IL
             <p><a href="{resetUrl}">Återställ lösenord</a></p>
             <p>Länken slutar gälla om 1 timme. Om du inte bad om detta kan du ignorera mejlet.</p>
             """, "Kunde inte skicka återställningsmejl", ct);
+
+    public Task SendNudgeDigestEmailAsync(
+        string toEmail, string memberName, IReadOnlyList<NudgeDigestLine> lines, string unsubscribeUrl,
+        CancellationToken ct = default) =>
+        SendAsync(toEmail, NudgeDigestEmail.Subject(lines.Count),
+            NudgeDigestEmail.Html(memberName, lines, unsubscribeUrl), "Kunde inte skicka påminnelse", ct);
 
     private async Task SendAsync(string toEmail, string subject, string html, string failureMessage, CancellationToken ct)
     {
@@ -100,4 +117,49 @@ public sealed class DevEmailSender(ILogger<DevEmailSender> logger, DevEmailLinkS
         linkStore.RecordPasswordReset(resetUrl);
         return Task.CompletedTask;
     }
+
+    public Task SendNudgeDigestEmailAsync(
+        string toEmail, string memberName, IReadOnlyList<NudgeDigestLine> lines, string unsubscribeUrl,
+        CancellationToken ct = default)
+    {
+        logger.LogInformation("[dev email] Nudge digest for {ToEmail}: {Count} nudge(s), unsubscribe {UnsubscribeUrl}",
+            toEmail, lines.Count, unsubscribeUrl);
+        linkStore.RecordNudgeDigest(toEmail, unsubscribeUrl, lines.Count);
+        return Task.CompletedTask;
+    }
+}
+
+/// <summary>Renders the daily digest email — shared by the real and dev senders so the copy is
+/// defined once. Plain, inline-styled HTML (email clients strip stylesheets).</summary>
+public static class NudgeDigestEmail
+{
+    public static string Subject(int count) =>
+        count == 1 ? "Du har en påminnelse på Settl" : $"Du har {count} påminnelser på Settl";
+
+    public static string Html(string memberName, IReadOnlyList<NudgeDigestLine> lines, string unsubscribeUrl)
+    {
+        var items = string.Join("\n", lines.Select(l => $"""
+            <li style="margin-bottom:12px">
+              <strong>{Encode(l.Title)}</strong><br/>
+              <span>{Encode(l.Body)}</span>
+              <span style="color:#888"> · {Encode(l.When)}</span>
+            </li>
+            """));
+
+        return $"""
+            <p>Hej {Encode(memberName)},</p>
+            <p>Här är dagens sammanfattning från Settl:</p>
+            <ul style="padding-left:18px">
+            {items}
+            </ul>
+            <p style="color:#888;font-size:12px;margin-top:24px">
+              Du får det här mejlet eftersom du har påminnelser aktiverade.
+              <a href="{unsubscribeUrl}">Sluta få påminnelser via e-post</a>.
+            </p>
+            """;
+    }
+
+    // The nudge copy is app-generated, but titles carry user data (household/expense names), so
+    // HTML-encode every field before it lands in the markup.
+    private static string Encode(string value) => System.Net.WebUtility.HtmlEncode(value);
 }

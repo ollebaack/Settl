@@ -24,6 +24,7 @@ public class SettlDbContext(DbContextOptions<SettlDbContext> options) : Identity
     public DbSet<SettlementClosure> SettlementClosures => Set<SettlementClosure>();
     public DbSet<Invite> Invites => Set<Invite>();
     public DbSet<Contact> Contacts => Set<Contact>();
+    public DbSet<EmittedNudge> EmittedNudges => Set<EmittedNudge>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -40,6 +41,9 @@ public class SettlDbContext(DbContextOptions<SettlDbContext> options) : Identity
             // Stored as the enum name (like every other domain enum here); the default keeps
             // existing rows on "Direct" — the product default this setting now exposes.
             e.Property(x => x.NudgeTone).HasConversion<string>().IsRequired().HasDefaultValue(NudgeTone.Direct);
+            // Nudge-digest emails default ON (account-activity, ADR-0024); the migration backfills
+            // existing rows to enabled via this default.
+            e.Property(x => x.NudgeEmailsEnabled).IsRequired().HasDefaultValue(true);
             e.Ignore(x => x.Initial);
         });
 
@@ -150,6 +154,20 @@ public class SettlDbContext(DbContextOptions<SettlDbContext> options) : Identity
                 .HasForeignKey(x => x.OwnerMemberId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.ContactMember).WithMany()
                 .HasForeignKey(x => x.ContactMemberId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        b.Entity<EmittedNudge>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.NudgeKey).IsRequired();
+            e.HasOne(x => x.Member).WithMany()
+                .HasForeignKey(x => x.MemberId).OnDelete(DeleteBehavior.Cascade);
+            // Delivery-dedup guard: a given nudge identity is emailed to a member at most once
+            // (reminder-delivery spec). The digest inserts a row per newly-sent key; this index
+            // makes a re-send a no-op even under a racing/duplicate pass.
+            e.HasIndex(x => new { x.MemberId, x.NudgeKey })
+                .IsUnique()
+                .HasDatabaseName("IX_EmittedNudge_Member_NudgeKey");
         });
     }
 }

@@ -103,6 +103,26 @@ test('resets the avatar back to the letter initial', async ({ page, request }) =
   await expect(page.getByRole('button', { name: 'Välj profilbild' })).toBeVisible()
 })
 
+test('toggles the nudge-email preference off and persists it', async ({ page, request }) => {
+  await freshVerifiedAccount(page, request)
+
+  await page.goto('/profil')
+  // Wait for the profile form to finish loading (me query) before asserting on its controls.
+  await expect(page.getByText('Så här syns du i loggboken.')).toBeVisible()
+  // Default is on — the "on" hint is shown.
+  await expect(page.getByText('Ett dagligt mejl när du har knuffar', { exact: false })).toBeVisible()
+
+  // Turn emails off and save.
+  await page.getByRole('button', { name: 'Av' }).click()
+  await expect(page.getByText('Du får inga påminnelser via e-post', { exact: false })).toBeVisible()
+  await page.getByRole('button', { name: 'Spara' }).click()
+  await expect(page.getByText('Profilen sparad')).toBeVisible()
+
+  // Persisted server-side: a reload still shows the off state.
+  await page.reload()
+  await expect(page.getByText('Du får inga påminnelser via e-post', { exact: false })).toBeVisible()
+})
+
 test('picker can reset with "use my letter instead"', async ({ page, request }) => {
   await freshVerifiedAccount(page, request)
 
