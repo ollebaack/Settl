@@ -19,6 +19,7 @@ export type SheetKind =
   | 'leaveHousehold'
   | 'transferOwnership'
   | 'archiveHousehold'
+  | 'deleteHousehold'
 
 export interface SheetSearch {
   sheet?: SheetKind
@@ -41,6 +42,7 @@ const SHEET_KINDS: readonly SheetKind[] = [
   'leaveHousehold',
   'transferOwnership',
   'archiveHousehold',
+  'deleteHousehold',
 ]
 
 /** Validate/normalise the sheet search params (used by the root route). */

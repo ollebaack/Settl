@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { useActiveHousehold } from '@/lib/active-household'
-import { useHousehold, useMe } from '@/lib/queries'
+import { useHousehold, useMe, useRemovalPreview } from '@/lib/queries'
 import { useSheet } from '@/lib/sheet'
 
 export const Route = createFileRoute('/household')({
@@ -36,6 +36,7 @@ function HouseholdManagePage() {
   const { openSheet } = useSheet()
   const household = useHousehold(householdId)
   const me = useMe()
+  const removalPreview = useRemovalPreview(householdId)
 
   if (householdsLoading || household.isLoading) return <LoadingState rows={4} />
   if (!householdId) return <NoHouseholdState onCreate={() => openSheet('newHousehold')} />
@@ -44,6 +45,7 @@ function HouseholdManagePage() {
 
   const hh = household.data
   const ownerName = hh.members.find((m) => m.id === hh.ownerMemberId)?.name ?? 'ägaren'
+  const isEmpty = removalPreview.data?.isEmpty ?? false
 
   return (
     <div className="flex flex-col">
@@ -118,6 +120,14 @@ function HouseholdManagePage() {
             >
               Arkivera hushåll
             </Button>
+            <Button
+              variant="outline"
+              className={DANGER_GHOST}
+              disabled={!isEmpty}
+              onClick={() => openSheet('deleteHousehold', { id: hh.id })}
+            >
+              Ta bort hushåll
+            </Button>
           </>
         ) : (
           <Button
@@ -132,7 +142,9 @@ function HouseholdManagePage() {
 
       <p className="mt-3 text-center text-[13px] text-muted-foreground">
         {hh.isOwner
-          ? 'Du äger hushållet. För att lämna — överför ägarskapet först.'
+          ? isEmpty
+            ? 'Du äger hushållet. Tomma hushåll kan tas bort helt.'
+            : 'Du äger hushållet. Ett hushåll med poster kan bara arkiveras, inte tas bort.'
           : `Bara ägaren (${ownerName}) kan arkivera hushållet.`}
       </p>
     </div>

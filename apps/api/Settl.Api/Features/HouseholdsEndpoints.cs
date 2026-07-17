@@ -191,7 +191,8 @@ public static class HouseholdsEndpoints
                 SoleMember: memberCount == 1,
                 MustTransferFirst: isOwner && memberCount > 1,
                 viewerOpenDebts,
-                BalanceCalculator.HouseholdOpenTotalMinor(entries, closures)));
+                BalanceCalculator.HouseholdOpenTotalMinor(entries, closures),
+                IsEmpty: !await HasActivity(db, id, ct)));
         }).WithName("GetHouseholdRemovalPreview")
             .Produces<RemovalPreviewDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound);
@@ -316,8 +317,51 @@ public static class HouseholdsEndpoints
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        // Permanently delete an EMPTY household (owner-only). Unlike archive this is
+        // terminal and cascades away memberships and pending invites — but only when the
+        // household has no ledger history to protect (ADR-0020, a carve-out to ADR-0016's
+        // soft-only rule). Extra members don't block (the client warns first); pending
+        // invites are cascade-revoked, not activity.
+        app.MapDelete("/households/{id:guid}", async (
+            Guid id, ICurrentUserAccessor cu, SettlDbContext db, CancellationToken ct) =>
+        {
+            var me = await cu.GetMemberIdAsync(ct);
+            if (me is null) return Results.Problem("Ingen användare", statusCode: 404);
+
+            var data = await Loaders.LoadHousehold(db, id, ct);
+            if (data is null || !data.MembersById.ContainsKey(me.Value))
+                return Results.Problem("Hushållet hittades inte", statusCode: 404);
+            if (data.Household.OwnerMemberId != me.Value)
+                return Results.Problem("Bara ägaren kan ta bort hushållet", statusCode: 403);
+
+            // Re-check emptiness inside the transaction so activity added between the read
+            // and the delete can't be silently destroyed — it fails with 409 instead.
+            await using var tx = await db.Database.BeginTransactionAsync(ct);
+            if (await HasActivity(db, id, ct))
+                return Results.Problem(
+                    "Hushållet har poster och kan inte tas bort — arkivera det i stället.",
+                    statusCode: 409);
+
+            db.Households.Remove(data.Household);
+            await db.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+            return Results.NoContent();
+        }).WithName("DeleteHousehold")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
         return app;
     }
+
+    // A household is "empty" (safe to hard-delete) only with no ledger history: no
+    // entries, no recurring templates, no settlements (ADR-0020). Pending invites and
+    // extra memberships are cascade-removed and don't count.
+    private static async Task<bool> HasActivity(SettlDbContext db, Guid householdId, CancellationToken ct) =>
+        await db.Entries.AnyAsync(e => e.HouseholdId == householdId, ct)
+        || await db.RecurringTemplates.AnyAsync(t => t.HouseholdId == householdId, ct)
+        || await db.Settlements.AnyAsync(s => s.HouseholdId == householdId, ct);
 
     private static long OverallNet(Guid me, HouseholdData data, IReadOnlyList<Entry> entries, ClosureLookup closures) =>
         data.OrderedMemberIds.Where(m => m != me)
