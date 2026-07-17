@@ -89,13 +89,13 @@ test('toggles the nudge-email preference on and persists it', async ({ page, req
 
   // Turn emails on and save.
   await emails.click()
-  await expect(page.getByText('Ett dagligt mejl när du har knuffar', { exact: false })).toBeVisible()
+  await expect(page.getByText('Ett dagligt mejl när du har notiser', { exact: false })).toBeVisible()
   await page.getByRole('button', { name: 'Spara' }).click()
   await expect(page.getByText('Profilen sparad')).toBeVisible()
 
   // Persisted server-side: a reload still shows the on state.
   await page.reload()
-  await expect(page.getByText('Ett dagligt mejl när du har knuffar', { exact: false })).toBeVisible()
+  await expect(page.getByText('Ett dagligt mejl när du har notiser', { exact: false })).toBeVisible()
 })
 
 test('sets a Swish number and persists it normalised', async ({ page, request }) => {

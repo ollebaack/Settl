@@ -426,14 +426,23 @@ function EntryForm({
     }
   }
 
+  // Stronger active state than the shadcn default: a solid brand-green pill with a
+  // soft shadow so the selected type reads clearly against the recessed track.
+  const activeTabClass =
+    'font-semibold text-foreground/70 data-active:bg-primary data-active:text-primary-foreground data-active:shadow-sm dark:data-active:border-transparent dark:data-active:bg-primary dark:data-active:text-primary-foreground'
+
   return (
     <div className="flex flex-col gap-5">
       {/* Type picker — only when creating; edit keeps the original type. */}
       {!isEdit && (
         <Tabs value={type} onValueChange={(v) => setType(v as EntryTab)} className="w-full">
-          <TabsList className="w-full">
-            <TabsTrigger value="expense">Utgift</TabsTrigger>
-            <TabsTrigger value="recurring">Återkommande</TabsTrigger>
+          <TabsList className="w-full border border-border/60 bg-muted">
+            <TabsTrigger value="expense" className={activeTabClass}>
+              Utgift
+            </TabsTrigger>
+            <TabsTrigger value="recurring" className={activeTabClass}>
+              Återkommande
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       )}

@@ -223,7 +223,7 @@ function ProfileForm({ me }: { me: MeDto }) {
       </div>
 
       {/* Nudge-email opt-in (reminder-delivery spec) — the daily digest email. Off by default;
-          off is honoured server-side. In-app nudges always use the direct voice. */}
+          off is honoured server-side. In-app notiser always use the direct voice. */}
       <div className="flex flex-col gap-1.5">
         <p className={UPLABEL}>Påminnelser via e-post</p>
         <Label
@@ -232,8 +232,8 @@ function ProfileForm({ me }: { me: MeDto }) {
         >
           <span className="min-w-0 flex-1 text-[13.5px] font-normal">
             {emailsEnabled
-              ? 'Ett dagligt mejl när du har knuffar att ta tag i. Aldrig mer än ett per dag.'
-              : 'Du får inga påminnelser via e-post. Knuffar visas fortfarande i appen.'}
+              ? 'Ett dagligt mejl när du har notiser att ta tag i. Aldrig mer än ett per dag.'
+              : 'Du får inga påminnelser via e-post. Notiser visas fortfarande i appen.'}
           </span>
           <Switch
             id="nudge-emails"

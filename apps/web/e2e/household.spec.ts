@@ -3,7 +3,7 @@ import { getHouseholdId, loginAs, openHouseholdSwitcher, pinHousehold } from './
 
 // MULTI-HOUSEHOLD OVERVIEW drill-in + switch (ADR-0019, §2.1). "Du" belongs to
 // both seeded books, so `/` is the overview. Tapping a book enters its focused
-// dashboard; the retained in-context switcher still swaps books; "Översikt"
+// dashboard; the retained in-context switcher still swaps books; the "Hem" tab
 // returns to the overview.
 test('drill into a book from the overview, switch, and return', async ({ page }) => {
   await loginAs(page, 'Du')
@@ -23,7 +23,7 @@ test('drill into a book from the overview, switch, and return', async ({ page })
   await page.getByRole('button', { name: /Lönnvägen 3/ }).click()
   await expect(page.getByText(/öppna poster i Lönnvägen 3/)).toBeVisible()
 
-  // Back to the overview from the focused book.
-  await page.getByRole('link', { name: 'Översikt' }).click()
+  // Back to the overview from the focused book — the "Hem" tab.
+  await page.getByRole('link', { name: 'Hem' }).click()
   await expect(page.getByRole('heading', { name: 'Dina hushåll', level: 1 })).toBeVisible()
 })

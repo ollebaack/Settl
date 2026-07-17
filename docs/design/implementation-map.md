@@ -26,7 +26,7 @@ Four primary screens are TanStack file-based routes. The five overlays are the *
 | `/` | **Hem** / Home | Net balance hero, per-person balances, upcoming (mobile), recent activity | Settl App (canonical); structure from Prototype "Home" |
 | `/ledger` | **Loggboken** / Ledger | Full chronological ledger, type filter, day groups | Settl App; Prototype "Ledger" |
 | `/recurring` | **På repeat** / Recurring | Recurring templates, monthly totals, cycle progress, pause/resume | Settl App; Prototype "Repeats" |
-| `/activity` | **Knuffar** / Activity (Nudges) | Event-driven nudges (3 triggers) | Settl App; Prototype "Activity" |
+| `/activity` | **Notiser** / Activity (Nudges) | Event-driven nudges (3 triggers) | Settl App; Prototype "Activity" |
 | `/?sheet=households` | **Dina hushåll** / Household switcher | Switch household (many-to-many) | overlay; Prototype `sheet.kind='hh'` |
 | `/?sheet=add` | **Ny post** / Add entry | Create expense / IOU / recurring | overlay; `sheet.kind='add'` |
 | `/?sheet=entry&id=…` | Entry detail | Inspect entry, per-person shares, settle/reopen | overlay; `sheet.kind='entry'` |
@@ -93,18 +93,18 @@ Shared row conventions used by Home "Senaste" and all Ledger rows (build once as
 
 **States** — Loading: tile + 2 card skeletons. Active vs paused (dimmed, 0% bar, `Pausad`, `Återuppta` button). Pause/resume fires toast + refetch. Empty (**no coded empty state**) → add "Inget på repeat än" (see ambiguities). Error: retry card.
 
-### 2.4 Knuffar `/activity`
+### 2.4 Notiser `/activity`
 
 **Components**
-- Title **"Knuffar"** + subtitle `Settl säger bara till när något händer.`
+- Title **"Notiser"** + subtitle `Settl säger bara till när något händer.`
 - **Nudge cards** — `Card` + secondary `Button`(s). Accent dot, title, `when` timestamp (right, muted), body (tone-dependent), 1–2 action pills `Visa` / `Gör upp`. `Visa` → related entry/recurring detail; `Gör upp` → Settle-up sheet for the payer (shown only when payer ≠ you).
-- **Empty state** — centered muted text.
-- **Footer explainer** (muted caption).
+- **Empty state** — centered bell icon + `Allt lugnt` + calm one-liner (no trigger listing; that lives in the triggers card).
+- **Triggers card** (always shown) — eyebrow `Du hör av oss när` over a 3-row icon list of the event triggers. Replaces the old redundant footer sentence with a scannable reference.
 
 **Data** — `GET /households/{id}/nudges?tone={gentle|direct}` → derived on read (ADR-0007, no storage) from 3 triggers, **in this order**: (1) active recurring `daysUntil(next) <= 5`; (2) non-IOU entry, unsettled, `amount >= 1500 kr` within last 7 days; (3) pairwise net `abs >= 750 kr`. Each nudge: `{ title, body, when, actions[] }` with copy pre-selected by tone. Trigger (3) fires on **crossing**, not while-over: the API replays the pair's net over `Entry.CreatedAt` / `Settlement.SettledAt` and emits only if the most recent upward crossing of 750 kr is within 7 days — no storage (ADR-0023, resolves ambiguity #6).
 
 **Copy** (all sv):
-- Title `Knuffar` ("Nudges"); subtitle `Settl säger bara till när något händer.` ("Settl only speaks up when something happens.").
+- Title `Notiser` ("Notifications"); subtitle `Settl säger bara till när något händer.` ("Settl only speaks up when something happens.").
 - Recurring-due title: direct `{titel} dras {när}` ("{title} is charged {when}"); gentle `{titel} bokförs {när}` ("{title} posts {when}").
 - Recurring-due body: direct `Din del är {belopp}. Den bokförs automatiskt.`; gentle `Din del ({belopp}) hamnar i loggboken automatiskt — inget att göra.`.
 - Big-expense title `Stor utgift: {titel}` ("Big expense: {title}").
@@ -112,8 +112,8 @@ Shared row conventions used by Home "Senaste" and all Ledger rows (build once as
 - Balance title: direct `Du är skyldig {namn} {belopp}` / `{namn} är skyldig dig {belopp}`; gentle `Er nota med {namn} växer` ("your tab with {name} is growing").
 - Balance body: direct `Saldot passerade 750 kr — dags att göra upp.`; gentle `Ert saldo passerade 750 kr. Kanske ett bra tillfälle att göra upp.`.
 - Actions `Visa` / `Gör upp` ("View / Settle up").
-- Empty (mobile) `Lugnt just nu. Settl knuffar när en stor utgift läggs till, ett saldo växer eller hyran närmar sig.`; empty (desktop rail, shorter) `Lugnt just nu. Knuffar skickas vid händelser — en stor utgift, ett växande saldo eller hyra på gång.`.
-- Footer `Inget dagligt tjat — knuffar skickas vid händelser: en stor utgift, ett saldo som passerar en gräns eller en återkommande kostnad som snart bokförs.`.
+- Empty (mobile) `Allt lugnt` + `Inga notiser att ta tag i just nu.`; empty (desktop rail) `Allt lugnt. Du hör av oss vid en stor utgift, ett saldo som blir stort eller en återkommande kostnad som snart bokförs.`.
+- Triggers card `Du hör av oss när` over: `En stor utgift läggs till` / `Från 1500 kr och uppåt.`; `Ett saldo blir stort` / `När det passerar 750 kr.`; `En återkommande kostnad närmar sig` / `Några dagar innan den bokförs.`.
 
 **States** — Loading: 2 card skeletons. `hasReminders` (cards) vs `noReminders` (empty text). On desktop the same nudges also render in the right rail (more compact). Error: retry card.
 
@@ -283,7 +283,7 @@ Custom (not shadcn primitives, build in `src/components/`): `AppShell` (sidebar 
 | På repeat | On repeat (desktop nav / tab title) |
 | Repeat | Repeat (mobile tab / ledger filter) |
 | Aktivitet | Activity |
-| Knuffar | Nudges (screen title) |
+| Notiser | Nudges (screen title) |
 | + Ny post | + New entry |
 | Interaktiv prototyp — lägg till en post, gör upp, pausa en återkommande kostnad eller byt hushåll. | Interactive prototype helper (sidebar) |
 
@@ -338,9 +338,12 @@ Custom (not shadcn primitives, build in `src/components/`): `AppShell` (sidebar 
 | Saldot passerade 750 kr — dags att göra upp. | Balance body (direct) |
 | Ert saldo passerade 750 kr. Kanske ett bra tillfälle att göra upp. | Balance body (gentle) |
 | Visa / Gör upp | View / Settle up |
-| Lugnt just nu. Settl knuffar när en stor utgift läggs till, ett saldo växer eller hyran närmar sig. | Empty state (mobile) |
-| Lugnt just nu. Knuffar skickas vid händelser — en stor utgift, ett växande saldo eller hyra på gång. | Empty state (desktop rail) |
-| Inget dagligt tjat — knuffar skickas vid händelser: en stor utgift, ett saldo som passerar en gräns eller en återkommande kostnad som snart bokförs. | Footer explainer |
+| Allt lugnt / Inga notiser att ta tag i just nu. | Empty state (mobile) |
+| Allt lugnt. Du hör av oss vid en stor utgift, ett saldo som blir stort eller en återkommande kostnad som snart bokförs. | Empty state (desktop rail) |
+| Du hör av oss när | Triggers card eyebrow |
+| En stor utgift läggs till / Från 1500 kr och uppåt. | Trigger — big expense |
+| Ett saldo blir stort / När det passerar 750 kr. | Trigger — balance |
+| En återkommande kostnad närmar sig / Några dagar innan den bokförs. | Trigger — recurring |
 
 ### Household switcher
 | sv | en |
