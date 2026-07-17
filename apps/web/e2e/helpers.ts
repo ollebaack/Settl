@@ -191,20 +191,41 @@ export async function registerConfirmedUser(
 /** Reads the most recent invite's accept token via the Development-only dev
  * side channel (the raw token is never persisted or returned any other way —
  * this is what a real inbox would have given the invitee). */
-export async function latestDevInviteToken(request: APIRequestContext): Promise<string> {
-  const res = await request.get(`${API}/dev/invites/latest`)
-  expect(res.ok(), 'GET /dev/invites/latest').toBeTruthy()
-  const { acceptUrl } = (await res.json()) as { acceptUrl: string }
-  return new URL(acceptUrl).searchParams.get('token')!
+export async function latestDevInviteToken(
+  request: APIRequestContext,
+  email?: string,
+): Promise<string> {
+  // Scoping by `email` makes this robust to parallel workers: the dev channel indexes invites
+  // by recipient, so a competing signup can't evict ours before we read it. Poll briefly since
+  // the send is async after the UI action.
+  const query = email ? `?email=${encodeURIComponent(email)}` : ''
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const res = await request.get(`${API}/dev/invites/latest${query}`)
+    if (res.ok()) {
+      const { acceptUrl } = (await res.json()) as { acceptUrl: string }
+      return new URL(acceptUrl).searchParams.get('token')!
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
+  throw new Error(`No invite link surfaced${email ? ` for ${email}` : ''}`)
 }
 
-/** Reads the most recent SMS invite's accept token via the Development-only dev side channel
- * (ADR-0019). Same reasoning as latestDevInviteToken — the raw token is never persisted. */
-export async function latestDevSmsInviteToken(request: APIRequestContext): Promise<string> {
-  const res = await request.get(`${API}/dev/sms-invites/latest`)
-  expect(res.ok(), 'GET /dev/sms-invites/latest').toBeTruthy()
-  const { acceptUrl } = (await res.json()) as { acceptUrl: string }
-  return new URL(acceptUrl).searchParams.get('token')!
+/** SMS equivalent of latestDevInviteToken (ADR-0019). Scope by `phone` (E.164) to avoid the
+ * parallel-worker race; the raw token is never persisted any other way. */
+export async function latestDevSmsInviteToken(
+  request: APIRequestContext,
+  phoneE164?: string,
+): Promise<string> {
+  const query = phoneE164 ? `?phone=${encodeURIComponent(phoneE164)}` : ''
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const res = await request.get(`${API}/dev/sms-invites/latest${query}`)
+    if (res.ok()) {
+      const { acceptUrl } = (await res.json()) as { acceptUrl: string }
+      return new URL(acceptUrl).searchParams.get('token')!
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
+  throw new Error(`No SMS invite link surfaced${phoneE164 ? ` for ${phoneE164}` : ''}`)
 }
 
 /** Reads the most recent email-verification link via the Development-only dev side channel
@@ -262,7 +283,7 @@ export async function inviteAndGetToken(
     data: { email },
   })
   expect(res.ok(), `create invite: ${await safeText(res)}`).toBeTruthy()
-  return latestDevInviteToken(request)
+  return latestDevInviteToken(request, email)
 }
 
 /** Accepts an invite as whoever `request`'s browser context is currently logged in as

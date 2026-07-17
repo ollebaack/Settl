@@ -75,7 +75,7 @@ public sealed class DevEmailSender(ILogger<DevEmailSender> logger, DevEmailLinkS
     {
         logger.LogInformation("[dev email] Invite for {ToEmail} to {HouseholdName} from {InviterName}: {AcceptUrl}",
             toEmail, householdName, inviterName, acceptUrl);
-        linkStore.RecordInviteAccept(acceptUrl);
+        linkStore.RecordInviteAccept(toEmail, acceptUrl);
         return Task.CompletedTask;
     }
 
@@ -83,7 +83,7 @@ public sealed class DevEmailSender(ILogger<DevEmailSender> logger, DevEmailLinkS
     {
         logger.LogInformation("[dev email] Contact invite for {ToEmail} from {InviterName}: {AcceptUrl}",
             toEmail, inviterName, acceptUrl);
-        linkStore.RecordInviteAccept(acceptUrl);
+        linkStore.RecordInviteAccept(toEmail, acceptUrl);
         return Task.CompletedTask;
     }
 
