@@ -73,7 +73,7 @@ function SwishPayAction({ swishPay }: { swishPay: SwishPayDto }) {
         <div className="rounded-lg bg-white p-3">
           <QRCodeSVG value={swishPay.uri} size={168} marginSize={2} bgColor="#ffffff" fgColor="#000000" />
         </div>
-        <p className="text-xs text-muted-foreground">Skanna med Swish-appen för att betala</p>
+        <p className="text-xs text-muted-foreground">Skanna med Swish-appen</p>
       </div>
     )
   }
@@ -244,9 +244,12 @@ function SettleUpBody({
         </div>
       )}
 
+      {/* With a real Swish button below, drop the generic "pay however you like" list and
+          instead reinforce the two-step nature — paying here never marks the debt settled. */}
       <p className="text-xs text-muted-foreground">
-        Betala som ni brukar — Swish, kontanter, banköverföring. Settl håller bara boken i
-        ordning.
+        {preview.swishPay
+          ? 'Betala först — bocka sedan av. Settl bokför inget automatiskt.'
+          : 'Betala som ni brukar — Swish, kontanter, banköverföring. Settl håller bara boken i ordning.'}
       </p>
 
       {/* Direct Swish launcher when the API offers one (debtor, SEK, creditor has a number). Sits
