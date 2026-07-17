@@ -83,7 +83,7 @@ there is always a real payer); `Allt` picker `Vem står för hela beloppet?`; hi
 
 ## 4. Follow-ups
 
-1. **Model teardown — decided in [ADR-0021](../adr/0021-remove-iou-entry-type.md).**
+1. **Model teardown — decided in [ADR-0020](../adr/0020-remove-iou-entry-type.md).**
    Remove the `iou` `EntryType`, `FromMemberId`/`ToMemberId`, and the `BalanceCalculator`
    IOU branch ([BalanceCalculator.cs:54](../../apps/api/Settl.Api/Domain/BalanceCalculator.cs#L54));
    `EntryType`/`SplitMode` persist as strings, so the enum member just drops. Seed-only

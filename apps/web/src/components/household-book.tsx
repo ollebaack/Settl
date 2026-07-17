@@ -1,5 +1,5 @@
 /**
- * HouseholdBook — the merged "Hushållet" page (ADR-0020 +
+ * HouseholdBook — the merged "Hushållet" page (ADR-0021 +
  * docs/design/home-hushallet-addendum.md §2.2). One scroll for a single book:
  * net balance hero → per-person balances (each with a prominent "Gör upp"
  * action) → mobile-only "På gång" upcoming rail → the full filterable Loggbok
@@ -156,7 +156,7 @@ export function HouseholdBook({ householdId }: { householdId: string }) {
         </section>
       )}
 
-      {/* Loggbok — filterable, day-grouped log (folded in, ADR-0020) */}
+      {/* Loggbok — filterable, day-grouped log (folded in, ADR-0021) */}
       <section>
         <div className="flex items-baseline justify-between">
           <p className={SECTION_LABEL}>Loggbok</p>

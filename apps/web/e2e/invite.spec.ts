@@ -46,7 +46,7 @@ test('invite a new email, accept it, and see the shared household', async ({ pag
 
   await expect(page).toHaveURL('http://localhost:5173/')
   // The invitee has exactly one book, so `/` is the single-household overview
-  // (ADR-0020) — the shared household shows up as its card.
+  // (ADR-0021) — the shared household shows up as its card.
   await expect(page.getByRole('heading', { name: 'Ditt hushåll', level: 1 })).toBeVisible()
   await expect(
     page.getByTestId('household-card').filter({ hasText: householdName }),

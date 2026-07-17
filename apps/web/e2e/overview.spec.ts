@@ -8,7 +8,7 @@ import {
   uniqueSuffix,
 } from './helpers'
 
-// MULTI-HOUSEHOLD OVERVIEW as always-home (ADR-0020). `/` is always the overview,
+// MULTI-HOUSEHOLD OVERVIEW as always-home (ADR-0021). `/` is always the overview,
 // regardless of household count: one book → a thinner single-book overview; 2+ →
 // the roll-up. "Du" belongs to two seeded books.
 
@@ -27,7 +27,7 @@ test('single active household → the single-book overview (not a collapse)', as
 
   await page.goto('/')
 
-  // ADR-0020: still the overview, singular — title "Ditt hushåll", the book as a
+  // ADR-0021: still the overview, singular — title "Ditt hushåll", the book as a
   // card with an "Öppna" affordance, and a hero scoped to that book.
   await expect(page.getByRole('heading', { name: 'Ditt hushåll', level: 1 })).toBeVisible()
   const card = page.getByTestId('household-card').filter({ hasText: name })

@@ -228,7 +228,7 @@ public class HouseholdsEntriesIntegrationTests
 
         var expenses = await du.GetFromJsonAsync<List<EntryDto>>(
             $"/households/{SeedIds.Lonnvagen}/entries?type=expense", Web);
-        // 4 plain expenses + the 2 former IOUs, now "Allt på en" amount-split expenses (ADR-0021).
+        // 4 plain expenses + the 2 former IOUs, now "Allt på en" amount-split expenses (ADR-0020).
         Assert.Equal(6, expenses!.Count);
         Assert.All(expenses, e => Assert.Equal("expense", e.Type));
 
@@ -335,7 +335,7 @@ public class HouseholdsEntriesIntegrationTests
         using var factory = await SeededAsync();
         var du = factory.ClientAs(SeedIds.Du);
 
-        // "iou" was removed (ADR-0021): one-owes-all is now the "Allt på en" amount split.
+        // "iou" was removed (ADR-0020): one-owes-all is now the "Allt på en" amount split.
         var req = new CreateEntryRequest("iou", null, 5_000, null, SeedIds.Du, null);
         var post = await du.PostAsJsonAsync($"/households/{SeedIds.Lonnvagen}/entries", req, Web);
         Assert.Equal(HttpStatusCode.BadRequest, post.StatusCode);

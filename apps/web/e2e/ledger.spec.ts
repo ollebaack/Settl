@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { getHouseholdId, loginAs, pinHousehold } from './helpers'
 
-// LOGGBOK, now folded into the merged Hushållet page (ADR-0020): the old
+// LOGGBOK, now folded into the merged Hushållet page (ADR-0021): the old
 // `/ledger` tab redirects to `/hushallet`, where the filterable, day-grouped log
 // lives below the hero + balances. Assertions about entry presence are scoped to
 // the main feed, because on the desktop shell the right rail also renders
