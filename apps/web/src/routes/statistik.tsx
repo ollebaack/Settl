@@ -93,12 +93,25 @@ function StatistikBody({
   )
 }
 
+// Pick a colour for a member's line by spacing hues evenly around the wheel by
+// the member's position in the list. Deterministic (stable across renders/
+// refetches, no Math.random() flicker) and guarantees maximal separation
+// between adjacent series — unlike hashing the id, which can collide two members
+// onto near-identical hues.
+function memberColor(index: number, count: number): string {
+  const hue = Math.round((index * 360) / Math.max(count, 1))
+  return `hsl(${hue} 65% 55%)`
+}
+
 function ContributionChart({ stats }: { stats: ContributionStatsDto }) {
   // One series per member; each keyed by memberId so the chart's --color-<key>
-  // vars carry the member's avatar colour. Values stay in minor units and are
+  // vars carry a generated per-user colour. Values stay in minor units and are
   // formatted with formatKr for the axis + tooltip.
   const chartConfig: ChartConfig = Object.fromEntries(
-    stats.members.map((m) => [m.memberId, { label: m.name, color: m.avatarColor }]),
+    stats.members.map((m, i) => [
+      m.memberId,
+      { label: m.name, color: memberColor(i, stats.members.length) },
+    ]),
   )
 
   const chartData = stats.buckets.map((bucket) => {
