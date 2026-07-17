@@ -13,13 +13,21 @@ public static class NudgeCalculator
     public const long BigExpenseThresholdMinor = 150_000; // 1500 kr
     public const long BalanceThresholdMinor = 75_000;     // 750 kr
 
+    /// <summary>Days a threshold crossing stays fresh enough to nudge (ADR-0023). Mirrors the
+    /// big-expense window so both event nudges age out consistently.</summary>
+    public const int BalanceCrossingWindowDays = BigExpenseWindowDays;
+
     public sealed record RecurringDueInput(Guid RecurringId, string Title, DateOnly NextPostDate, long YourShareMinor);
 
     public sealed record BigExpenseInput(
         Guid EntryId, string Title, long AmountMinor, DateOnly Date,
         Guid PayerId, string PayerName, long YourShareMinor, bool PayerIsMe, bool Settled);
 
-    public sealed record BalanceInput(Guid MemberId, string Name, long NetMinor);
+    /// <summary><paramref name="CrossedOn"/> = date the pair's |net| most recently crossed up
+    /// through the threshold (ADR-0023), or null if it never has. Null suppresses the nudge even
+    /// when <paramref name="NetMinor"/> is currently over — a standing balance with no fresh
+    /// crossing is not news.</summary>
+    public sealed record BalanceInput(Guid MemberId, string Name, long NetMinor, DateOnly? CrossedOn);
 
     public static IReadOnlyList<NudgeDto> Build(
         string tone,
@@ -71,10 +79,13 @@ public static class NudgeCalculator
                 Actions: actions));
         }
 
-        // 3. Balance — |net with X| ≥ 750 kr.
+        // 3. Balance — fire ONCE when |net with X| crosses 750 kr, not continuously while above
+        //    (ADR-0023): currently over the threshold AND the crossing is within the window.
         foreach (var b in balances)
         {
             if (Math.Abs(b.NetMinor) < BalanceThresholdMinor) continue;
+            if (b.CrossedOn is not { } crossedOn) continue;
+            if (SwedishDates.DaysUntil(crossedOn, today) < -BalanceCrossingWindowDays) continue;
 
             var amount = Money.FormatKr(b.NetMinor);
             string title;
@@ -91,7 +102,7 @@ public static class NudgeCalculator
                 Body: direct
                     ? "Saldot passerade 750 kr — dags att göra upp."
                     : "Ert saldo passerade 750 kr. Kanske ett bra tillfälle att göra upp.",
-                When: "idag",
+                When: SwedishDates.Short(crossedOn),
                 Actions: [new NudgeActionDto("Gör upp", "settle", b.MemberId)]));
         }
 

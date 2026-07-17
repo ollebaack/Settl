@@ -3,6 +3,13 @@ namespace Settl.Api.Domain;
 /// <summary>A single debt: <see cref="Debtor"/> owes <see cref="Creditor"/> this amount.</summary>
 public readonly record struct Debt(Guid Debtor, Guid Creditor, long AmountMinor);
 
+/// <summary>
+/// A settlement closure tagged with the timestamp of its parent settlement, for chronological
+/// balance-timeline replay (ADR-0023). Direction is stored as recorded.
+/// </summary>
+public readonly record struct PairClosure(
+    Guid EntryId, Guid DebtorMemberId, Guid CreditorMemberId, DateTimeOffset SettledAt);
+
 public enum ViewerStatusKind
 {
     Settled,
@@ -97,6 +104,66 @@ public static class BalanceCalculator
     /// </summary>
     public static long HouseholdOpenTotalMinor(IEnumerable<Entry> householdEntries, ClosureLookup closures) =>
         householdEntries.Sum(e => OpenDebts(e, closures).Sum(d => d.AmountMinor));
+
+    /// <summary>
+    /// The date on which the net between <paramref name="me"/> and <paramref name="x"/> most
+    /// recently crossed UP through ±<paramref name="thresholdMinor"/> — |net| transitioning from
+    /// below the threshold to at/above it — replayed chronologically over entry
+    /// <see cref="Entry.CreatedAt"/> (when a debt appears) and settlement <c>SettledAt</c> (when it
+    /// is closed). Returns null if the pair's |net| has never reached the threshold. Backs the
+    /// crossing-not-standing balance nudge (ADR-0023) with no stored state.
+    ///
+    /// Ordering is by when each action was RECORDED, not the accounting <see cref="Entry.Date"/>,
+    /// so backdating an entry can neither fake nor hide a fresh crossing. A closure can never take
+    /// effect before the entry it closes exists, so its timestamp is clamped to the entry's
+    /// CreatedAt — a no-op for real data (a settlement always follows the entry) that also keeps
+    /// temporally loose fixtures coherent.
+    /// </summary>
+    public static DateOnly? MostRecentThresholdCrossing(
+        Guid me, Guid x,
+        IEnumerable<Entry> householdEntries,
+        IEnumerable<PairClosure> closures,
+        long thresholdMinor)
+    {
+        // Closures touching the me↔x pair, keyed by entry (at most one debt per pair per entry).
+        var pairClosedAt = closures
+            .Where(c => (c.DebtorMemberId == x && c.CreditorMemberId == me)
+                     || (c.DebtorMemberId == me && c.CreditorMemberId == x))
+            .GroupBy(c => c.EntryId)
+            .ToDictionary(g => g.Key, g => g.Min(c => c.SettledAt));
+
+        // Signed deltas to the (me,x) net, each tagged with when it was recorded.
+        var events = new List<(DateTimeOffset At, long Delta)>();
+        foreach (var entry in householdEntries)
+        {
+            long signed = 0;
+            foreach (var d in Debts(entry))
+            {
+                if (d.Debtor == x && d.Creditor == me) signed += d.AmountMinor;       // x owes me → net up
+                else if (d.Debtor == me && d.Creditor == x) signed -= d.AmountMinor;  // I owe x → net down
+            }
+            if (signed == 0) continue;
+
+            events.Add((entry.CreatedAt, signed));                    // debt appears
+            if (pairClosedAt.TryGetValue(entry.Id, out var closedAt)) // debt later closed
+            {
+                var effectiveAt = closedAt < entry.CreatedAt ? entry.CreatedAt : closedAt;
+                events.Add((effectiveAt, -signed));
+            }
+        }
+
+        // Walk the timeline; simultaneous events apply together before testing the crossing.
+        long net = 0;
+        DateOnly? crossedOn = null;
+        foreach (var group in events.GroupBy(e => e.At).OrderBy(g => g.Key))
+        {
+            var before = Math.Abs(net);
+            net += group.Sum(e => e.Delta);
+            if (before < thresholdMinor && Math.Abs(net) >= thresholdMinor)
+                crossedOn = DateOnly.FromDateTime(group.Key.UtcDateTime);
+        }
+        return crossedOn;
+    }
 
     /// <summary>Viewer-relative status for a single entry (§2.4).</summary>
     public static ViewerStatus StatusFor(Entry entry, Guid me, ClosureLookup closures)

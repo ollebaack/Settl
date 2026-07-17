@@ -30,7 +30,10 @@ public sealed class NudgeCalculatorTests
         long share = 80000, string title = "Möbler", string payerName = "Sam") =>
         new(EntryId, title, amount, Today.AddDays(dateOffset), PayerId, payerName, share, payerIsMe, settled);
 
-    private static BalanceInput Bal(long net, string name = "Sam") => new(MemberId, name, net);
+    // crossedOn defaults to Today (a fresh crossing, within the window) so balance tests fire
+    // unless they deliberately exercise the freshness gate.
+    private static BalanceInput Bal(long net, string name = "Sam", DateOnly? crossedOn = null) =>
+        new(MemberId, name, net, crossedOn ?? Today);
 
     private static IReadOnlyList<NudgeDto> BuildRec(string tone, RecurringDueInput r) =>
         Build(tone, Today, new[] { r }, NoExpenses, NoBalances);
@@ -185,7 +188,7 @@ public sealed class NudgeCalculatorTests
         Assert.Equal("balance", n.Kind);
         Assert.Equal($"Du är skyldig Sam {Money.FormatKr(90000)}", n.Title);
         Assert.Equal("Saldot passerade 750 kr — dags att göra upp.", n.Body);
-        Assert.Equal("idag", n.When);
+        Assert.Equal(SwedishDates.Short(Today), n.When); // crossing date, not a fixed "idag"
         var a = Assert.Single(n.Actions);
         Assert.Equal("Gör upp", a.Label);
         Assert.Equal("settle", a.Kind);
@@ -231,6 +234,32 @@ public sealed class NudgeCalculatorTests
         Assert.Empty(BuildBal("direct", Bal(0)));
     }
 
+    // ------------------------------------------------ Balance crossing freshness (ADR-0023)
+
+    [Fact]
+    public void Balance_Fire_WhenCrossingExactlyAtWindowEdge()
+    {
+        var crossedOn = Today.AddDays(-BalanceCrossingWindowDays); // 7 days ago
+        var n = Assert.Single(BuildBal("direct", Bal(90000, crossedOn: crossedOn)));
+        Assert.Equal("balance", n.Kind);
+        Assert.Equal(SwedishDates.Short(crossedOn), n.When);
+    }
+
+    [Fact]
+    public void Balance_NotFire_WhenCrossingOlderThanWindow()
+    {
+        var crossedOn = Today.AddDays(-(BalanceCrossingWindowDays + 1)); // 8 days ago
+        Assert.Empty(BuildBal("direct", Bal(90000, crossedOn: crossedOn)));
+    }
+
+    [Fact]
+    public void Balance_NotFire_WhenOverThresholdButNoCrossingRecorded()
+    {
+        // Standing balance with no fresh crossing is not news — null CrossedOn suppresses it.
+        Assert.Empty(Build("direct", Today, NoRecurrings, NoExpenses,
+            new[] { new BalanceInput(MemberId, "Sam", 90000, null) }));
+    }
+
     // ---------------------------------------------------------------- Tone default
 
     [Fact]
@@ -265,7 +294,7 @@ public sealed class NudgeCalculatorTests
         var r1 = new RecurringDueInput(Guid.NewGuid(), "A", Today.AddDays(1), 1000);
         var r2 = new RecurringDueInput(Guid.NewGuid(), "B", Today.AddDays(2), 2000);
         var b1 = Bal(80000, "Sam");
-        var b2 = new BalanceInput(Guid.NewGuid(), "Priya", -95000);
+        var b2 = new BalanceInput(Guid.NewGuid(), "Priya", -95000, Today);
 
         var nudges = Build("direct", Today, new[] { r1, r2 }, NoExpenses, new[] { b1, b2 });
 
