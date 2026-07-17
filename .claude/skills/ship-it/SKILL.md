@@ -84,45 +84,28 @@ CI on `main` and rolls out via Dokploy (see [production.md](../../../docs/ops/pr
 ## 6. Clean up
 
 Only once the deploy is confirmed and the PR is merged — never before. The remote branch
-is already gone (`--delete-branch` in step 4); this cleans up the local side so nothing
-stale is left behind.
+is already gone (`--delete-branch` in step 4); this tidies the local side.
 
-- **Worktree** (this session is running in one — `.claude/worktrees/<name>`, see the
-  environment/CLAUDE.md):
-  - If the worktree was created by `EnterWorktree` earlier in *this* session, exit it with
-    the `ExitWorktree` tool, `action: "remove"` — it restores the original directory and
-    deletes the worktree + branch in one step. It refuses if there are uncommitted changes
-    or unmerged commits; since everything just shipped there should be none, but if it
-    lists any, stop and confirm with the user rather than passing `discard_changes: true`
-    blindly.
-  - Otherwise (the session merely started inside a pre-existing worktree, so `ExitWorktree`
-    is a no-op), you **cannot** remove the worktree you're standing in. Confirm it's clean
-    (`git status` shows nothing to commit), then tell the user the exact command to run
-    from the main checkout: `git worktree remove .claude/worktrees/<name>` followed by
-    `git worktree prune`. Don't attempt it from inside the worktree.
-  - **Session-lock caveat (observed on Windows):** even run from the main checkout, that
-    `git worktree remove` will *partially* fail while this session is still live — it
-    de-registers the worktree from `git worktree list` but then errors with
-    `failed to delete '...': Directory not empty`, because the session's working directory
-    is anchored inside the worktree (and the harness keeps resetting cwd back into it), so
-    the OS holds a lock on it (e.g. `node_modules`). The git-side cleanup succeeds; only the
-    physical folder is left behind, inert. Don't `rm -rf` it from inside the session — that
-    fights the same lock and can break the session mid-command. Instead tell the user the
-    folder remains only because the session is running in it, and hand off the final delete
-    to run **after this session ends**, from a terminal not sitting in that folder:
-    `rm -rf .claude/worktrees/<name>`.
-  - **When you need to ship a *further* change after the worktree is already de-registered:**
-    don't work in the orphaned folder — its `.git` link is dangling and git there resolves
-    to whatever branch the main checkout currently holds (possibly another session's). Add a
-    clean worktree off `origin/main` instead
-    (`git worktree add -b <branch> .claude/worktrees/<new> origin/main`, run from the main
-    checkout) and do the new work there.
-- **Local branch:** if the shipped branch still exists locally after the worktree is gone,
-  delete it: `git branch -d <branch>` (use `-d`, not `-D`, so a not-fully-merged branch is
-  a signal to stop, not force-delete).
-- **Stale leftovers:** `git worktree prune` (drops removed-worktree metadata) and
-  `git fetch --prune` (drops the remote-tracking ref for the now-deleted remote branch).
-  Skip anything already clean — don't invent work.
+**Never hand the user manual cleanup steps.** Do only what you can run cleanly right now,
+from wherever this session is sitting; anything you can't do from here is handled
+automatically when the session ends. Do **not** print a "manual cleanups left" list, a
+`git worktree remove` / `rm -rf` command for the user to run, or a Docker/Postgres teardown
+suggestion. If a cleanup can't run from inside the worktree, that is expected — say nothing
+about it rather than turning it into a task for the user.
+
+- **Worktree:** if it was created by `EnterWorktree` earlier in *this* session, exit it with
+  the `ExitWorktree` tool, `action: "remove"` — it restores the original directory and
+  deletes the worktree + branch in one step. It refuses if there are uncommitted changes or
+  unmerged commits; since everything just shipped there should be none, but if it lists any,
+  stop and confirm with the user rather than passing `discard_changes: true` blindly.
+  Otherwise (the session merely started inside a pre-existing worktree, so `ExitWorktree` is
+  a no-op) just leave it — the cwd is anchored here so it can't be removed from inside, and
+  the harness prompts to remove it when the session ends. Don't attempt it, don't mention it.
+- **Prune what runs cleanly from here:** `git worktree prune` and `git fetch --prune` work
+  from inside the worktree and are safe — run them to drop stale metadata and the deleted
+  remote-tracking ref. Skip `git branch -d <branch>` while that branch is the one checked out
+  by this worktree (it can't be deleted from here and clears on session exit); only run it if
+  the shipped branch is a separate local branch not tied to the live worktree.
 
 ## Report
 
@@ -133,18 +116,20 @@ not a log.
 
 On success, use `🚀` and cover, one short line each: what shipped (the PR title/number),
 CI result, the merge commit, the deploy result + live-site status code, and cleanup (what
-was done, or the exact command left for the user if the worktree couldn't be removed from
-inside itself). For example:
+was done). Report cleanup as done — the worktree folder clearing on session exit is normal
+housekeeping, not a caveat, so don't surface it as a leftover task or a manual command. For
+example:
 
 > 🚀 **Shipped #38** — ship-it verifies PR state on non-zero merge exit
 > - **CI:** api · web · e2e all green
 > - **Merged:** `aaa4b62` (squash)
 > - **Deploy:** CD green, `https://settlapp.se` → 200 ✅
-> - **Cleanup:** remote branch + ref pruned · run `git worktree remove …` from the main checkout
+> - **Cleanup:** remote branch + ref pruned · worktree clears on session exit
 
 If you stopped at a blocker (red CI you couldn't fix, protected merge, deploy that didn't
-roll out, uncommitted changes blocking cleanup), lead with `🛑` instead, name the exact
-failing step in the headline, and say what's needed to unblock. Add a `⚠️` line for
+roll out), lead with `🛑` instead, name the exact failing step in the headline, and say
+what's needed to unblock. Cleanup is never a blocker and never a manual step — leftover
+local state clears on session exit, so don't report it. Add a `⚠️` line for
 anything shipped-but-noteworthy (e.g. a deploy SHA that differs because a later merge
 superseded it). Put full URLs and any longer detail below the summary if the user needs
 them — keep the headline block clean.
