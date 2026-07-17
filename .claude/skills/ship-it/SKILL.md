@@ -54,8 +54,18 @@ CI on `main` and rolls out via Dokploy (see [production.md](../../../docs/ops/pr
 
 - Merge once CI is fully green: `gh pr merge --squash --delete-branch`. Squash matches
   the repo's history (recent commits are squashed `... (#NN)`).
-- If merge is blocked (required reviews, branch protection, conflicts), stop and tell the
-  user exactly what's blocking — don't try to force it.
+- **A non-zero exit is not automatically a merge failure — verify before reacting.** In
+  this repo's multi-worktree setup, `--delete-branch` makes `gh` try to check out `main`
+  locally after merging, which fails with `fatal: 'main' is already used by worktree at
+  ...` because the main worktree holds it. The *remote* merge and branch deletion still
+  succeeded; only the local post-merge checkout failed. So whenever the command exits
+  non-zero, confirm the real state with
+  `gh pr view <n> --json state,mergeCommit` before deciding anything:
+  - `state: "MERGED"` → the merge went through; capture the `mergeCommit.oid` and continue
+    to step 5. The local-checkout error is cosmetic (the local branch cleanup just moves to
+    step 6 instead).
+  - `state: "OPEN"` and it's a genuine block (required reviews, branch protection,
+    conflicts) → stop and tell the user exactly what's blocking. Don't try to force it.
 
 ## 5. Watch the deploy
 
