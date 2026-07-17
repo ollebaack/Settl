@@ -35,10 +35,17 @@ test('owner permanently deletes an empty household', async ({ page }) => {
   await expect(page.getByRole('heading', { name: `Ta bort ${name}?` })).toBeVisible()
   await page.getByRole('button', { name: 'Ta bort permanent' }).click()
 
-  // Success feedback, and the household is gone from the API.
-  await expect(page.getByText(`${name} togs bort`)).toBeVisible()
-  const list = (await (await page.request.get(`${API}/households`)).json()) as Array<{ id: string }>
-  expect(list.some((h) => h.id === id)).toBe(false)
+  // The household is gone for good — absent from the owner's list. Poll this durable
+  // server post-condition rather than asserting the "togs bort" toast: the toast
+  // auto-dismisses within seconds and races the assertion window under CI load, and the
+  // sheet-close/redirect ride the same success callback, so they're no more reliable.
+  await expect
+    .poll(async () => {
+      const res = await page.request.get(`${API}/households`)
+      const list = (await res.json()) as Array<{ id: string }>
+      return list.some((h) => h.id === id)
+    })
+    .toBe(false)
 })
 
 test('a household with activity cannot be deleted, only archived', async ({ page }) => {

@@ -20,8 +20,8 @@ test('creates a household and switches into it', async ({ page }) => {
   await page.getByLabel('Namn').fill(name)
   await page.getByRole('button', { name: 'Skapa hushåll' }).click()
 
-  // Success toast, sheet closes, and the app switched to the new (now active) household.
-  await expect(page.getByText(`${name} skapat`)).toBeVisible()
+  // Sheet closes and the app switches into the new (now active) household — durable
+  // signals, unlike the "skapat" toast, which auto-dismisses and races the assertion.
   await expect(page.getByRole('heading', { name: 'Nytt hushåll' })).toBeHidden()
   await expect(page.getByText(`öppna poster i ${name}`)).toBeVisible()
 

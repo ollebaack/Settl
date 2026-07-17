@@ -136,7 +136,7 @@ test('recurring: clean template can be hard-deleted', async ({ page }) => {
   await expect(page.getByText(`Ta bort ”${title}”?`)).toBeVisible()
   await page.getByRole('button', { name: 'Ta bort' }).click()
 
-  await expect(page.getByText(`${title} borttagen`)).toBeVisible()
+  // The card disappearing is the durable outcome; the "borttagen" toast auto-dismisses.
   await expect(page.locator('[data-slot="card"]', { hasText: title })).toBeHidden()
 })
 
