@@ -58,6 +58,9 @@ public static class MetaEndpoints
             m.Name = name;
             m.AvatarEmoji = emoji;
             if (tone is not null) m.NudgeTone = tone.Value;
+            // Nudge-email opt-in (reminder-delivery spec): null leaves it unchanged, so a name/emoji
+            // edit never flips the preference. The same flag is toggled login-free via unsubscribe.
+            if (req.NudgeEmailsEnabled is { } enabled) m.NudgeEmailsEnabled = enabled;
             await db.SaveChangesAsync(ct);
 
             return Results.Ok(m.ToMeDto());

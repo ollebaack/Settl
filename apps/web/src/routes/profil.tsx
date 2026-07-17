@@ -60,10 +60,12 @@ function ProfileForm({ me }: { me: MeDto }) {
   const [sheetOpen, setSheetOpen] = useState(false)
   // The API only ever returns 'gentle' | 'direct'; fall back to the default for safety.
   const [tone, setTone] = useState<NudgeTone>((me.nudgeTone as NudgeTone) ?? 'direct')
+  // Daily nudge-digest email opt-in (reminder-delivery spec). On by default.
+  const [emailsEnabled, setEmailsEnabled] = useState<boolean>(me.nudgeEmailsEnabled ?? true)
 
   const emoji = me.avatarEmoji ?? null
 
-  /** Persist name + the given emoji + the current tone. Returns true on success. */
+  /** Persist name + the given emoji + the current tone + email opt-in. Returns true on success. */
   async function save(nextEmoji: string | null, successMsg: string): Promise<boolean> {
     const trimmed = name.trim()
     if (!trimmed) {
@@ -72,7 +74,12 @@ function ProfileForm({ me }: { me: MeDto }) {
     }
     setNameError('')
     try {
-      await updateMe.mutateAsync({ name: trimmed, avatarEmoji: nextEmoji, nudgeTone: tone })
+      await updateMe.mutateAsync({
+        name: trimmed,
+        avatarEmoji: nextEmoji,
+        nudgeTone: tone,
+        nudgeEmailsEnabled: emailsEnabled,
+      })
       toast(successMsg)
       return true
     } catch (e) {
@@ -202,6 +209,29 @@ function ProfileForm({ me }: { me: MeDto }) {
           ))}
         </ToggleGroup>
         <p className="text-xs text-muted-foreground">{TONE_COPY[tone].hint}</p>
+
+        {/* Nudge-email opt-in (reminder-delivery spec). Separate from tone: tone styles in-app
+            nudges, this controls the daily digest email. Off is honoured server-side. */}
+        <div className="mt-3 flex flex-col gap-1.5">
+          <p className={UPLABEL}>Påminnelser via e-post</p>
+          <ToggleGroup
+            value={[emailsEnabled ? 'on' : 'off']}
+            onValueChange={(v) => setEmailsEnabled((v[0] ?? (emailsEnabled ? 'on' : 'off')) === 'on')}
+            className="w-full rounded-xl bg-muted p-1"
+          >
+            <ToggleGroupItem value="on" className="flex-1 rounded-lg text-sm">
+              På
+            </ToggleGroupItem>
+            <ToggleGroupItem value="off" className="flex-1 rounded-lg text-sm">
+              Av
+            </ToggleGroupItem>
+          </ToggleGroup>
+          <p className="text-xs text-muted-foreground">
+            {emailsEnabled
+              ? 'Ett dagligt mejl när du har knuffar att ta tag i. Aldrig mer än ett per dag.'
+              : 'Du får inga påminnelser via e-post. Knuffar visas fortfarande i appen.'}
+          </p>
+        </div>
       </div>
 
       {/* Actions */}

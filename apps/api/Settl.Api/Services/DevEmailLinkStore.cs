@@ -24,6 +24,12 @@ public sealed class DevEmailLinkStore
     private readonly ConcurrentDictionary<string, string> _inviteByEmail = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, string> _smsInviteByPhone = new();
 
+    // Nudge-digest sends, per recipient: the unsubscribe link and how many digests were sent.
+    // Lets integration tests assert "emailed once" and read the tokenised unsubscribe URL a real
+    // inbox would have received (reminder-delivery spec).
+    private readonly ConcurrentDictionary<string, (string UnsubscribeUrl, int NudgeCount, int SendCount)> _digestByEmail
+        = new(StringComparer.OrdinalIgnoreCase);
+
     public void RecordInviteAccept(string email, string url)
     {
         _lastInviteAcceptUrl = url;
@@ -51,4 +57,16 @@ public sealed class DevEmailLinkStore
     /// <summary>The accept link for a specific invitee phone (E.164), or null if none recorded.</summary>
     public string? SmsInviteAcceptUrlFor(string phoneE164) =>
         _smsInviteByPhone.TryGetValue(phoneE164.Trim(), out var url) ? url : null;
+
+    /// <summary>Records a nudge-digest send: keeps the latest unsubscribe URL / nudge count and
+    /// bumps the per-recipient send counter (so a de-duplicated second pass shows no new send).</summary>
+    public void RecordNudgeDigest(string email, string unsubscribeUrl, int nudgeCount) =>
+        _digestByEmail.AddOrUpdate(
+            email.Trim(),
+            (unsubscribeUrl, nudgeCount, 1),
+            (_, prev) => (unsubscribeUrl, nudgeCount, prev.SendCount + 1));
+
+    /// <summary>The most recent digest recorded for a recipient, or null if none was sent.</summary>
+    public (string UnsubscribeUrl, int NudgeCount, int SendCount)? NudgeDigestFor(string email) =>
+        _digestByEmail.TryGetValue(email.Trim(), out var v) ? v : null;
 }

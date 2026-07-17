@@ -10,16 +10,19 @@ public sealed record LoginRequest(string Email, string Password);
 /// optional profile phone (ADR-0019); <c>PhoneVerified</c> is always false for now (no OTP —
 /// tech-debt/0010), so it is display/contact data only and must never be treated as a lookup
 /// key or auth factor. <c>NudgeTone</c> is the member's chosen nudge voice ("gentle"|"direct",
-/// implementation-map §2.4).</summary>
+/// implementation-map §2.4). <c>NudgeEmailsEnabled</c> is the daily-digest email opt-in
+/// (reminder-delivery spec, ADR-0024), on by default.</summary>
 public sealed record MeDto(
     Guid Id, string Name, string AvatarColor, string? AvatarEmoji, string? Email,
-    bool EmailConfirmed, string? Phone, bool PhoneVerified, string NudgeTone);
+    bool EmailConfirmed, string? Phone, bool PhoneVerified, string NudgeTone, bool NudgeEmailsEnabled);
 
-/// <summary>Updates the acting member's own name + avatar emoji (ADR-0019) and nudge tone
-/// (implementation-map §2.4). <see cref="AvatarEmoji"/> null/empty resets the avatar to the
-/// letter initial; <see cref="NudgeTone"/> null leaves the current tone unchanged, otherwise
-/// it must be "gentle" or "direct". (PUT /me)</summary>
-public sealed record UpdateMeRequest(string Name, string? AvatarEmoji, string? NudgeTone = null);
+/// <summary>Updates the acting member's own name + avatar emoji (ADR-0019), nudge tone
+/// (implementation-map §2.4) and nudge-email opt-in (reminder-delivery spec). <see cref="AvatarEmoji"/>
+/// null/empty resets the avatar to the letter initial; <see cref="NudgeTone"/> null leaves the current
+/// tone unchanged, otherwise it must be "gentle" or "direct"; <see cref="NudgeEmailsEnabled"/> null
+/// leaves the current opt-in unchanged. (PUT /me)</summary>
+public sealed record UpdateMeRequest(
+    string Name, string? AvatarEmoji, string? NudgeTone = null, bool? NudgeEmailsEnabled = null);
 
 /// <summary>Updates the acting member's own profile phone. <c>Phone</c> is normalised to E.164 and
 /// stored UNVERIFIED (ADR-0019); an empty/null value clears it. Email stays the sole identity.

@@ -310,4 +310,96 @@ public sealed class NudgeCalculatorTests
     {
         Assert.Empty(Build("direct", Today, NoRecurrings, NoExpenses, NoBalances));
     }
+
+    // ------------------------------------------------ Delivery identity keys (reminder-delivery spec)
+
+    private static string RecKey(RecurringDueInput r) =>
+        Assert.Single(BuildEmittable("direct", Today, new[] { r }, NoExpenses, NoBalances)).Key;
+
+    private static string BigKey(BigExpenseInput e) =>
+        Assert.Single(BuildEmittable("direct", Today, NoRecurrings, new[] { e }, NoBalances)).Key;
+
+    private static string BalKey(BalanceInput b) =>
+        Assert.Single(BuildEmittable("direct", Today, NoRecurrings, NoExpenses, new[] { b })).Key;
+
+    [Fact]
+    public void Key_RecurringDue_IsRecurringIdAndNextPostDate()
+    {
+        Assert.Equal($"recurringDue:{RecId}:2026-07-14", RecKey(Rec(2)));
+    }
+
+    [Fact]
+    public void Key_RecurringDue_AdvancesWithCycle_SoItReFires()
+    {
+        // Next cycle = a later NextPostDate = a distinct key, so a re-posted template nudges again.
+        Assert.NotEqual(RecKey(Rec(2)), RecKey(Rec(2, title: "Hyra") with { NextPostDate = Today.AddDays(5) }));
+    }
+
+    [Fact]
+    public void Key_BigExpense_IsEntryId_StableAcrossReComputes()
+    {
+        Assert.Equal($"bigExpense:{EntryId}", BigKey(Big()));
+        // Same entry, later day (still in window) → same key → emailed once ever.
+        var later = BuildEmittable("direct", Today.AddDays(3), NoRecurrings, new[] { Big() }, NoBalances);
+        Assert.Equal($"bigExpense:{EntryId}", Assert.Single(later).Key);
+    }
+
+    [Fact]
+    public void Key_Balance_IsCounterpartyAndCrossedOn()
+    {
+        Assert.Equal($"balance:{MemberId}:2026-07-12", BalKey(Bal(-90000, crossedOn: Today)));
+    }
+
+    [Fact]
+    public void Key_Balance_StandingBalance_KeepsOneKey_EmailedOnce()
+    {
+        // The crossing date is what anchors the key: a balance still standing days later, its
+        // crossing unchanged, yields the SAME key — so the digest de-dups it to a single send.
+        var crossedOn = Today.AddDays(-3);
+        var day1 = Assert.Single(BuildEmittable("direct", Today, NoRecurrings, NoExpenses,
+            new[] { Bal(-90000, crossedOn: crossedOn) }));
+        var day2 = Assert.Single(BuildEmittable("direct", Today.AddDays(2), NoRecurrings, NoExpenses,
+            new[] { Bal(-90000, crossedOn: crossedOn) }));
+        Assert.Equal(day1.Key, day2.Key);
+    }
+
+    [Fact]
+    public void Key_Balance_ReCrossing_YieldsNewKey_ReFires()
+    {
+        // Settle-below-then-recross moves CrossedOn forward → a new key → a fresh nudge.
+        var first = BalKey(Bal(-90000, crossedOn: Today.AddDays(-5)));
+        var recross = BalKey(Bal(-90000, crossedOn: Today));
+        Assert.NotEqual(first, recross);
+    }
+
+    [Fact]
+    public void Key_IsCultureInvariant_NotLocaleFormatted()
+    {
+        // The date segment must be ISO yyyy-MM-dd regardless of thread culture (keys are storage,
+        // not display) — guard against a locale-formatted date sneaking into the identity.
+        var prev = System.Threading.Thread.CurrentThread.CurrentCulture;
+        try
+        {
+            System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("sv-SE");
+            Assert.Equal($"balance:{MemberId}:2026-07-12", BalKey(Bal(80000, crossedOn: Today)));
+        }
+        finally
+        {
+            System.Threading.Thread.CurrentThread.CurrentCulture = prev;
+        }
+    }
+
+    [Fact]
+    public void BuildEmittable_NudgesMatchBuild_KeysAreTheOnlyAddition()
+    {
+        var emittable = BuildEmittable("direct", Today, new[] { Rec(2) }, new[] { Big() }, new[] { Bal(-90000) });
+        var plain = Build("direct", Today, new[] { Rec(2) }, new[] { Big() }, new[] { Bal(-90000) });
+
+        // Same nudges, same order — asserted field-by-field (NudgeDto's Actions list defeats record
+        // structural equality across separately-built instances).
+        Assert.Equal(plain.Count, emittable.Count);
+        Assert.Equal(
+            plain.Select(n => (n.Kind, n.Title, n.Body, n.When)),
+            emittable.Select(e => (e.Nudge.Kind, e.Nudge.Title, e.Nudge.Body, e.Nudge.When)));
+    }
 }

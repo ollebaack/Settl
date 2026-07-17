@@ -49,6 +49,11 @@ if (!builder.Environment.IsEnvironment("Testing"))
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
 builder.Services.AddHostedService<RecurringPostingService>();
+// The daily nudge-digest pass runs inside RecurringPostingService (reminder-delivery spec — one
+// worker, not two). Scoped: it holds a DbContext + email sender per pass. The token minter is
+// stateless over the Data Protection key ring, so it's a singleton.
+builder.Services.AddScoped<NudgeDigestService>();
+builder.Services.AddSingleton<NudgeUnsubscribeTokens>();
 // Scrubs the raw phone number off SMS invites once they expire (ADR-0019 / GDPR).
 builder.Services.AddHostedService<ExpiredInviteScrubber>();
 
@@ -251,6 +256,7 @@ app.MapEntriesEndpoints();
 app.MapRecurringEndpoints();
 app.MapSettlementsEndpoints();
 app.MapNudgesEndpoints();
+app.MapUnsubscribeEndpoints();
 
 // SPA client-side routing fallback — must come after all API route mappings above. Anonymous
 // so the login page (served from here) loads before the user is authenticated.
