@@ -228,7 +228,7 @@ public class HouseholdsEntriesIntegrationTests
 
         var expenses = await du.GetFromJsonAsync<List<EntryDto>>(
             $"/households/{SeedIds.Lonnvagen}/entries?type=expense", Web);
-        // 4 plain expenses + the 2 former IOUs, now "Allt på en" amount-split expenses (ADR-0020).
+        // 4 plain expenses + the 2 former IOUs, now "Allt på en" amount-split expenses (ADR-0021).
         Assert.Equal(6, expenses!.Count);
         Assert.All(expenses, e => Assert.Equal("expense", e.Type));
 
@@ -335,7 +335,7 @@ public class HouseholdsEntriesIntegrationTests
         using var factory = await SeededAsync();
         var du = factory.ClientAs(SeedIds.Du);
 
-        // "iou" was removed (ADR-0020): one-owes-all is now the "Allt på en" amount split.
+        // "iou" was removed (ADR-0021): one-owes-all is now the "Allt på en" amount split.
         var req = new CreateEntryRequest("iou", null, 5_000, null, SeedIds.Du, null);
         var post = await du.PostAsJsonAsync($"/households/{SeedIds.Lonnvagen}/entries", req, Web);
         Assert.Equal(HttpStatusCode.BadRequest, post.StatusCode);
@@ -382,6 +382,39 @@ public class HouseholdsEntriesIntegrationTests
         var res = await du.PostAsJsonAsync($"/households/{SeedIds.Lonnvagen}/entries", req, Web);
         Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
         Assert.Equal($"Delningen måste bli {Money.FormatKr(10_000)}", await DetailAsync(res));
+    }
+
+    [Fact]
+    public async Task PostExpense_with_whole_share_on_payer_returns_400()
+    {
+        using var factory = await SeededAsync();
+        var du = factory.ClientAs(SeedIds.Du);
+
+        // Everything assigned to the payer, nothing to anyone else → balance-neutral,
+        // "ingen andel" for the rest. A shared expense must include someone else.
+        var split = new SplitInput("percent",
+            new Dictionary<Guid, decimal> { [SeedIds.Du] = 100m, [SeedIds.Sam] = 0m, [SeedIds.Priya] = 0m });
+        var req = new CreateEntryRequest("expense", "Bara jag", 10_000, null, SeedIds.Du, split);
+
+        var res = await du.PostAsJsonAsync($"/households/{SeedIds.Lonnvagen}/entries", req, Web);
+        Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+        Assert.Equal("Lägg till någon att dela med", await DetailAsync(res));
+    }
+
+    [Fact]
+    public async Task PostExpense_payer_only_is_allowed_in_a_solo_household()
+    {
+        using var factory = await SeededAsync();
+        var du = factory.ClientAs(SeedIds.Du);
+
+        // Fresh solo household (only Du): logging an own expense must still be allowed,
+        // even though the payer is the sole share-holder.
+        var hh = await du.PostAsJsonAsync("/households", new CreateHouseholdRequest("Solo", null), Web);
+        var solo = await hh.Content.ReadFromJsonAsync<HouseholdDto>(Web);
+
+        var req = new CreateEntryRequest("expense", "Eget", 5_000, null, SeedIds.Du, null);
+        var post = await du.PostAsJsonAsync($"/households/{solo!.Id}/entries", req, Web);
+        Assert.Equal(HttpStatusCode.Created, post.StatusCode);
     }
 
     // ---------- Entries: category ----------

@@ -43,7 +43,7 @@ Shared row conventions used by Home "Senaste" and all Ledger rows (build once as
 
 - **Glyph tile** (36px rounded): IOU `⇄` (U+21C4, chip bg); recurring `↻` (U+21BB, soft/accent bg); expense = first uppercased letter of title (chip bg).
 - **Meta line:** `Du betalade` / `{namn} betalade`; recurring `Bokförd automatiskt · {du betalar|namn betalar} · {datum}`; IOU `Lån till {namn}` / `Lån från {namn}` (English gloss: "you paid / name paid"; "posted automatically…"; "IOU to/from name").
-- **Right column:** mono amount + colored sub-status. Sub-status precedence (all **derived from API**, never a stored flag): fully closed → `reglerad` at `opacity .5`; else you owe → `du är skyldig {belopp}` (destructive); else owed → `du ska få {belopp}` (`--success`); else some pair settled → `din del reglerad`; else `inte din del` (no share). ("settled / you owe / you're owed / your share settled / not your share").
+- **Right column:** mono amount + colored sub-status. Sub-status precedence (all **derived from API**, never a stored flag): fully closed → `reglerad` at `opacity .5`; else you owe → `du är skyldig {belopp}` (destructive); else owed → `du ska få {belopp}` (`--success`); else some pair settled → `din del reglerad`; else `ingen andel` (no share). ("settled / you owe / you're owed / your share settled / not your share").
 - Whole row is a **button** → Card + Avatar, opens Entry detail.
 
 ### 2.1 Hem `/`
@@ -401,7 +401,7 @@ Custom (not shadcn primitives, build in `src/components/`): `AppShell` (sidebar 
 | du ska få {belopp} | you're owed {amount} (--success) |
 | reglerad | settled |
 | din del reglerad | your share settled |
-| inte din del | not your share |
+| ingen andel | not your share |
 | öppen | open |
 
 ### Settle-up

@@ -23,7 +23,7 @@ debt-tracking app removal must not become a loophole to walk away from what you 
 - A household with financial history is never hard-deleted — a misclick on a whole shared
   ledger must be recoverable (soft archive only).
 - An **empty** household (no ledger activity) can be **hard-deleted** by the owner, since
-  there is no history to protect — for cleaning up mistakes ([ADR-0020](../adr/0020-delete-empty-households.md)).
+  there is no history to protect — for cleaning up mistakes ([ADR-0022](../adr/0022-delete-empty-households.md)).
 - Open debts are always surfaced as a warning, but never block leaving or archiving.
 
 ## The owner role
@@ -50,7 +50,7 @@ templates, invites) is retained. There is no automatic purge, and archival never
 **Delete** is a separate, terminal path from archive (not a state): the owner can
 permanently remove a household **only when it is empty** (no entries, recurring
 templates, or settlements). This cascade-deletes memberships and pending invites. See
-[Delete household](#delete-household-owner-only-empty-only--adr-0020).
+[Delete household](#delete-household-owner-only-empty-only--adr-0022).
 
 ## Flows
 
@@ -86,7 +86,7 @@ Copy and layout come from the design export; the frame numbers below map to it.
 - The owner restores from the "Arkiverade" section; `ArchivedAt` is cleared and the
   household returns to the normal list. Restorable indefinitely.
 
-### Delete household (owner only, empty only) — ADR-0020
+### Delete household (owner only, empty only) — ADR-0022
 
 - Only the owner can delete, and only when the household is **empty**: no entries, no
   recurring templates, no settlements. Pending invites do **not** count as activity —
@@ -188,7 +188,7 @@ Per the design export:
 
 - **Hard delete of a non-empty household / GDPR purge / storage cleanup** — soft archival
   keeps all financial data indefinitely; only empty households can be hard-deleted
-  ([ADR-0020](../adr/0020-delete-empty-households.md)). Purging households that *have*
+  ([ADR-0022](../adr/0022-delete-empty-households.md)). Purging households that *have*
   history remains a separate decision (ADR-0016 consequences).
 - **Co-owners / multiple roles** — single owner only (rejected in ADR-0016).
 - **Blocking writes to an archived household** — archived households are hidden from the

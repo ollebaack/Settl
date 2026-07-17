@@ -1,4 +1,4 @@
-# ADR-0020: Hard-delete of empty households
+# ADR-0022: Hard-delete of empty households
 
 - **Status:** accepted
 - **Date:** 2026-07-17

@@ -41,7 +41,7 @@ public sealed record LeaveResultDto(bool Archived);
 
 /// <summary>
 /// Everything the leave/archive/delete confirmation sheets need, in one call (ADR-0016,
-/// ADR-0020). <see cref="ViewerOpenDebts"/> drives the per-person leave warning;
+/// ADR-0022). <see cref="ViewerOpenDebts"/> drives the per-person leave warning;
 /// <see cref="HouseholdOpenTotalMinor"/> drives the household-wide archive warning;
 /// <see cref="IsEmpty"/> tells the client whether the owner may hard-delete (no entries,
 /// recurring templates, or settlements). Debts warn but never block.

@@ -2,7 +2,7 @@
  * Ny post / Redigera post — create or edit an expense or a recurring template.
  * Implementation-map §2.6 + flow §4 + ledger-editing addendum §2.1–2.2. Split editor
  * (Lika / Allt på en / % / kr) where "Allt på en" puts the whole amount on one person
- * (ADR-0020 removed the separate IOU type), with LIVE, color-coded validation; the API is authoritative
+ * (ADR-0021 removed the separate IOU type), with LIVE, color-coded validation; the API is authoritative
  * (ADR-0006) so client pre-checks raise the exact toast copy and API error details
  * are surfaced too. Edit mode reuses the same form, prefilled from the entry /
  * template (PUT /entries/{id} · PATCH /recurring/{id}).
@@ -348,6 +348,17 @@ function EntryForm({
     if (splitMode === 'amount' && !amountOk) {
       toast(`Delningen måste bli ${formatKr(totalMinor)}`)
       return
+    }
+    // Mirror the API rule: a shared expense must include someone other than the payer.
+    // Equal/whole always do; only percent/kr can land the whole amount on the payer.
+    if (memberList.length > 1 && (splitMode === 'percent' || splitMode === 'amount')) {
+      const nonPayerShare = memberList
+        .filter((m) => m.id !== payer)
+        .reduce((sum, m) => sum + parseNum(vals[m.id] ?? ''), 0)
+      if (nonPayerShare <= 0) {
+        toast('Lägg till någon att dela med')
+        return
+      }
     }
 
     try {
