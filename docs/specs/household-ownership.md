@@ -20,7 +20,10 @@ debt-tracking app removal must not become a loophole to walk away from what you 
 
 - A household has exactly one **owner**; ownership is explicit and transferable.
 - Any member can **leave**; the owner can **archive** (soft) and **restore**.
-- Nothing is ever hard-deleted — a misclick on a whole shared ledger must be recoverable.
+- A household with financial history is never hard-deleted — a misclick on a whole shared
+  ledger must be recoverable (soft archive only).
+- An **empty** household (no ledger activity) can be **hard-deleted** by the owner, since
+  there is no history to protect — for cleaning up mistakes ([ADR-0020](../adr/0020-delete-empty-households.md)).
 - Open debts are always surfaced as a warning, but never block leaving or archiving.
 
 ## The owner role
@@ -31,18 +34,23 @@ debt-tracking app removal must not become a loophole to walk away from what you 
 - **Existing households (backfill):** owner = the member with the earliest `JoinedAt`
   (tie-break by `MemberId`), i.e. the first entry in the canonical `MembershipOrder`.
   This is a proxy — the real creator was never persisted.
-- Only the owner can rename, archive, restore, or transfer ownership of the household.
-  Non-owners can only leave.
+- Only the owner can rename, archive, restore, delete (when empty), or transfer
+  ownership of the household. Non-owners can only leave.
 
 ## States
 
 A household is either **active** (`ArchivedAt == null`) or **archived**
 (`ArchivedAt` set). Archival is soft: every row (memberships, entries, settlements,
-templates, invites) is retained. There is no cascade delete and no automatic purge.
+templates, invites) is retained. There is no automatic purge, and archival never cascades.
 
 - Active households appear in the normal household list.
 - Archived households are hidden from the normal list and shown in a dedicated
   **"Arkiverade"** section. Only the owner sees the **Restore** affordance.
+
+**Delete** is a separate, terminal path from archive (not a state): the owner can
+permanently remove a household **only when it is empty** (no entries, recurring
+templates, or settlements). This cascade-deletes memberships and pending invites. See
+[Delete household](#delete-household-owner-only-empty-only--adr-0020).
 
 ## Flows
 
@@ -78,6 +86,21 @@ Copy and layout come from the design export; the frame numbers below map to it.
 - The owner restores from the "Arkiverade" section; `ArchivedAt` is cleared and the
   household returns to the normal list. Restorable indefinitely.
 
+### Delete household (owner only, empty only) — ADR-0020
+
+- Only the owner can delete, and only when the household is **empty**: no entries, no
+  recurring templates, no settlements. Pending invites do **not** count as activity —
+  they are cascade-revoked on delete.
+- Available directly on the active household (no archive-first step). The affordance is
+  present but **disabled** while the household has activity; the owner archives instead.
+- When other members remain, the confirmation **warns** ("N andra medlemmar förlorar
+  åtkomst") and requires confirmation, but never blocks — consistent with archive.
+- Deletion is **permanent and cascades**: the household row, all `HouseholdMembership`
+  rows, and household-scoped pending `Invite`s are removed. It is irreversible; there is
+  no restore. (Nothing financial exists to lose — that is the precondition.)
+- The empty-check is re-evaluated inside the delete transaction: if activity was added
+  concurrently, the delete fails with 409 rather than destroying it.
+
 ## Edge cases & rules (enforced server-side)
 
 | Case | Rule |
@@ -90,6 +113,10 @@ Copy and layout come from the design export; the frame numbers below map to it.
 | Archive / restore by a non-owner | 403. |
 | Archive an already-archived household | 409. |
 | Restore a non-archived household | 409. |
+| Delete by a non-owner | 403. |
+| Delete a household with any entry, template, or settlement | 409 — not empty. |
+| Delete with pending invites | Allowed; invites cascade-revoked (not activity). |
+| Delete with other members present | Allowed; warn "N andra medlemmar förlorar åtkomst", never block. |
 | Open debts on leave / archive | Warn with amounts; never block. |
 | Any of the above on a household you're not in | 404 (don't leak existence). |
 
@@ -115,7 +142,8 @@ otherwise 404):
 | `POST /households/{id}/leave` | any member | Non-owner: removes membership. Sole owner: archives, keeps membership. Owner with others: 409. |
 | `POST /households/{id}/archive` | owner | Sets `ArchivedAt`. 409 if already archived. |
 | `POST /households/{id}/restore` | owner | Clears `ArchivedAt`. 409 if not archived. |
-| `GET /households/{id}/removal-preview` | any member | Debt figures + guard flags for the leave/archive sheets (below). |
+| `DELETE /households/{id}` | owner | Permanently deletes an **empty** household (cascades memberships + pending invites). 409 if it has any entry, template, or settlement. 204 on success. |
+| `GET /households/{id}/removal-preview` | any member | Debt figures + guard flags for the leave/archive/delete sheets (below). |
 
 ### Removal preview
 
@@ -125,6 +153,8 @@ sheets need in one call, computed from the pure
 
 - `isOwner`, `memberCount`, `soleMember` (caller is the only member → leave archives),
   `mustTransferFirst` (owner with other members → leave blocked).
+- `isEmpty` (no entries, recurring templates, or settlements → owner may hard-delete),
+  so the client can enable/disable the delete affordance without a second call.
 - `viewerOpenDebts`: per-other-member net for the caller (`memberId`, `name`,
   `avatarColor`, `netMinor`, `relation` — same shape as the summary's people), for the
   **leave** sheet (frame 3).
@@ -156,8 +186,10 @@ Per the design export:
 
 ## Out of scope
 
-- **Hard delete / GDPR purge / storage cleanup** — soft archival keeps all data
-  indefinitely; a purge would be a separate decision (ADR-0016 consequences).
+- **Hard delete of a non-empty household / GDPR purge / storage cleanup** — soft archival
+  keeps all financial data indefinitely; only empty households can be hard-deleted
+  ([ADR-0020](../adr/0020-delete-empty-households.md)). Purging households that *have*
+  history remains a separate decision (ADR-0016 consequences).
 - **Co-owners / multiple roles** — single owner only (rejected in ADR-0016).
 - **Blocking writes to an archived household** — archived households are hidden from the
   list and read-only in practice via the UI; server-side write-blocking on archived

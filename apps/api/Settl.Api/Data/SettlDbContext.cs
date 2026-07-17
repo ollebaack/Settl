@@ -132,8 +132,9 @@ public class SettlDbContext(DbContextOptions<SettlDbContext> options) : Identity
             // Email is null for SMS invites; PhoneNumber is null for email invites (ADR-0019).
             e.Property(x => x.Channel).HasConversion<string>().IsRequired();
             e.Property(x => x.TokenHash).IsRequired();
-            // HouseholdId is nullable (contact-only invites have none); SetNull so deleting a
-            // household leaves any contact-only history intact rather than cascading.
+            // HouseholdId is nullable (contact-only invites have none). Cascade so that
+            // hard-deleting an empty household revokes its pending invites too (ADR-0020);
+            // contact-only invites have no household and are unaffected.
             e.HasOne(x => x.Household).WithMany()
                 .HasForeignKey(x => x.HouseholdId).OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(x => x.TokenHash).IsUnique();
