@@ -34,9 +34,9 @@ test('the Statistik tab replaced Aktivitet in the nav', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Statistik' })).toBeVisible()
 })
 
-// Knuffar moved off the tab bar into a bell button in the mobile header. Desktop keeps
-// its right-rail Knuffar panel, so the header bell only exists on the phone viewport.
-test('the mobile header bell opens Knuffar', async ({ page }, testInfo) => {
+// Notiser moved off the tab bar into a bell button in the mobile header. Desktop keeps
+// its right-rail Notiser panel, so the header bell only exists on the phone viewport.
+test('the mobile header bell opens Notiser', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile', 'bell button is mobile-only; desktop uses the right rail')
 
   await loginAs(page, 'Du')
@@ -44,7 +44,7 @@ test('the mobile header bell opens Knuffar', async ({ page }, testInfo) => {
   await pinHousehold(page, household)
   await page.goto('/')
 
-  await page.getByRole('link', { name: 'Knuffar' }).click()
+  await page.getByRole('link', { name: 'Notiser' }).click()
   await expect(page).toHaveURL(/\/activity$/)
-  await expect(page.getByRole('heading', { name: 'Knuffar' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Notiser' })).toBeVisible()
 })
