@@ -45,4 +45,25 @@ test.describe('Loggbok (in the Hushållet page)', () => {
     await page.getByRole('button', { name: 'Utgifter', exact: true }).click()
     await expect(feed.getByText('Begagnad soffa')).toBeVisible()
   })
+
+  // Search is a client-side text filter over the loaded log (title / category /
+  // member names). "soffa" matches "Begagnad soffa" and little else.
+  test('searching narrows the log to matching entries and clears back', async ({ page }) => {
+    const feed = page.getByRole('main')
+    const search = page.getByRole('textbox', { name: 'Sök i loggboken' })
+
+    await expect(feed.getByText('Begagnad soffa')).toBeVisible()
+    await search.fill('soffa')
+    await expect(feed.getByText('Begagnad soffa')).toBeVisible()
+
+    // A query with no hits shows the search-specific empty copy.
+    await search.fill('zzzzzzz')
+    await expect(feed.getByText('Begagnad soffa')).toHaveCount(0)
+    await expect(feed.getByText(/Inga träffar för/)).toBeVisible()
+
+    // Clearing restores the full log.
+    await page.getByRole('button', { name: 'Rensa sök' }).click()
+    await expect(search).toHaveValue('')
+    await expect(feed.getByText('Begagnad soffa')).toBeVisible()
+  })
 })
