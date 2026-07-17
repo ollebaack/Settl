@@ -304,6 +304,83 @@ public class RecurringSettlementsNudgesIntegrationTests
         Assert.True(taxi.GetProperty("settled").GetBoolean());
     }
 
+    [Fact]
+    public async Task GetSettlementHistory_returns_pair_events_newest_first()
+    {
+        using var factory = new SettlApiFactory();
+        await factory.SeedCanonicalAsync();
+        var du = factory.ClientAs(SeedIds.Du);
+
+        var (status, body) = await ReadJson(await du.GetAsync(
+            $"/households/{SeedIds.Lonnvagen}/settlements?person={SeedIds.Sam}"));
+        Assert.Equal(HttpStatusCode.OK, status);
+        var arr = body.RootElement;
+
+        // The seed records exactly one settlement (Du-initiated), closing e6 Städmaterial
+        // (Sam→Du 8 300) and e3 Hyra — juli (Sam→Du 800 000) for the Du↔Sam pair.
+        Assert.Equal(1, arr.GetArrayLength());
+        var item = arr[0];
+
+        Assert.Equal(SeedIds.Du, item.GetProperty("initiatedByMemberId").GetGuid());
+        Assert.Equal(808_300L, item.GetProperty("netClearedMinor").GetInt64()); // Sam owed Du
+        Assert.Equal(2, item.GetProperty("closedEntryCount").GetInt32());
+        Assert.True(item.TryGetProperty("settledAt", out var settledAt));
+        Assert.NotEqual(default, settledAt.GetDateTimeOffset());
+
+        var entries = item.GetProperty("entries");
+        Assert.Equal(2, entries.GetArrayLength());
+
+        // Newest-first by entry date: Städmaterial (−10d) before Hyra — juli (−27d).
+        var titles = entries.EnumerateArray().Select(e => e.GetProperty("title").GetString()).ToList();
+        Assert.Equal(new[] { "Städmaterial", "Hyra — juli" }, titles);
+
+        var stad = entries.EnumerateArray().First(e => e.GetProperty("title").GetString() == "Städmaterial");
+        Assert.Equal(8_300L, stad.GetProperty("amountMinor").GetInt64());
+        var hyra = entries.EnumerateArray().First(e => e.GetProperty("title").GetString() == "Hyra — juli");
+        Assert.Equal(800_000L, hyra.GetProperty("amountMinor").GetInt64());
+    }
+
+    [Fact]
+    public async Task GetSettlementHistory_empty_for_pair_that_never_settled()
+    {
+        using var factory = new SettlApiFactory();
+        await factory.SeedCanonicalAsync();
+        var sam = factory.ClientAs(SeedIds.Sam);
+
+        // The seed settlement only credits Du, so no closure touches the Sam↔Priya pair.
+        var (status, body) = await ReadJson(await sam.GetAsync(
+            $"/households/{SeedIds.Lonnvagen}/settlements?person={SeedIds.Priya}"));
+        Assert.Equal(HttpStatusCode.OK, status);
+        Assert.Equal(0, body.RootElement.GetArrayLength());
+    }
+
+    [Fact]
+    public async Task GetSettlementHistory_reflects_a_new_settlement_after_settling()
+    {
+        using var factory = new SettlApiFactory();
+        await factory.SeedCanonicalAsync();
+        var du = factory.ClientAs(SeedIds.Du);
+
+        // Before: Du↔Priya has the one seed settlement.
+        var (_, before) = await ReadJson(await du.GetAsync(
+            $"/households/{SeedIds.Lonnvagen}/settlements?person={SeedIds.Priya}"));
+        Assert.Equal(1, before.RootElement.GetArrayLength());
+
+        // Settle the rest of the Du↔Priya pair → a second, Du-initiated event.
+        var (createStatus, _) = await ReadJson(await du.PostAsJsonAsync(
+            $"/households/{SeedIds.Lonnvagen}/settlements",
+            new { personMemberId = SeedIds.Priya }, Json));
+        Assert.Equal(HttpStatusCode.Created, createStatus);
+
+        var (_, after) = await ReadJson(await du.GetAsync(
+            $"/households/{SeedIds.Lonnvagen}/settlements?person={SeedIds.Priya}"));
+        Assert.Equal(2, after.RootElement.GetArrayLength());
+        // Newest-first: the just-created settlement leads.
+        var dates = after.RootElement.EnumerateArray()
+            .Select(e => e.GetProperty("settledAt").GetDateTimeOffset()).ToList();
+        Assert.Equal(dates.OrderByDescending(d => d).ToList(), dates);
+    }
+
     // ------------------------------------------------------------------ Nudges
 
     [Fact]
