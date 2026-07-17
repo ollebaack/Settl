@@ -83,7 +83,7 @@ test('toggles the nudge-email preference off and persists it', async ({ page, re
   // Wait for the profile form to finish loading (me query) before asserting on its controls.
   await expect(page.getByText('Så här syns du i loggboken.')).toBeVisible()
   // Default is on — the "on" hint is shown.
-  await expect(page.getByText('Ett dagligt mejl när du har knuffar', { exact: false })).toBeVisible()
+  await expect(page.getByText('Ett dagligt mejl när du har notiser', { exact: false })).toBeVisible()
 
   // Turn emails off and save.
   await page.getByRole('button', { name: 'Av' }).click()
