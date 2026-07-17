@@ -145,7 +145,7 @@ public class MeEndpointTests
     }
 
     [Fact]
-    public async Task Me_nudge_emails_default_enabled()
+    public async Task Me_nudge_emails_default_disabled()
     {
         using var factory = new SettlApiFactory();
         await factory.SeedCanonicalAsync();
@@ -153,7 +153,8 @@ public class MeEndpointTests
 
         var me = await client.GetFromJsonAsync<MeDto>("/me", Web);
 
-        Assert.True(me!.NudgeEmailsEnabled);
+        // Nudge-digest emails are opt-in: a new member starts disabled (reminder-delivery spec).
+        Assert.False(me!.NudgeEmailsEnabled);
     }
 
     [Fact]
@@ -163,15 +164,16 @@ public class MeEndpointTests
         await factory.SeedCanonicalAsync();
         var client = factory.ClientAs(SeedIds.Du);
 
-        var res = await client.PutAsJsonAsync("/me", new UpdateMeRequest("Alex", null, null, NudgeEmailsEnabled: false), Web);
+        // Opt in: a new member starts disabled, so switching it on is the meaningful change.
+        var res = await client.PutAsJsonAsync("/me", new UpdateMeRequest("Alex", null, null, NudgeEmailsEnabled: true), Web);
         Assert.Equal(HttpStatusCode.OK, res.StatusCode);
 
         var updated = await res.Content.ReadFromJsonAsync<MeDto>(Web);
-        Assert.False(updated!.NudgeEmailsEnabled);
+        Assert.True(updated!.NudgeEmailsEnabled);
 
         // Persisted.
         var me = await client.GetFromJsonAsync<MeDto>("/me", Web);
-        Assert.False(me!.NudgeEmailsEnabled);
+        Assert.True(me!.NudgeEmailsEnabled);
     }
 
     [Fact]
@@ -181,13 +183,13 @@ public class MeEndpointTests
         await factory.SeedCanonicalAsync();
         var client = factory.ClientAs(SeedIds.Du);
 
-        await client.PutAsJsonAsync("/me", new UpdateMeRequest("Alex", null, null, NudgeEmailsEnabled: false), Web);
-        // A later name/emoji-only edit (omitting the flag) must not flip it back on.
+        await client.PutAsJsonAsync("/me", new UpdateMeRequest("Alex", null, null, NudgeEmailsEnabled: true), Web);
+        // A later name/emoji-only edit (omitting the flag) must not flip it back off.
         var res = await client.PutAsJsonAsync("/me", new UpdateMeRequest("Alex", "🦊"), Web);
         Assert.Equal(HttpStatusCode.OK, res.StatusCode);
 
         var updated = await res.Content.ReadFromJsonAsync<MeDto>(Web);
-        Assert.False(updated!.NudgeEmailsEnabled);
+        Assert.True(updated!.NudgeEmailsEnabled);
     }
 
     [Fact]

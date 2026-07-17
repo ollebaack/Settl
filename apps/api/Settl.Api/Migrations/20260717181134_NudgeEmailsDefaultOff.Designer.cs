@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Settl.Api.Data;
@@ -11,9 +12,11 @@ using Settl.Api.Data;
 namespace Settl.Api.Migrations
 {
     [DbContext(typeof(SettlDbContext))]
-    partial class SettlDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260717181134_NudgeEmailsDefaultOff")]
+    partial class NudgeEmailsDefaultOff
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -363,6 +366,10 @@ namespace Settl.Api.Migrations
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");
 
+                    b.Property<string>("SwishNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("boolean");
 
@@ -422,9 +429,6 @@ namespace Settl.Api.Migrations
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateOnly?>("EndDate")
-                        .HasColumnType("date");
 
                     b.Property<Guid>("HouseholdId")
                         .HasColumnType("uuid");

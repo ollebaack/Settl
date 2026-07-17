@@ -45,10 +45,10 @@ is undelivered.
   log — **no shared mutable crossing-state to coordinate with**. ADR-0023 derives crossings
   on read and explicitly left this persisted, de-duplicated log to *this* feature
   (tech-debt/0002), so the crossing work is a **shipped prerequisite, not an open dependency**.
-- **Consent:** nudge emails are **on by default** (account-activity, legitimate interest —
-  not marketing), with a **one-click unsubscribe** and honouring the existing gentle/direct
-  **tone** setting (the tone-toggle chip). Unsubscribe is all-or-nothing in v1 (no
-  per-trigger toggles).
+- **Consent:** nudge emails are **off by default** — an explicit opt-in the member turns on
+  with the profile switch (the earlier gentle/direct tone toggle is gone; in-app nudges use the
+  direct voice). A **one-click unsubscribe** still forces the opt-in off. Unsubscribe is
+  all-or-nothing in v1 (no per-trigger toggles).
 - **No** in-app notification centre, read receipts, or SMS here — email out only.
 
 ## Data model
@@ -67,8 +67,10 @@ New persistence, provider-portable EF Core (ADR-0010), money/time rules unchange
     emailed once.
   Because every key is derived, no coordination with the crossing code is required — the log
   is a standalone delivery-dedup record, not a mirror of nudge state.
-- **Email preference on the member/user** — `nudgeEmailsEnabled` (default true) and reuse
-  the tone field from the tone-toggle work. Migration backfills existing members to enabled.
+- **Email preference on the member/user** — `nudgeEmailsEnabled` (default false; new members
+  opt in via the profile switch). The `NudgeEmailsDefaultOff` migration only flips the column
+  default — existing members who were already enabled keep their setting and are not
+  retroactively unsubscribed.
 - Digest send timestamps are UTC (project rule); the daily pass picks a fixed send hour —
   interpret it in a sensible local zone for Sweden (Europe/Stockholm) rather than raw UTC so
   digests don't land at 02:00 local. Zone handling is an implementation detail, called out
@@ -85,9 +87,9 @@ New persistence, provider-portable EF Core (ADR-0010), money/time rules unchange
 
 ## Web surface
 
-- A **nudge-email preference** control on the Profile screen (`apps/web/src/routes/profil.tsx`),
-  next to the tone setting from the tone-toggle chip: a simple on/off plus the gentle/direct
-  choice. No other UI — delivery is server-side.
+- A **nudge-email preference** switch on the Profile screen (`apps/web/src/routes/profil.tsx`):
+  a single on/off, off by default. The tone chooser is gone — nudge tone is fixed to the direct
+  voice. No other UI — delivery is server-side.
 
 ## Out of scope / open questions
 
