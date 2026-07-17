@@ -3,7 +3,6 @@ namespace Settl.Api.Domain;
 public enum EntryType
 {
     Expense,
-    Iou,
     RecurringPost
 }
 

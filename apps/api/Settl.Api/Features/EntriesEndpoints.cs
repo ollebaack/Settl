@@ -30,7 +30,6 @@ public static class EntriesEndpoints
                 var filter = type.Trim().ToLowerInvariant() switch
                 {
                     "expense" => (EntryType?)EntryType.Expense,
-                    "iou" => EntryType.Iou,
                     "recurring" => EntryType.RecurringPost,
                     _ => null
                 };
@@ -64,7 +63,7 @@ public static class EntriesEndpoints
             try
             {
                 var entry = BuildEntryFromRequest(req.Type, req.Title, req.AmountMinor, req.Date, req.PaidByMemberId,
-                    req.FromMemberId, req.ToMemberId, req.Split, data, id, today, now, Guid.NewGuid(),
+                    req.Split, data, id, today, now, Guid.NewGuid(),
                     categoryOverride: null, existingEntry: null);
                 db.Entries.Add(entry);
                 await db.SaveChangesAsync(ct);
@@ -115,7 +114,7 @@ public static class EntriesEndpoints
             try
             {
                 var rebuilt = BuildEntryFromRequest(req.Type, req.Title, req.AmountMinor, req.Date, req.PaidByMemberId,
-                    req.FromMemberId, req.ToMemberId, req.Split, data, entry.HouseholdId, today, entry.CreatedAt, entry.Id,
+                    req.Split, data, entry.HouseholdId, today, entry.CreatedAt, entry.Id,
                     categoryOverride: req.Category, existingEntry: entry);
 
                 entry.Type = rebuilt.Type;
@@ -124,8 +123,6 @@ public static class EntriesEndpoints
                 entry.AmountMinor = rebuilt.AmountMinor;
                 entry.Date = rebuilt.Date;
                 entry.PaidByMemberId = rebuilt.PaidByMemberId;
-                entry.FromMemberId = rebuilt.FromMemberId;
-                entry.ToMemberId = rebuilt.ToMemberId;
                 entry.SplitMode = rebuilt.SplitMode;
 
                 db.EntryShares.RemoveRange(entry.Shares);
@@ -253,7 +250,7 @@ public static class EntriesEndpoints
 
     private static Entry BuildEntryFromRequest(
         string type, string? title, long amountMinor, DateOnly? date,
-        Guid? paidByMemberId, Guid? fromMemberId, Guid? toMemberId, SplitInput? split,
+        Guid? paidByMemberId, SplitInput? split,
         HouseholdData data, Guid householdId, DateOnly today, DateTimeOffset createdAt, Guid entryId,
         string? categoryOverride, Entry? existingEntry)
     {
@@ -262,32 +259,6 @@ public static class EntriesEndpoints
 
         var normalizedType = type?.Trim().ToLowerInvariant();
         var effectiveDate = date ?? today;
-
-        if (normalizedType == "iou")
-        {
-            if (fromMemberId is null || toMemberId is null)
-                throw new SplitValidationException("Lån kräver både från och till");
-            if (fromMemberId == toMemberId)
-                throw new SplitValidationException("Från och till måste vara olika");
-            if (!data.MembersById.ContainsKey(fromMemberId.Value) || !data.MembersById.ContainsKey(toMemberId.Value))
-                throw new SplitValidationException("Okänd medlem");
-
-            var iouTitle = string.IsNullOrWhiteSpace(title) ? "Lån" : title!.Trim();
-            return new Entry
-            {
-                Id = entryId,
-                HouseholdId = householdId,
-                Type = EntryType.Iou,
-                Title = iouTitle,
-                Category = ResolveCategory(iouTitle, categoryOverride, existingEntry?.Category),
-                AmountMinor = amountMinor,
-                Date = effectiveDate,
-                CreatedAt = createdAt,
-                FromMemberId = fromMemberId,
-                ToMemberId = toMemberId,
-                SplitMode = SplitMode.None
-            };
-        }
 
         if (normalizedType != "expense")
             throw new SplitValidationException("Ogiltig posttyp");

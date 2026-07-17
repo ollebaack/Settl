@@ -8,7 +8,6 @@ public static class Contract
     public static string EntryType(EntryType t) => t switch
     {
         Domain.EntryType.Expense => "expense",
-        Domain.EntryType.Iou => "iou",
         Domain.EntryType.RecurringPost => "recurringPost",
         _ => throw new ArgumentOutOfRangeException(nameof(t))
     };

@@ -1,8 +1,8 @@
 /**
- * Ny post / Redigera post — create or edit an expense, an IOU (Lån), or a
- * recurring template. Implementation-map §2.6 + flow §4 + ledger-editing addendum
- * §2.1–2.2. Three-mode split editor plus the "Allt på en" preset (one person owes
- * the whole amount), with LIVE, color-coded validation; the API is authoritative
+ * Ny post / Redigera post — create or edit an expense or a recurring template.
+ * Implementation-map §2.6 + flow §4 + ledger-editing addendum §2.1–2.2. Split editor
+ * (Lika / Allt på en / % / kr) where "Allt på en" puts the whole amount on one person
+ * (ADR-0020 removed the separate IOU type), with LIVE, color-coded validation; the API is authoritative
  * (ADR-0006) so client pre-checks raise the exact toast copy and API error details
  * are surfaced too. Edit mode reuses the same form, prefilled from the entry /
  * template (PUT /entries/{id} · PATCH /recurring/{id}).
@@ -47,21 +47,18 @@ import type {
   UpdateRecurringRequest,
 } from '@/lib/api'
 
-type EntryTab = 'expense' | 'iou' | 'recurring'
+type EntryTab = 'expense' | 'recurring'
 type SplitMode = 'equal' | 'percent' | 'amount' | 'whole'
-type IouDir = 'iowe' | 'theyowe'
 type Cadence = 'monthly' | 'biweekly' | 'weekly'
 type FormMode = 'create' | 'editEntry' | 'editRecurring'
 
 const TITLE_PLACEHOLDER: Record<EntryTab, string> = {
   expense: 'Mat, middag, biljetter…',
-  iou: 'Vad gäller det?',
   recurring: 'Hyra, internet, Spotify…',
 }
 
 const SAVE_LABEL: Record<EntryTab, string> = {
   expense: 'Lägg i loggboken',
-  iou: 'Anteckna',
   recurring: 'Sätt på repeat',
 }
 
@@ -112,8 +109,6 @@ interface FormState {
   splitMode: SplitMode
   vals: Record<string, string>
   wholeMemberId: string | null
-  iouDir: IouDir
-  iouWith: string | null
   cadence: Cadence
   date: string
 }
@@ -126,8 +121,6 @@ const EMPTY_STATE: FormState = {
   splitMode: 'equal',
   vals: {},
   wholeMemberId: null,
-  iouDir: 'iowe',
-  iouWith: null,
   cadence: 'monthly',
   date: todayIso(),
 }
@@ -155,20 +148,7 @@ function valsFromShares(
   return {}
 }
 
-function stateFromEntry(entry: EntryDto, viewerId: string | undefined): FormState {
-  if (entry.type === 'iou') {
-    const iAmFrom = entry.fromMemberId != null && entry.fromMemberId === viewerId
-    const iouDir: IouDir = iAmFrom ? 'iowe' : 'theyowe'
-    const iouWith = iAmFrom ? entry.toMemberId : (entry.fromMemberId ?? entry.toMemberId)
-    return {
-      ...EMPTY_STATE,
-      type: 'iou',
-      amountStr: minorToAmountStr(entry.amountMinor),
-      title: entry.title,
-      iouDir,
-      iouWith: iouWith ?? null,
-    }
-  }
+function stateFromEntry(entry: EntryDto): FormState {
   const splitMode = splitModeFrom(entry.splitMode)
   return {
     ...EMPTY_STATE,
@@ -234,7 +214,7 @@ export function AddEntrySheet({
     mode === 'editEntry' ? entryQuery : mode === 'editRecurring' ? recurringQuery : null
 
   let initial: FormState = EMPTY_STATE
-  if (mode === 'editEntry' && entryQuery.data) initial = stateFromEntry(entryQuery.data, me?.id)
+  if (mode === 'editEntry' && entryQuery.data) initial = stateFromEntry(entryQuery.data)
   if (mode === 'editRecurring' && recurringQuery.data)
     initial = stateFromRecurring(recurringQuery.data)
 
@@ -301,8 +281,6 @@ function EntryForm({
   const [splitMode, setSplitMode] = useState<SplitMode>(initial.splitMode)
   const [vals, setVals] = useState<Record<string, string>>(initial.vals)
   const [wholeMemberId, setWholeMemberId] = useState<string | null>(initial.wholeMemberId)
-  const [iouDir, setIouDir] = useState<IouDir>(initial.iouDir)
-  const [iouWith, setIouWith] = useState<string | null>(initial.iouWith)
   const [cadence, setCadence] = useState<Cadence>(initial.cadence)
   const [date, setDate] = useState(initial.date)
 
@@ -320,9 +298,7 @@ function EntryForm({
     setVals({}) // percent numbers must not be reused as kr amounts
   }
 
-  const otherMembers = memberList.filter((m) => m.id !== currentMemberId)
   const payer = paidBy ?? currentMemberId ?? memberList[0]?.id
-  const iouOther = iouWith ?? otherMembers[0]?.id
   // "Allt på en": you can't owe yourself, so the picker excludes the payer and defaults to
   // the first non-payer — makes the balance-neutral payer==ower entry unreachable.
   const wholeCandidates = memberList.filter((m) => m.id !== payer)
@@ -365,15 +341,13 @@ function EntryForm({
       toast('Ange ett belopp först')
       return
     }
-    if (type !== 'iou') {
-      if (splitMode === 'percent' && !percentOk) {
-        toast('Procenten måste bli 100')
-        return
-      }
-      if (splitMode === 'amount' && !amountOk) {
-        toast(`Delningen måste bli ${formatKr(totalMinor)}`)
-        return
-      }
+    if (splitMode === 'percent' && !percentOk) {
+      toast('Procenten måste bli 100')
+      return
+    }
+    if (splitMode === 'amount' && !amountOk) {
+      toast(`Delningen måste bli ${formatKr(totalMinor)}`)
+      return
     }
 
     try {
@@ -394,32 +368,15 @@ function EntryForm({
       }
 
       if (mode === 'editEntry' && editId) {
-        const body: UpdateEntryRequest =
-          type === 'iou'
-            ? {
-                type: 'iou',
-                title: title.trim() || 'Lån',
-                amountMinor: totalMinor,
-                date: null,
-                paidByMemberId: null,
-                fromMemberId:
-                  iouDir === 'iowe' ? (currentMemberId ?? null) : (iouOther ?? null),
-                toMemberId:
-                  iouDir === 'iowe' ? (iouOther ?? null) : (currentMemberId ?? null),
-                split: null,
-                category: null,
-              }
-            : {
-                type: 'expense',
-                title: title.trim() || 'Utan titel',
-                amountMinor: totalMinor,
-                date: null,
-                paidByMemberId: payer ?? null,
-                fromMemberId: null,
-                toMemberId: null,
-                split: buildSplit(),
-                category: null,
-              }
+        const body: UpdateEntryRequest = {
+          type: 'expense',
+          title: title.trim() || 'Utan titel',
+          amountMinor: totalMinor,
+          date: null,
+          paidByMemberId: payer ?? null,
+          split: buildSplit(),
+          category: null,
+        }
         await updateEntry.mutateAsync({ entryId: editId, body })
         toast('Ändrad')
         onClose()
@@ -442,32 +399,16 @@ function EntryForm({
         return
       }
 
-      const body: CreateEntryRequest =
-        type === 'iou'
-          ? {
-              type: 'iou',
-              title: title.trim() || 'Lån',
-              amountMinor: totalMinor,
-              date: null,
-              paidByMemberId: null,
-              fromMemberId:
-                iouDir === 'iowe' ? (currentMemberId ?? null) : (iouOther ?? null),
-              toMemberId:
-                iouDir === 'iowe' ? (iouOther ?? null) : (currentMemberId ?? null),
-              split: null,
-            }
-          : {
-              type: 'expense',
-              title: title.trim() || 'Utan titel',
-              amountMinor: totalMinor,
-              date: null,
-              paidByMemberId: payer ?? null,
-              fromMemberId: null,
-              toMemberId: null,
-              split: buildSplit(),
-            }
+      const body: CreateEntryRequest = {
+        type: 'expense',
+        title: title.trim() || 'Utan titel',
+        amountMinor: totalMinor,
+        date: null,
+        paidByMemberId: payer ?? null,
+        split: buildSplit(),
+      }
       await createEntry.mutateAsync(body)
-      toast(type === 'iou' ? 'Antecknat' : 'Tillagd i loggboken')
+      toast('Tillagd i loggboken')
       onClose()
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Något gick fel. Försök igen.')
@@ -509,46 +450,7 @@ function EntryForm({
         onChange={(e) => setTitle(e.target.value)}
       />
 
-      {/* IOU branch */}
-      {type === 'iou' ? (
-        <>
-          <div className="flex flex-col gap-2">
-            <Label className={FIELD_LABEL}>Åt vilket håll</Label>
-            <ToggleGroup
-              value={[iouDir]}
-              onValueChange={(v) => setIouDir(pickSingle<IouDir>(v, iouDir))}
-              variant="outline"
-              className="w-full"
-            >
-              <ToggleGroupItem value="iowe" className="flex-1">
-                Jag är skyldig
-              </ToggleGroupItem>
-              <ToggleGroupItem value="theyowe" className="flex-1">
-                Skyldig mig
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label className={FIELD_LABEL}>Med</Label>
-            <ToggleGroup
-              value={iouOther ? [iouOther] : []}
-              onValueChange={(v) => setIouWith(pickSingle(v, iouOther ?? ''))}
-              variant="outline"
-              className="flex-wrap"
-            >
-              {otherMembers.map((m) => (
-                <ToggleGroupItem key={m.id} value={m.id} className="gap-2">
-                  <MemberAvatar name={m.name} avatarColor={m.avatarColor} avatarEmoji={m.avatarEmoji} size="sm" />
-                  {m.name}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </div>
-        </>
-      ) : (
-        <>
-          {/* Payer */}
+      {/* Payer */}
           <div className="flex flex-col gap-2">
             <Label className={FIELD_LABEL}>Vem betalade</Label>
             <ToggleGroup
@@ -705,8 +607,6 @@ function EntryForm({
               </p>
             </>
           )}
-        </>
-      )}
 
       {/* Save */}
       <Button

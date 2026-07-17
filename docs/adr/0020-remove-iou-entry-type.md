@@ -20,12 +20,14 @@ Only demo seed data uses `iou` today.
   entry becomes an `expense`; "one owes all" is the `Allt på en` amount-split preset
   (payer share = 0). The `BalanceCalculator`/`NudgeCalculator` IOU branches and the `Lån`
   ledger filter are deleted.
-- **Enum integer values stay fixed** — `Expense=0`, `RecurringPost=2`; `1` is retired and
-  never reused (renumbering would corrupt existing `RecurringPost` rows).
+- **`EntryType`/`SplitMode` persist as strings** (`HasConversion<string>`), so dropping the
+  `Iou` enum member needs no `Type` column change and can't renumber `RecurringPost` — the
+  `Type` column simply never holds `'Iou'` again.
 - **Seed-only data rewrite:** the two `DbInitializer` `Iou(...)` calls become `Expense` +
-  `Allt på en`. The column-dropping EF migration carries a **one-line defensive backfill**
-  (`UPDATE Entries … WHERE Type = 1`) that converts any stray IOU to its amount-split
-  equivalent *before* the columns drop — a guard, not a full data-migration. The mapping
+  `Allt på en`. The column-dropping EF migration carries a **defensive backfill**
+  (`UPDATE "Entries" … WHERE "Type" = 'Iou'`, plus an `INSERT` of the debtor's full share)
+  that converts any stray IOU to its amount-split equivalent *before* the columns drop — a
+  guard, not a full data-migration. The mapping
   is balance-equivalent: payer = creditor (`to`), shares debtor (`from`) = full /
   creditor (`to`) = 0, `SplitMode.Amount`; title and category preserved; settlement
   closures (keyed by entry id + unordered pair) untouched.

@@ -23,10 +23,9 @@ test.describe('Ledger', () => {
     await expect(feed.getByRole('heading', { level: 2 }).first()).toBeVisible()
   })
 
-  test('the "Utgifter" filter hides IOU entries', async ({ page }) => {
+  test('the "Utgifter" filter shows only expenses', async ({ page }) => {
     const feed = page.getByRole('main')
     await page.getByRole('button', { name: 'Utgifter', exact: true }).click()
     await expect(feed.getByText('Begagnad soffa')).toBeVisible()
-    await expect(feed.getByText('Konsertbiljett')).toHaveCount(0)
   })
 })

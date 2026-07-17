@@ -20,8 +20,6 @@ public sealed record EntryDto(
     DateOnly Date,
     DateTimeOffset CreatedAt,
     Guid? PaidByMemberId,
-    Guid? FromMemberId,
-    Guid? ToMemberId,
     string SplitMode,
     IReadOnlyList<ShareDto> Shares,
     Guid? RecurringTemplateId,
@@ -39,8 +37,6 @@ public sealed record CreateEntryRequest(
     long AmountMinor,
     DateOnly? Date,
     Guid? PaidByMemberId,
-    Guid? FromMemberId,
-    Guid? ToMemberId,
     SplitInput? Split);
 
 public sealed record UpdateEntryRequest(
@@ -49,7 +45,5 @@ public sealed record UpdateEntryRequest(
     long AmountMinor,
     DateOnly? Date,
     Guid? PaidByMemberId,
-    Guid? FromMemberId,
-    Guid? ToMemberId,
     SplitInput? Split,
     string? Category);

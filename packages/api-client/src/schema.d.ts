@@ -620,10 +620,6 @@ export interface components {
             date: null | string;
             /** Format: uuid */
             paidByMemberId: null | string;
-            /** Format: uuid */
-            fromMemberId: null | string;
-            /** Format: uuid */
-            toMemberId: null | string;
             split: null | components["schemas"]["SplitInput"];
         };
         CreateHouseholdRequest: {
@@ -668,10 +664,6 @@ export interface components {
             createdAt: string;
             /** Format: uuid */
             paidByMemberId: null | string;
-            /** Format: uuid */
-            fromMemberId: null | string;
-            /** Format: uuid */
-            toMemberId: null | string;
             splitMode: string;
             shares: components["schemas"]["ShareDto"][];
             /** Format: uuid */
@@ -920,10 +912,6 @@ export interface components {
             date: null | string;
             /** Format: uuid */
             paidByMemberId: null | string;
-            /** Format: uuid */
-            fromMemberId: null | string;
-            /** Format: uuid */
-            toMemberId: null | string;
             split: null | components["schemas"]["SplitInput"];
             category: null | string;
         };

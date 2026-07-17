@@ -117,7 +117,7 @@ export type ResetPasswordRequest = Schemas['ResetPasswordRequest']
 export type UpdateMeRequest = Schemas['UpdateMeRequest']
 
 // Domain string-union helpers (the API serialises these as plain strings)
-export type EntryType = 'expense' | 'iou' | 'recurringPost'
+export type EntryType = 'expense' | 'recurringPost'
 export type EntryCategory =
   | 'cleaning'
   | 'restaurant'
@@ -140,7 +140,7 @@ export type ViewerStatusKind =
   | 'partiallySettled'
   | 'notYourShare'
 export type NudgeActionKind = 'viewEntry' | 'viewRecurring' | 'settle'
-export type EntryFilter = 'all' | 'expense' | 'iou' | 'recurring'
+export type EntryFilter = 'all' | 'expense' | 'recurring'
 export type NudgeTone = 'gentle' | 'direct'
 export type InviteChannel = 'sms' | 'email'
 /** invitable-contacts status: already joined | pick to invite | invite already outstanding */

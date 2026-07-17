@@ -48,15 +48,9 @@ public sealed class ClosureLookup
 /// </summary>
 public static class BalanceCalculator
 {
-    /// <summary>All debts implied by an entry's frozen shares (or its Iou direction).</summary>
+    /// <summary>All debts implied by an entry's frozen shares.</summary>
     public static IReadOnlyList<Debt> Debts(Entry entry)
     {
-        if (entry.Type == EntryType.Iou)
-        {
-            if (entry.FromMemberId is null || entry.ToMemberId is null) return [];
-            return [new Debt(entry.FromMemberId.Value, entry.ToMemberId.Value, entry.AmountMinor)];
-        }
-
         if (entry.PaidByMemberId is null) return [];
         var paidBy = entry.PaidByMemberId.Value;
 
