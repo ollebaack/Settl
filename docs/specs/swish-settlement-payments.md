@@ -44,14 +44,17 @@ to the wrong person. Nothing in `apps/web/src/components/sheets/settle-up-sheet.
 
 ## Data model
 
-- New optional column **`Member.SwishNumber`** (`string?`, stored **E.164**), reusing
-  `Services/PhoneHelpers.TryNormalize` and following [ADR-0019](../adr/0019-phone-e164.md).
-  Absence = opted out. Distinct from the existing `Member.PhoneNumber` (a Swish number isn't
-  necessarily the account phone; we deliberately do **not** derive one from the other).
-- Same trust posture as `PhoneNumber`: **unverified contact data** — never a lookup key, auth
-  factor, or proof of anything ([tech-debt/0010](../tech-debt/0010-unverified-contact-data.md)).
-- EF Core migration adds the nullable column; no backfill. Provider-portable, no Postgres-specific
-  types (ADR-0010).
+> **Superseded by [ADR-0026](../adr/0026-single-member-phone-number.md) (2026-07-17):** the
+> separate `Member.SwishNumber` column was merged into the inherited `Member.PhoneNumber` — one
+> number now serves both the Swish payee and the deferred contacts/SMS feature. The original v1
+> shape is kept below for provenance; where it says `SwishNumber`, read `PhoneNumber`.
+
+- The payee number is the member's single **`Member.PhoneNumber`** (`string?`, stored **E.164**),
+  normalized via `Services/PhoneHelpers.TryNormalize`. Absence = opted out (no button).
+  (~~New optional column `Member.SwishNumber`, distinct from `PhoneNumber`~~ — merged per ADR-0026.)
+- Same trust posture: **unverified contact data** — never a lookup key, auth factor, or proof of
+  anything ([tech-debt/0010](../tech-debt/0010-unverified-profile-phone.md)).
+- EF Core migration is provider-portable, no Postgres-specific types (ADR-0010).
 
 ## API surface
 
@@ -76,9 +79,11 @@ to the wrong person. Nothing in `apps/web/src/components/sheets/settle-up-sheet.
 
 ## Web surface
 
-- **Profile:** an optional "Swish-nummer" field on the profile edit surface (alongside
-  display name / avatar), with the existing `+46` phone-input affordance. Cosmetic formatting
-  only; the API validates (ADR-0006).
+- **Profile:** an optional number field on the profile edit surface (alongside display name /
+  avatar), with the `+46` phone-input affordance. Cosmetic formatting only; the API validates
+  (ADR-0006). Per [ADR-0026](../adr/0026-single-member-phone-number.md) this is the member's single
+  "Ditt nummer" field (not a separate "Swish-nummer"); the Contacts screen no longer has its own
+  number input.
 - **Settle-up sheet** (`apps/web/src/components/sheets/settle-up-sheet.tsx`): when `swishPay` is
   present, render a **"Betala med Swish"** action near the net owed:
   - **On mobile**, a tap-through link to `swishPay.uri` — opens the Swish app pre-filled.

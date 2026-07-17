@@ -26,9 +26,10 @@ public static class MetaEndpoints
             .Produces<MeDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
-        // Update the acting member's own name + avatar emoji (ADR-0019). AvatarColor and email
-        // are not editable here. "AuthenticatedOnly" (not the confirmed-email fallback) so an
-        // unconfirmed member can still fix their name/avatar — same reasoning as GET /me.
+        // Update the acting member's own name, avatar emoji, nudge prefs and phone number
+        // (ADR-0019/0026 — one number, also the Swish payee). AvatarColor and email are not editable
+        // here. "AuthenticatedOnly" (not the confirmed-email fallback) so an unconfirmed member can
+        // still fix their name/avatar/phone before confirming their email — same reasoning as GET /me.
         app.MapPut("/me", async (
             UpdateMeRequest req, ICurrentUserAccessor cu, SettlDbContext db, CancellationToken ct) =>
         {
@@ -55,22 +56,23 @@ public static class MetaEndpoints
             var m = await db.Members.FirstOrDefaultAsync(x => x.Id == id, ct);
             if (m is null) return Results.Problem("Ingen användare hittades", statusCode: StatusCodes.Status404NotFound);
 
-            // Swish payee number (swish-settlement-payments spec): normalised to E.164 and stored
-            // UNVERIFIED (tech-debt/0010), distinct from the profile phone. The API is authoritative
-            // over the format (ADR-0006). Unlike the nudge toggles above, the profile form always
-            // submits this field, so null/empty CLEARS it rather than leaving it unchanged.
-            string? swishNumber;
-            if (string.IsNullOrWhiteSpace(req.SwishNumber))
+            // The member's single phone number (ADR-0026): normalised to E.164 and stored UNVERIFIED
+            // (tech-debt/0010) — display/contact data only, never a lookup key or auth factor. It
+            // also powers "Betala med Swish". The API is authoritative over the format (ADR-0006).
+            // Unlike the nudge toggles above, the profile form always submits this field, so
+            // null/empty CLEARS it rather than leaving it unchanged.
+            string? phone;
+            if (string.IsNullOrWhiteSpace(req.Phone))
             {
-                swishNumber = null;
+                phone = null;
             }
-            else if (PhoneHelpers.TryNormalize(req.SwishNumber, out var swishE164))
+            else if (PhoneHelpers.TryNormalize(req.Phone, out var e164))
             {
-                swishNumber = swishE164;
+                phone = e164;
             }
             else
             {
-                return Results.Problem("Ogiltigt Swish-nummer", statusCode: StatusCodes.Status400BadRequest);
+                return Results.Problem("Ogiltigt telefonnummer", statusCode: StatusCodes.Status400BadRequest);
             }
 
             m.Name = name;
@@ -79,45 +81,13 @@ public static class MetaEndpoints
             // Nudge-email opt-in (reminder-delivery spec): null leaves it unchanged, so a name/emoji
             // edit never flips the preference. The same flag is toggled login-free via unsubscribe.
             if (req.NudgeEmailsEnabled is { } enabled) m.NudgeEmailsEnabled = enabled;
-            m.SwishNumber = swishNumber;
-            await db.SaveChangesAsync(ct);
-
-            return Results.Ok(m.ToMeDto());
-        }).WithName("UpdateCurrentUser")
-            .RequireAuthorization("AuthenticatedOnly")
-            .Produces<MeDto>(StatusCodes.Status200OK)
-            .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status404NotFound);
-
-        // Update the acting member's own profile phone (ADR-0019), stored UNVERIFIED (no OTP —
-        // tech-debt/0010): display/contact data only, never a lookup key or auth factor. Email
-        // stays the sole identity (ADR-0005). "AuthenticatedOnly" so a member can set their phone
-        // before confirming their email.
-        app.MapPatch("/me", async (
-            UpdateProfileRequest req, ICurrentUserAccessor cu, SettlDbContext db, CancellationToken ct) =>
-        {
-            var id = await cu.GetMemberIdAsync(ct);
-            if (id is null) return Results.Problem("Ingen användare hittades", statusCode: StatusCodes.Status404NotFound);
-
-            var m = await db.Members.FirstOrDefaultAsync(x => x.Id == id, ct);
-            if (m is null) return Results.Problem("Ingen användare hittades", statusCode: StatusCodes.Status404NotFound);
-
-            if (string.IsNullOrWhiteSpace(req.Phone))
-            {
-                m.PhoneNumber = null;
-            }
-            else
-            {
-                if (!PhoneHelpers.TryNormalize(req.Phone, out var e164))
-                    return Results.Problem("Ogiltigt telefonnummer", statusCode: StatusCodes.Status400BadRequest);
-                m.PhoneNumber = e164;
-            }
+            m.PhoneNumber = phone;
             // Never trust an unverified number: keep it unconfirmed until an OTP lands (tech-debt/0010).
             m.PhoneNumberConfirmed = false;
             await db.SaveChangesAsync(ct);
 
             return Results.Ok(m.ToMeDto());
-        }).WithName("UpdateProfile")
+        }).WithName("UpdateCurrentUser")
             .RequireAuthorization("AuthenticatedOnly")
             .Produces<MeDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)

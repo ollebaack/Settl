@@ -370,7 +370,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["UpdateProfile"];
+        patch?: never;
         trace?: never;
     };
     "/households": {
@@ -876,7 +876,6 @@ export interface components {
             phoneVerified: boolean;
             nudgeTone: string;
             nudgeEmailsEnabled: boolean;
-            swishNumber: null | string;
         };
         MemberContributionDto: {
             /** Format: uuid */
@@ -1099,10 +1098,7 @@ export interface components {
             avatarEmoji: null | string;
             nudgeTone?: null | string;
             nudgeEmailsEnabled?: null | boolean;
-            swishNumber?: null | string;
-        };
-        UpdateProfileRequest: {
-            phone: null | string;
+            phone?: null | string;
         };
         UpdateRecurringRequest: {
             active: null | boolean;
@@ -1852,48 +1848,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["UpdateMeRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MeDto"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-        };
-    };
-    UpdateProfile: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateProfileRequest"];
             };
         };
         responses: {

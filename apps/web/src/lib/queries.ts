@@ -45,7 +45,6 @@ import {
   type NudgeDto,
   type NudgeTone,
   type PendingInviteDto,
-  type UpdateProfileRequest,
   type RecurringDetailDto,
   type RecurringDto,
   type RecurringListDto,
@@ -474,15 +473,6 @@ export function useInviteContactToHousehold(householdId: string | undefined) {
       qc.invalidateQueries({ queryKey: queryKeys.invitableContacts(householdId) })
       qc.invalidateQueries({ queryKey: queryKeys.householdInvites(householdId) })
     },
-  })
-}
-
-/** Update the acting member's own profile (the optional, unverified phone). */
-export function useUpdateProfile() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (body: UpdateProfileRequest) => apiPatch<MeDto>('/me', body),
-    onSuccess: (me) => qc.setQueryData(queryKeys.me, me),
   })
 }
 
