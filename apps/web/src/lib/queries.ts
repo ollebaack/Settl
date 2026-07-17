@@ -531,6 +531,27 @@ function invalidateHouseholdLists(qc: QueryClient) {
   ])
 }
 
+/**
+ * The household just became inaccessible to the viewer (hard-deleted, or left so we're no
+ * longer a member) and the acting sheet closes by navigating home. Refresh only the LISTS
+ * — deliberately DON'T touch the gone household's own queries (detail, removal-preview, …).
+ *
+ * Both other ways of "cleaning them up" wedge the confirmation sheet open:
+ *  - invalidateQueries refetches them, and a GET on a gone/forbidden household 404/403s;
+ *    awaiting that (with retry + backoff) delays the sheet's mutate-level onSuccess (toast +
+ *    close + navigate) so it intermittently never runs.
+ *  - removeQueries evicts what the still-open sheet observes, flipping it to its loading
+ *    branch and UNMOUNTING it before that same mutate-level onSuccess fires — React Query
+ *    skips mutate-level callbacks once the calling component has unmounted, so the sheet lingers.
+ *
+ * Left alone, those queries simply lose their observer when the sheet navigates away and are
+ * garbage-collected. Nothing else reads them: the active-household context tracks only the
+ * list, so there's no observer left to refetch and 404. Fire-and-forget (not awaited) so the
+ * sheet closes immediately; the lists' own observers refetch on their own. */
+function forgetHousehold(qc: QueryClient) {
+  invalidateHouseholdLists(qc)
+}
+
 /** Owner hands ownership to another current member (ADR-0016). */
 export function useTransferOwnership(householdId: string | undefined) {
   const qc = useQueryClient()
@@ -546,7 +567,13 @@ export function useLeaveHousehold(householdId: string | undefined) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: () => apiPost<LeaveResultDto>(`/households/${householdId}/leave`),
-    onSuccess: () => invalidateHouseholdMembership(qc, householdId),
+    onSuccess: (result) =>
+      // Sole-owner leave archives it — still ours, still accessible, so keep it fresh.
+      // A plain leave drops our membership: the household is now forbidden to us, so
+      // forget it rather than refetching into a 403 (same wedge as delete).
+      result.archived
+        ? invalidateHouseholdMembership(qc, householdId)
+        : forgetHousehold(qc),
   })
 }
 
@@ -573,7 +600,8 @@ export function useDeleteHousehold(householdId: string | undefined) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: () => apiDelete<void>(`/households/${householdId}`),
-    onSuccess: () => invalidateHouseholdMembership(qc, householdId),
+    // The household is gone — forget it, don't refetch it (see forgetHousehold).
+    onSuccess: () => forgetHousehold(qc),
   })
 }
 
