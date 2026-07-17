@@ -49,6 +49,45 @@ test.describe('Add entry', () => {
     await expect(page.getByRole('heading', { name: 'Ny post' })).toBeVisible()
   })
 
+  test('recurring tab drawer does not scroll horizontally', async ({ page }, testInfo) => {
+    // The x-overflow lived on the mobile bottom Drawer (a centered Dialog on desktop
+    // sizes differently and never showed it). The recurring tab's wide cadence toggle
+    // ("Varje månad / Varannan vecka / Varje vecka") was the trigger.
+    test.skip(testInfo.project.name !== 'mobile', 'drawer is mobile-only')
+
+    // Pin a narrow-but-common Android width (360px). Pixel 7's 412px is wide enough that the
+    // cadence toggle just fits; the overflow only bit on narrower phones — which is what the
+    // report was about.
+    await page.setViewportSize({ width: 360, height: 800 })
+
+    await openAddSheet(page)
+    await page.getByRole('tab', { name: 'Återkommande' }).click()
+    await expect(page.getByRole('button', { name: 'Varannan vecka' })).toBeVisible()
+
+    // Two symptoms of the old flex-1 columns: (a) the scroll region gaining an inline
+    // scrollbar, and (b) the cadence chips clipping their own label (scrollWidth beyond
+    // clientWidth). scrollWidth still reports clipped content, so both survive the drawer's
+    // overflow-x-hidden guard. Natural-width wrapping chips avoid both.
+    const measure = await page.evaluate(() => {
+      const popup = document.querySelector('[data-slot="drawer-popup"]')!
+      const scroller = Array.from(popup.querySelectorAll('div')).find(
+        (el) => getComputedStyle(el).overflowY === 'auto',
+      )
+      const clipped = (Array.from(popup.querySelectorAll('[data-slot="toggle-group-item"]')) as HTMLElement[])
+        .filter((el) => el.scrollWidth - el.clientWidth > 1)
+        .map((el) => el.textContent)
+      return {
+        scroller: scroller
+          ? { scrollWidth: scroller.scrollWidth, clientWidth: scroller.clientWidth }
+          : null,
+        clipped,
+      }
+    })
+    expect(measure.scroller, 'found the drawer scroll region').not.toBeNull()
+    expect(measure.scroller!.scrollWidth).toBeLessThanOrEqual(measure.scroller!.clientWidth)
+    expect(measure.clipped, 'no toggle chip clips its label').toEqual([])
+  })
+
   test('blocks save when the whole amount lands on the payer', async ({ page }) => {
     await openAddSheet(page)
     await page.getByRole('textbox', { name: 'Belopp' }).fill('100')
