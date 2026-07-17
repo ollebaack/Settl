@@ -1,13 +1,13 @@
 /**
  * Statistik — per-person "who paid how much, when" for the active household
- * (docs/specs/household-statistics.md). v1 is a single grouped bar chart of each
+ * (docs/specs/household-statistics.md). v1 is a single line chart of each
  * member's monthly contributions over the trailing 12 months. Aggregation is
  * server-side (ADR-0006); this screen only renders and calls. No design export
  * exists for this new screen — layout mirrors the other list screens (header +
  * card), using semantic tokens and each member's avatar colour as their series.
  */
 import { createFileRoute } from '@tanstack/react-router'
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts'
 import { RequireAuth } from '@/components/require-auth'
 import { Card } from '@/components/ui/card'
 import {
@@ -109,7 +109,7 @@ function ContributionChart({ stats }: { stats: ContributionStatsDto }) {
 
   return (
     <ChartContainer config={chartConfig} className="h-[280px] w-full">
-      <BarChart accessibilityLayer data={chartData}>
+      <LineChart accessibilityLayer data={chartData} margin={{ left: 12, right: 12 }}>
         <CartesianGrid vertical={false} />
         <XAxis
           dataKey="month"
@@ -129,14 +129,16 @@ function ContributionChart({ stats }: { stats: ContributionStatsDto }) {
         />
         <ChartLegend content={<ChartLegendContent />} />
         {stats.members.map((m) => (
-          <Bar
+          <Line
             key={m.memberId}
             dataKey={m.memberId}
-            fill={`var(--color-${m.memberId})`}
-            radius={4}
+            type="monotone"
+            stroke={`var(--color-${m.memberId})`}
+            strokeWidth={2}
+            dot={false}
           />
         ))}
-      </BarChart>
+      </LineChart>
     </ChartContainer>
   )
 }
