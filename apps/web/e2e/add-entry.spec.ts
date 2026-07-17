@@ -48,4 +48,21 @@ test.describe('Add entry', () => {
     await expect(page.getByText('Procenten måste bli 100')).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Ny post' })).toBeVisible()
   })
+
+  test('blocks save when the whole amount lands on the payer', async ({ page }) => {
+    await openAddSheet(page)
+    await page.getByRole('textbox', { name: 'Belopp' }).fill('100')
+
+    // Percent split summing to 100 but entirely on the payer (Du) — nobody else owes.
+    await page.getByRole('button', { name: '%', exact: true }).click()
+    await page.getByRole('textbox', { name: 'Du andel' }).fill('100')
+    await page.getByRole('textbox', { name: 'Sam andel' }).fill('0')
+    await page.getByRole('textbox', { name: 'Priya andel' }).fill('0')
+
+    await page.getByRole('button', { name: 'Lägg i loggboken' }).click()
+
+    // Save is blocked: a shared expense must include someone other than the payer.
+    await expect(page.getByText('Lägg till någon att dela med')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Ny post' })).toBeVisible()
+  })
 })

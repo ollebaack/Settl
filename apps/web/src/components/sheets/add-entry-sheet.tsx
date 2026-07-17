@@ -349,6 +349,17 @@ function EntryForm({
       toast(`Delningen måste bli ${formatKr(totalMinor)}`)
       return
     }
+    // Mirror the API rule: a shared expense must include someone other than the payer.
+    // Equal/whole always do; only percent/kr can land the whole amount on the payer.
+    if (memberList.length > 1 && (splitMode === 'percent' || splitMode === 'amount')) {
+      const nonPayerShare = memberList
+        .filter((m) => m.id !== payer)
+        .reduce((sum, m) => sum + parseNum(vals[m.id] ?? ''), 0)
+      if (nonPayerShare <= 0) {
+        toast('Lägg till någon att dela med')
+        return
+      }
+    }
 
     try {
       if (mode === 'editRecurring' && editId) {
