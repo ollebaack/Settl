@@ -45,7 +45,12 @@ test('invite a new email, accept it, and see the shared household', async ({ pag
   await page.getByRole('button', { name: 'Skapa konto & gå med' }).click()
 
   await expect(page).toHaveURL('http://localhost:5173/')
-  await expect(page.getByText(`öppna poster i ${householdName}`)).toBeVisible()
+  // The invitee has exactly one book, so `/` is the single-household overview
+  // (ADR-0020) — the shared household shows up as its card.
+  await expect(page.getByRole('heading', { name: 'Ditt hushåll', level: 1 })).toBeVisible()
+  await expect(
+    page.getByTestId('household-card').filter({ hasText: householdName }),
+  ).toBeVisible()
 
   // Both accounts are now members of the household.
   const members = await getMembers(page.request, household.id)
