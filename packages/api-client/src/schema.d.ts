@@ -1536,7 +1536,9 @@ export interface operations {
     };
     GetLatestDevVerification: {
         parameters: {
-            query?: never;
+            query?: {
+                email?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1554,7 +1556,9 @@ export interface operations {
     };
     GetLatestDevPasswordReset: {
         parameters: {
-            query?: never;
+            query?: {
+                email?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;

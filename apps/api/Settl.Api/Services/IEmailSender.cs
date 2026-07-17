@@ -107,14 +107,14 @@ public sealed class DevEmailSender(ILogger<DevEmailSender> logger, DevEmailLinkS
     public Task SendVerificationEmailAsync(string toEmail, string confirmUrl, CancellationToken ct = default)
     {
         logger.LogInformation("[dev email] Verification for {ToEmail}: {ConfirmUrl}", toEmail, confirmUrl);
-        linkStore.RecordVerification(confirmUrl);
+        linkStore.RecordVerification(toEmail, confirmUrl);
         return Task.CompletedTask;
     }
 
     public Task SendPasswordResetEmailAsync(string toEmail, string resetUrl, CancellationToken ct = default)
     {
         logger.LogInformation("[dev email] Password reset for {ToEmail}: {ResetUrl}", toEmail, resetUrl);
-        linkStore.RecordPasswordReset(resetUrl);
+        linkStore.RecordPasswordReset(toEmail, resetUrl);
         return Task.CompletedTask;
     }
 

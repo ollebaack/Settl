@@ -1,8 +1,7 @@
 import { test, expect } from '@playwright/test'
 import {
-  API,
   createHousehold,
-  devVerificationUrlFor,
+  latestDevVerificationUrl,
   registerConfirmedUser,
   relativePath,
   uniqueSuffix,
@@ -35,14 +34,9 @@ test('signs up, verifies email, logs out, and logs back in', async ({ page }) =>
   await expect(page).toHaveURL(/\/verify-email$/)
   await expect(page.getByText('Bekräfta din e-postadress')).toBeVisible()
 
-  // Follow THIS user's verification link. The dev channel is a single slot shared across
-  // parallel workers, so match on our own userId (read from the now-authenticated session)
-  // rather than grabbing whatever link landed there last, or we may confirm someone else's
-  // account and stay unconfirmed ourselves.
-  const meRes = await page.request.get(`${API}/me`)
-  expect(meRes.ok(), 'GET /me').toBeTruthy()
-  const { id } = (await meRes.json()) as { id: string }
-  const confirmUrl = await devVerificationUrlFor(page.request, id)
+  // Follow THIS account's verification link, scoped by email so a parallel worker's signup
+  // can't hand us someone else's token (the dev channel indexes links by recipient).
+  const confirmUrl = await latestDevVerificationUrl(page.request, email)
   await page.goto(relativePath(confirmUrl))
   await expect(page.getByText('E-post bekräftad')).toBeVisible()
 

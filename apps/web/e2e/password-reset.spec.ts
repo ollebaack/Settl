@@ -26,7 +26,7 @@ test('forgot password, reset it, and log in with the new password', async ({ pag
   await expect(page.getByText('Kolla din inkorg')).toBeVisible()
   await expect(page.getByText(email)).toBeVisible()
 
-  const resetUrl = await latestDevPasswordResetUrl(request)
+  const resetUrl = await latestDevPasswordResetUrl(request, email)
   await page.goto(relativePath(resetUrl))
   await page.getByLabel('Nytt lösenord').fill(newPassword)
   await page.getByRole('button', { name: 'Spara lösenord' }).click()
