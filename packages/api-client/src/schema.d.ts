@@ -758,6 +758,11 @@ export interface components {
             /** Format: uuid */
             paidByMemberId: string;
             split: components["schemas"]["SplitInput"];
+            endMode?: null | string;
+            /** Format: date */
+            endDate?: null | string;
+            /** Format: int32 */
+            endAfterCount?: null | number | string;
         };
         CreateSettlementRequest: {
             /** Format: uuid */
@@ -967,6 +972,9 @@ export interface components {
             /** Format: double */
             cycleProgress: number | string;
             contributingMemberIds: string[];
+            /** Format: date */
+            endDate: null | string;
+            ended: boolean;
         };
         RecurringListDto: {
             /** Format: int64 */
@@ -1115,6 +1123,11 @@ export interface components {
             /** Format: uuid */
             paidByMemberId: null | string;
             split: null | components["schemas"]["SplitInput"];
+            endMode?: null | string;
+            /** Format: date */
+            endDate?: null | string;
+            /** Format: int32 */
+            endAfterCount?: null | number | string;
         };
         ViewerStatusDto: {
             kind: string;

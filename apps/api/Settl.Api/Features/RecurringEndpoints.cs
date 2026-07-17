@@ -27,11 +27,15 @@ public static class RecurringEndpoints
 
             var dtos = templates
                 .Select(t => Mapping.ToRecurringDto(t, data.OrderedMemberIds, data.MembersById, me.Value, today))
-                .OrderBy(t => t.DaysUntil)
+                // Ended templates sink below live ones; within each group, soonest next-post first.
+                .OrderBy(t => t.Ended)
+                .ThenBy(t => t.DaysUntil)
                 .ToList();
 
+            // Monthly-normalized tiles count only templates that still cost something — active and
+            // not yet ended (a template past its EndDate contributes nothing going forward).
             long recTotal = 0, recShare = 0;
-            foreach (var t in templates.Where(t => t.Active))
+            foreach (var t in templates.Where(t => t.Active && !RecurrenceCalculator.IsEnded(t.NextPostDate, t.EndDate)))
             {
                 recTotal += RecurrenceCalculator.MonthlyNormalizedMinor(t.AmountMinor, t.Cadence);
                 var myShare = Mapping.TemplateShares(t, data.OrderedMemberIds).Where(s => s.MemberId == me).Sum(s => s.ShareMinor);
@@ -66,6 +70,8 @@ public static class RecurringEndpoints
                 ShareFreezer.Freeze(mode, data.OrderedMemberIds, req.AmountMinor, formula);
 
                 var templateTitle = string.IsNullOrWhiteSpace(req.Title) ? "Utan titel" : req.Title!.Trim();
+                var cadence = Contract.ParseCadence(req.Cadence);
+                var endDate = ResolveEndDate(req.EndMode, req.EndDate, req.EndAfterCount, req.NextPostDate, cadence);
                 var template = new RecurringTemplate
                 {
                     Id = Guid.NewGuid(),
@@ -73,8 +79,9 @@ public static class RecurringEndpoints
                     Title = templateTitle,
                     Category = CategoryClassifier.Classify(templateTitle),
                     AmountMinor = req.AmountMinor,
-                    Cadence = Contract.ParseCadence(req.Cadence),
+                    Cadence = cadence,
                     NextPostDate = req.NextPostDate,
+                    EndDate = endDate,
                     PaidByMemberId = req.PaidByMemberId,
                     SplitMode = mode,
                     Active = true,
@@ -204,6 +211,13 @@ public static class RecurringEndpoints
                     ShareFreezer.Freeze(template.SplitMode, data.OrderedMemberIds, template.AmountMinor, effectiveFormula);
                 }
 
+                // Termination: null EndMode leaves the end date untouched; otherwise re-resolve from
+                // the (possibly updated) cadence + next-post cursor. "count" counts from the next
+                // upcoming post, since there's no immutable start stored.
+                if (req.EndMode is not null)
+                    template.EndDate = ResolveEndDate(
+                        req.EndMode, req.EndDate, req.EndAfterCount, template.NextPostDate, template.Cadence);
+
                 // Resume (paused → active): skip the paused gap by scheduling the next cycle on or
                 // after today, rather than back-posting every missed cycle in one burst.
                 if (!wasActive && template.Active)
@@ -250,4 +264,26 @@ public static class RecurringEndpoints
 
         return app;
     }
+
+    /// <summary>
+    /// Resolves the mutually-exclusive termination input to a single inclusive <c>EndDate</c>
+    /// (recurring-end-date spec). "never"/null → no end; "date" → the given date (must be on or
+    /// after the next post); "count" → the Nth post date from <paramref name="nextPostDate"/>.
+    /// Throws <see cref="SplitValidationException"/> (→ 400) on invalid input.
+    /// </summary>
+    private static DateOnly? ResolveEndDate(
+        string? endMode, DateOnly? endDate, int? endAfterCount, DateOnly nextPostDate, Domain.Cadence cadence)
+        => (endMode ?? "never").Trim().ToLowerInvariant() switch
+        {
+            "never" => null,
+            "date" => endDate is { } d
+                ? d.DayNumber >= nextPostDate.DayNumber
+                    ? d
+                    : throw new SplitValidationException("Slutdatumet kan inte vara före nästa bokföring")
+                : throw new SplitValidationException("Välj ett slutdatum"),
+            "count" => endAfterCount is { } n && n >= 1
+                ? RecurrenceCalculator.NthPostDate(nextPostDate, cadence, n)
+                : throw new SplitValidationException("Ange hur många gånger den ska bokföras"),
+            _ => throw new SplitValidationException("Ogiltigt slutläge")
+        };
 }

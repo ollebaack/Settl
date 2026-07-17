@@ -57,16 +57,39 @@ public static class RecurrenceCalculator
 
     /// <summary>
     /// Yields every post date due up to and including <paramref name="today"/> for an active
-    /// template, starting at its NextPostDate. Deterministic and terminating.
+    /// template, starting at its NextPostDate. Stops at <paramref name="endDate"/> when set
+    /// (INCLUSIVE — a cycle landing exactly on the end date still posts). Deterministic and terminating.
     /// </summary>
-    public static IEnumerable<DateOnly> DuePosts(bool active, DateOnly nextPostDate, Cadence cadence, DateOnly today)
+    public static IEnumerable<DateOnly> DuePosts(
+        bool active, DateOnly nextPostDate, Cadence cadence, DateOnly today, DateOnly? endDate = null)
     {
         if (!active) yield break;
         var cursor = nextPostDate;
-        while (cursor.DayNumber <= today.DayNumber)
+        while (cursor.DayNumber <= today.DayNumber && (endDate is not { } end || cursor.DayNumber <= end.DayNumber))
         {
             yield return cursor;
             cursor = Advance(cursor, cadence);
         }
     }
+
+    /// <summary>
+    /// The date of the <paramref name="n"/>th post (1-based), counting from
+    /// <paramref name="nextPostDate"/> inclusive: N=1 → the next post itself. Resolves
+    /// "efter N gånger" to an inclusive <c>EndDate</c> at save time, so only the date is stored.
+    /// </summary>
+    public static DateOnly NthPostDate(DateOnly nextPostDate, Cadence cadence, int n)
+    {
+        if (n < 1) throw new ArgumentOutOfRangeException(nameof(n), "Count must be at least 1.");
+        var cursor = nextPostDate;
+        for (var i = 1; i < n; i++)
+            cursor = Advance(cursor, cadence);
+        return cursor;
+    }
+
+    /// <summary>
+    /// Whether the template has run past its end date — DERIVED, never stored. True once the
+    /// rolling cursor has advanced beyond an inclusive <paramref name="endDate"/>. Null end = never ends.
+    /// </summary>
+    public static bool IsEnded(DateOnly nextPostDate, DateOnly? endDate) =>
+        endDate is { } end && nextPostDate.DayNumber > end.DayNumber;
 }

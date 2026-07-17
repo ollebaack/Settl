@@ -122,9 +122,15 @@ function RecurringCard({
   const toggling =
     updateRecurring.isPending && updateRecurring.variables?.recId === template.id
 
-  const pct = template.active ? Number(template.cycleProgress) * 100 : 0
+  const ended = template.ended
+  const pct = ended ? 100 : template.active ? Number(template.cycleProgress) * 100 : 0
   const cadLabel = `${cadenceLabel(template.cadence)} · ${template.payerName} betalar`
   const splitLabel = SPLIT_LABEL[template.splitMode] ?? ''
+  const statusLabel = ended
+    ? 'Avslutad'
+    : template.active
+      ? `Bokförs ${inDays(template.nextPostDate)}`
+      : 'Pausad'
 
   const avatars = template.contributingMemberIds
     .map((id) => members?.find((m) => m.id === id))
@@ -160,7 +166,7 @@ function RecurringCard({
   }
 
   return (
-    <Card className={cn('gap-0 p-4', !template.active && 'opacity-[0.55]')}>
+    <Card className={cn('gap-0 p-4', (!template.active || ended) && 'opacity-[0.55]')}>
       <div className="flex items-start gap-3">
         <span
           aria-hidden="true"
@@ -183,8 +189,13 @@ function RecurringCard({
       <Progress value={pct} className="mt-3 mb-2 h-[5px]" />
 
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold text-accent-foreground">
-          {template.active ? `Bokförs ${inDays(template.nextPostDate)}` : 'Pausad'}
+        <span
+          className={cn(
+            'text-xs font-semibold',
+            ended ? 'text-muted-foreground' : 'text-accent-foreground',
+          )}
+        >
+          {statusLabel}
         </span>
         <span className="flex items-center gap-2">
           {avatars.length > 0 && <MemberAvatarStack members={avatars} />}
@@ -201,15 +212,19 @@ function RecurringCard({
         >
           Detaljer
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex-1"
-          disabled={toggling}
-          onClick={onToggle}
-        >
-          {template.active ? 'Pausa' : 'Återuppta'}
-        </Button>
+        {/* Ended templates can't post again — pausing/resuming is meaningless. Reviving one
+            means clearing its slutdatum via Redigera (in the detail sheet). */}
+        {!ended && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1"
+            disabled={toggling}
+            onClick={onToggle}
+          >
+            {template.active ? 'Pausa' : 'Återuppta'}
+          </Button>
+        )}
       </div>
     </Card>
   )
