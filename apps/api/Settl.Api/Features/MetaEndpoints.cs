@@ -55,12 +55,31 @@ public static class MetaEndpoints
             var m = await db.Members.FirstOrDefaultAsync(x => x.Id == id, ct);
             if (m is null) return Results.Problem("Ingen användare hittades", statusCode: StatusCodes.Status404NotFound);
 
+            // Swish payee number (swish-settlement-payments spec): normalised to E.164 and stored
+            // UNVERIFIED (tech-debt/0010), distinct from the profile phone. The API is authoritative
+            // over the format (ADR-0006). Unlike the nudge toggles above, the profile form always
+            // submits this field, so null/empty CLEARS it rather than leaving it unchanged.
+            string? swishNumber;
+            if (string.IsNullOrWhiteSpace(req.SwishNumber))
+            {
+                swishNumber = null;
+            }
+            else if (PhoneHelpers.TryNormalize(req.SwishNumber, out var swishE164))
+            {
+                swishNumber = swishE164;
+            }
+            else
+            {
+                return Results.Problem("Ogiltigt Swish-nummer", statusCode: StatusCodes.Status400BadRequest);
+            }
+
             m.Name = name;
             m.AvatarEmoji = emoji;
             if (tone is not null) m.NudgeTone = tone.Value;
             // Nudge-email opt-in (reminder-delivery spec): null leaves it unchanged, so a name/emoji
             // edit never flips the preference. The same flag is toggled login-free via unsubscribe.
             if (req.NudgeEmailsEnabled is { } enabled) m.NudgeEmailsEnabled = enabled;
+            m.SwishNumber = swishNumber;
             await db.SaveChangesAsync(ct);
 
             return Results.Ok(m.ToMeDto());

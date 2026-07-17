@@ -876,6 +876,7 @@ export interface components {
             phoneVerified: boolean;
             nudgeTone: string;
             nudgeEmailsEnabled: boolean;
+            swishNumber: null | string;
         };
         MemberContributionDto: {
             /** Format: uuid */
@@ -1041,6 +1042,7 @@ export interface components {
             netLabel: string;
             memberName: string;
             entries: components["schemas"]["SettleEntryDto"][];
+            swishPay: null | components["schemas"]["SwishPayDto"];
         };
         ShareDto: {
             /** Format: uuid */
@@ -1057,6 +1059,11 @@ export interface components {
             values: null | {
                 [key: string]: number | string;
             };
+        };
+        SwishPayDto: {
+            uri: string;
+            /** Format: int64 */
+            amountMinor: number | string;
         };
         TransferOwnershipRequest: {
             /** Format: uuid */
@@ -1092,6 +1099,7 @@ export interface components {
             avatarEmoji: null | string;
             nudgeTone?: null | string;
             nudgeEmailsEnabled?: null | boolean;
+            swishNumber?: null | string;
         };
         UpdateProfileRequest: {
             phone: null | string;
