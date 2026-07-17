@@ -70,7 +70,7 @@ export function ResponsiveSheet({
             <DrawerDescription className="sr-only">{title}</DrawerDescription>
           )}
         </DrawerHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-1 pb-6">{children}</div>
       </DrawerContent>
     </Drawer>
   )
