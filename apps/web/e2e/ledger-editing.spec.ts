@@ -26,7 +26,7 @@ test('split preset "Allt på en" puts the whole amount on one person', async ({ 
   await page.getByRole('textbox', { name: 'Titel' }).fill(title)
 
   // Fourth Delning preset → a single-select "who owes it all" picker appears.
-  await page.getByRole('button', { name: 'Allt på en' }).click()
+  await page.getByRole('button', { name: 'Allt', exact: true }).click()
   await expect(page.getByText('Vem står för hela beloppet?')).toBeVisible()
   // The whole-owner buttons follow the payer buttons, so Sam's second occurrence is here.
   await page.getByRole('button', { name: 'Sam' }).nth(1).click()

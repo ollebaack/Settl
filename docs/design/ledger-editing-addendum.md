@@ -17,7 +17,7 @@ UI** over existing behavior, not a new contract.
 
 | Frame | Screen | Extends |
 |---|---|---|
-| 1 | Add entry — `Delning` gains an **"Allt på en"** preset | §2.6 |
+| 1 | Add entry — `Delning` gains an **"Allt"** preset | §2.6 |
 | 2 | Entry detail — how the preset reads back | §2.7 |
 | 3 | Entry detail — **⋯ action menu** (Redigera / Ta bort) | §2.7 |
 | 4 | **Redigera post** — the add-entry form, prefilled | §2.6 / §2.7 |
@@ -32,7 +32,7 @@ UI** over existing behavior, not a new contract.
 
 ## 2. Per-feature spec
 
-### 2.1 "Allt på en" split preset (frames 1–2) — wishlist #6
+### 2.1 "Allt" split preset (frames 1–2) — wishlist #6
 
 A fourth `Delning` mode alongside `Lika / % / kr`. Selecting it reveals a
 single-select member list (`Vem står för hela beloppet?`); the chosen member's
@@ -51,7 +51,7 @@ confusion: the gap was split flexibility, not the payer model (ADR-0018).
 - Client validation reuses the existing amount tolerance (±0.05 kr); the preset always
   balances by construction, so the live hint reads `{namn} står för hela beloppet`.
 
-**Copy** — mode label `Allt på en`; picker label `Vem står för hela beloppet?`;
+**Copy** — mode label `Allt`; picker label `Vem står för hela beloppet?`;
 hint `{namn} står för hela beloppet`; detail meta `Du betalade · {namn} står för allt`.
 
 ### 2.2 Edit affordance (frames 3–5) — wishlist #8
@@ -136,7 +136,7 @@ i stället.`; buttons `Ta bort` / `Pausa i stället`; toast `{titel} borttagen`.
 ## 4. Notes & follow-ups
 
 1. **No schema change.** No `CreatedByMemberId`, no nullable payer, no soft-delete —
-   all rejected in ADR-0018. The "Allt på en" preset stores an ordinary amount split.
+   all rejected in ADR-0018. The "Allt" preset stores an ordinary amount split.
 2. **`DELETE /recurring/{id}` is the only API-shape change** — new operation +
    regenerated client + a `WebApplicationFactory` test (api rule), incl. the 409-with-
    history case.

@@ -7,7 +7,7 @@ described there. Same conventions: DC export is authoritative for UI structure; 
 Swedish, shared-notebook tone.
 
 Product decision: [unified-add-entry.md](../specs/unified-add-entry.md), evolved via the
-follow-up UI pass — **`Lån` is removed as a feature**, not merely merged. "Allt på en"
+follow-up UI pass — **`Lån` is removed as a feature**, not merely merged. "Allt"
 already does exactly what a loan did (one person owes the whole amount), so the separate
 IOU surface was redundant. **Every created entry is now an `expense`.** The model-side
 teardown (removing the `iou` `EntryType`) is a separate, irreversible decision → see the
@@ -20,8 +20,8 @@ teardown (removing the `iou` `EntryType`) is a separate, irreversible decision �
 | Frame | Screen | Note |
 |---|---|---|
 | 1 | `Ny post` — **Utgift · Lika** | Two-tab picker; standard equal split |
-| 2 | `Ny post` — **Utgift · Allt på en** | One person owes all; payer excluded from the picker |
-| 3 | Entry detail — how "Allt på en" reads back | Ordinary amount-split rendering |
+| 2 | `Ny post` — **Utgift · Allt** | One person owes all; payer excluded from the picker |
+| 3 | Entry detail — how "Allt" reads back | Ordinary amount-split rendering |
 
 ---
 
@@ -37,14 +37,15 @@ and with it the whole IOU branch (`Åt vilket håll` / `Med`,
 
 ### 2.2 Delning order — presets first
 
-`Lika · Allt på en · % · kr`. The two **one-tap presets** (`Lika`, `Allt på en`) sit
+`Lika · Allt · % · kr`. The two **one-tap presets** (`Lika`, `Allt`) sit
 adjacent on the left; the **manual-entry** modes (`%`, `kr`) follow. Fixes the earlier
-overflow where the long `Allt på en` label sat last and spilled past the row — four equal
-`flex-1` pills fit on one line at the `max-w-md` sheet width (verified in the export).
+overflow where the label (then `Allt på en`) sat last and spilled past the row: the presets
+now lead, and the label has since been shortened to `Allt`, so four equal `flex-1` pills fit
+on one line at the `max-w-md` sheet width.
 
-### 2.3 "Allt på en" — payer excluded
+### 2.3 "Allt" — payer excluded
 
-Selecting `Allt på en` reveals **`Vem står för hela beloppet?`** listing every member
+Selecting `Allt` reveals **`Vem står för hela beloppet?`** listing every member
 **except the payer** (was: the full member list,
 [add-entry-sheet.tsx:599](../../apps/web/src/components/sheets/add-entry-sheet.tsx#L599)),
 defaulting to the first non-payer (was: `memberList[0]`,
@@ -55,14 +56,14 @@ two-person household the picker collapses to one option (auto-selected); the sum
 
 ### 2.4 Save — always an expense
 
-`Allt på en` builds `SplitInput { mode: "amount", values: { <ower>: total, <others>: 0 } }`
+`Allt` builds `SplitInput { mode: "amount", values: { <ower>: total, <others>: 0 } }`
 (ADR-0018 §2.1, unchanged) and posts `type: "expense"`. There is **no `iou` creation
 path** in the UI. Detail (frame 3) renders the ordinary amount-split share rows
 (`Du · betalade 0 kr`, `Sam · skyldig 1 000 kr`) — same as any amount split.
 
-**Copy** — tabs `Utgift` / `Återkommande`; split `Lika` / `Allt på en` / `%` / `kr`;
+**Copy** — tabs `Utgift` / `Återkommande`; split `Lika` / `Allt` / `%` / `kr`;
 payer label `Vem betalade` (reverted from the merge-era `Vem la ut?` — with loans gone
-there is always a real payer); `Allt på en` picker `Vem står för hela beloppet?`; hint
+there is always a real payer); `Allt` picker `Vem står för hela beloppet?`; hint
 `{namn} står för hela beloppet`; detail meta `{du/namn} betalade · {namn} står för allt`.
 
 ---
@@ -72,7 +73,7 @@ there is always a real payer); `Allt på en` picker `Vem står för hela beloppe
 - **Add-entry web change** is self-contained in
   [add-entry-sheet.tsx](../../apps/web/src/components/sheets/add-entry-sheet.tsx):
   remove the `iou` tab + branch, reorder `Delning`, exclude the payer from the
-  `Allt på en` ower picker, and drop the `type: "iou"` build path in
+  `Allt` ower picker, and drop the `type: "iou"` build path in
   `onSave()` / `buildSplit()`.
 - **`POST /entries`** is now only ever called with `type: "expense"` (or `recurring`).
 - **Ledger `Lån` filter** ([implementation-map.md](implementation-map.md) §2.2) is
