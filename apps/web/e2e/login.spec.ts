@@ -49,7 +49,7 @@ test('signs up, verifies email, logs out, and logs back in', async ({ page }) =>
   // Now lands in the app shell (no household yet, so home auto-opens the create-household
   // sheet). Dismiss it to get back to the shell chrome, including the account menu.
   await page.goto('/')
-  await expect(page).toHaveURL('http://localhost:5173/?sheet=newHousehold')
+  await expect(page).toHaveURL('/?sheet=newHousehold')
   await page.keyboard.press('Escape')
   await expect(page.getByRole('button', { name: `Konto: ${name}` })).toBeVisible()
 
@@ -62,7 +62,7 @@ test('signs up, verifies email, logs out, and logs back in', async ({ page }) =>
   await page.getByLabel('E-post').fill(email)
   await page.getByLabel('Lösenord').fill(password)
   await page.getByRole('button', { name: 'Logga in' }).click()
-  await expect(page).toHaveURL('http://localhost:5173/?sheet=newHousehold')
+  await expect(page).toHaveURL('/?sheet=newHousehold')
 })
 
 // REGRESSION: a returning user logging in through the form must land on a rendered

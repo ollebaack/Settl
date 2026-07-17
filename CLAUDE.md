@@ -13,9 +13,14 @@ flexible splits, pure-ledger settlement. Brief: `docs/specs/product-brief.md`.
 
 ## Commands (root)
 
-- `pnpm dev` — Aspire AppHost, starts API (:5000) + web (:5173) together, dashboard
-  logs both. Fallback: `pnpm dev:api` / `pnpm dev:web` in separate terminals
-  (ADR-0008).
+- `pnpm dev` — Aspire AppHost via `aspire run --isolated`; starts API + web + Postgres
+  together with **randomized per-run ports** so multiple worktrees run at once without
+  collisions (ADR-0023). Requires the `aspire` CLI (`dotnet tool install -g Aspire.Cli`).
+  **Find your ports:** `aspire run` prints the dashboard URL on startup; the dashboard's
+  resource list shows the resolved web + API URLs (the web auto-learns the API port). The
+  web origin is dynamic, so dev CORS accepts any localhost origin (prod stays pinned).
+  Fallback (fixed :5000/:5173, no CLI): `pnpm dev:api` / `pnpm dev:web` in separate
+  terminals (ADR-0008).
 - `pnpm verify` — must pass before work is done
 - `pnpm publish:docker` — generates a Docker Compose deployment (`docker-compose.yaml`
   and `.env`) for the single-container production image, via `aspire publish`.

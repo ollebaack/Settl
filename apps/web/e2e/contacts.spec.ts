@@ -46,7 +46,7 @@ test('add a contact by phone, accept the SMS invite, and see the connection', as
   await page.getByLabel('E-post').fill(`contact-${suffix}@example.com`)
   await page.getByLabel('Lösenord').fill('Password123!')
   await page.getByRole('button', { name: 'Skapa konto & fortsätt' }).click()
-  await expect(page).toHaveURL('http://localhost:5173/')
+  await expect(page).toHaveURL('/')
 
   // Now signed in as the invitee — Du appears in their contacts (connection-on-accept).
   await page.goto('/kontakter')
