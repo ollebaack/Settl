@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Settl.Api.Data;
 using Settl.Api.Domain;
 using Settl.Api.Dtos;
@@ -41,6 +42,65 @@ public static class SettlementsEndpoints
             return Results.Ok(new SettlePreviewDto(net, Labels.Relation(net), other.Name, items));
         }).WithName("GetSettlePreview")
             .Produces<SettlePreviewDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        app.MapGet("/households/{id:guid}/settlements", async (
+            Guid id, Guid person, ICurrentUserAccessor cu, SettlDbContext db, CancellationToken ct) =>
+        {
+            var me = await cu.GetMemberIdAsync(ct);
+            if (me is null) return Results.Problem("Ingen användare", statusCode: 404);
+
+            var data = await Loaders.LoadHousehold(db, id, ct);
+            if (data is null) return Results.Problem("Hushållet hittades inte", statusCode: 404);
+            if (!data.MembersById.ContainsKey(person))
+                return Results.Problem("Okänd medlem", statusCode: 404);
+
+            var entries = (await Loaders.LoadEntries(db, id, ct)).ToDictionary(e => e.Id);
+
+            // Order client-side: SQLite can't ORDER BY DateTimeOffset (ADR-0010 portability).
+            var settlements = (await db.Settlements
+                .Where(s => s.HouseholdId == id)
+                .Include(s => s.Closures)
+                .ToListAsync(ct))
+                .OrderByDescending(s => s.SettledAt);
+
+            var meId = me.Value;
+            var items = new List<SettlementHistoryItemDto>();
+
+            foreach (var s in settlements)
+            {
+                long net = 0;
+                var rows = new List<SettlementHistoryEntryDto>();
+
+                foreach (var c in s.Closures)
+                {
+                    var involvesPair =
+                        (c.DebtorMemberId == person && c.CreditorMemberId == meId) ||
+                        (c.DebtorMemberId == meId && c.CreditorMemberId == person);
+                    if (!involvesPair) continue;
+                    if (!entries.TryGetValue(c.EntryId, out var entry)) continue;
+
+                    // The closed debt's amount comes from the entry's frozen shares — never stored
+                    // on the closure (ADR-0007). A pair closes at most one debt per entry.
+                    var amount = BalanceCalculator.Debts(entry)
+                        .Where(d => d.Debtor == c.DebtorMemberId && d.Creditor == c.CreditorMemberId)
+                        .Sum(d => d.AmountMinor);
+
+                    // Signed toward the viewer: +person owed me, −I owed person.
+                    net += c.CreditorMemberId == meId ? amount : -amount;
+                    rows.Add(new SettlementHistoryEntryDto(entry.Id, entry.Title, entry.Date, amount));
+                }
+
+                if (rows.Count == 0) continue; // this settlement didn't touch the pair
+
+                var ordered = rows.OrderByDescending(r => r.Date).ToList();
+                items.Add(new SettlementHistoryItemDto(
+                    s.Id, s.SettledAt, net, s.InitiatedByMemberId, ordered.Count, ordered));
+            }
+
+            return Results.Ok(items);
+        }).WithName("GetSettlementHistory")
+            .Produces<IReadOnlyList<SettlementHistoryItemDto>>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         app.MapPost("/households/{id:guid}/settlements", async (

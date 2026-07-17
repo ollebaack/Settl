@@ -620,7 +620,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["GetSettlementHistory"];
         put?: never;
         post: operations["CreateSettlement"];
         delete?: never;
@@ -956,6 +956,28 @@ export interface components {
             date: string;
             /** Format: int64 */
             signedAmountMinor: number | string;
+        };
+        SettlementHistoryEntryDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            /** Format: date */
+            date: string;
+            /** Format: int64 */
+            amountMinor: number | string;
+        };
+        SettlementHistoryItemDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            settledAt: string;
+            /** Format: int64 */
+            netClearedMinor: number | string;
+            /** Format: uuid */
+            initiatedByMemberId: string;
+            /** Format: int32 */
+            closedEntryCount: number | string;
+            entries: components["schemas"]["SettlementHistoryEntryDto"][];
         };
         SettlePreviewDto: {
             /** Format: int64 */
@@ -1436,7 +1458,9 @@ export interface operations {
     };
     GetLatestDevInvite: {
         parameters: {
-            query?: never;
+            query?: {
+                email?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1490,7 +1514,9 @@ export interface operations {
     };
     GetLatestDevSmsInvite: {
         parameters: {
-            query?: never;
+            query?: {
+                phone?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2736,6 +2762,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SettlePreviewDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetSettlementHistory: {
+        parameters: {
+            query: {
+                person: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettlementHistoryItemDto"][];
                 };
             };
             /** @description Not Found */

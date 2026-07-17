@@ -5,15 +5,22 @@
  * Everything (net, label, contributing entries) is DERIVED server-side via
  * useSettlePreview — the sheet never computes balances (ADR-0006).
  */
+import { useState } from 'react'
+import { ChevronDownIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 import { ResponsiveSheet } from '@/components/responsive-sheet'
-import { ErrorState, LoadingState } from '@/components/screen-states'
+import { EmptyState, ErrorState, LoadingState } from '@/components/screen-states'
 import { cn } from '@/lib/utils'
 import { formatSignedKr, shortDate } from '@/lib/format'
 import { useActiveHousehold } from '@/lib/active-household'
-import { useCreateSettlement, useSettlePreview } from '@/lib/queries'
+import {
+  useCreateSettlement,
+  useSettlePreview,
+  useSettlementHistory,
+} from '@/lib/queries'
 import type { MoneyIntent } from '@/components/money'
 import { Money } from '@/components/money'
 import type { SettlePreviewDto } from '@/lib/api'
@@ -36,6 +43,98 @@ function signIntent(minor: number): MoneyIntent {
   if (minor > 0) return 'success'
   if (minor < 0) return 'destructive'
   return 'muted'
+}
+
+/** Swedish count: "1 post" / "N poster". */
+function postCount(n: number): string {
+  return `${n} ${n === 1 ? 'post' : 'poster'}`
+}
+
+/**
+ * Read-only pairwise settlement history (docs/specs/settlement-history.md). One row per
+ * past settlement event, newest first; tap a row to reveal the entries it closed. Never
+ * mutates — reopening stays in entry detail (ADR-0007).
+ */
+function SettlementHistory({
+  householdId,
+  person,
+  personName,
+}: {
+  householdId: string
+  person: string
+  personName: string
+}) {
+  const query = useSettlementHistory(householdId, person)
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set())
+
+  const toggle = (id: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+
+  return (
+    <div className="flex flex-col gap-2" data-testid="settlement-history">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        Tidigare uppgörelser med {personName}
+      </p>
+
+      {query.isLoading ? (
+        <LoadingState rows={2} />
+      ) : query.isError ? (
+        <ErrorState error={query.error} onRetry={() => query.refetch()} />
+      ) : !query.data || query.data.length === 0 ? (
+        <EmptyState className="py-6">Inga tidigare uppgörelser än</EmptyState>
+      ) : (
+        query.data.map((s) => {
+          const isOpen = expanded.has(s.id)
+          const initiator = s.initiatedByMemberId === person ? personName : 'Du'
+          return (
+            <Card key={s.id} size="sm" className="gap-0 p-0">
+              <button
+                type="button"
+                onClick={() => toggle(s.id)}
+                aria-expanded={isOpen}
+                data-testid="settlement-row"
+                className="flex w-full items-center gap-3 p-3 text-left"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{shortDate(s.settledAt)}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {initiator} gjorde upp · {postCount(s.entries.length)}
+                  </p>
+                </div>
+                <Money minor={s.netClearedMinor} intent="muted" className="text-[13.5px]" />
+                <ChevronDownIcon
+                  className={cn(
+                    'size-4 shrink-0 text-muted-foreground transition-transform',
+                    isOpen && 'rotate-180',
+                  )}
+                />
+              </button>
+              {isOpen && (
+                <div className="flex flex-col gap-2 border-t border-foreground/5 p-3">
+                  {s.entries.map((e) => (
+                    <div key={e.id} className="flex items-center gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm">{e.title}</p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {shortDate(e.date)}
+                        </p>
+                      </div>
+                      <Money minor={e.amountMinor} intent="muted" className="text-[13.5px]" />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          )
+        })
+      )}
+    </div>
+  )
 }
 
 function SettleUpBody({
@@ -120,6 +219,14 @@ function SettleUpBody({
           Markera allt som reglerat
         </Button>
       )}
+
+      <Separator />
+
+      <SettlementHistory
+        householdId={householdId}
+        person={person}
+        personName={preview.memberName}
+      />
     </div>
   )
 }

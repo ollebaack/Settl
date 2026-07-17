@@ -52,6 +52,7 @@ import {
   type RemovalPreviewDto,
   type ResetPasswordRequest,
   type SettlePreviewDto,
+  type SettlementHistoryItemDto,
   type TransferOwnershipRequest,
   type UpdateEntryRequest,
   type UpdateMeRequest,
@@ -82,6 +83,9 @@ export const queryKeys = {
   settlePreviewAll: (id: string | undefined) => ['household', id, 'settle-preview'] as const,
   settlePreview: (id: string | undefined, person: string | undefined) =>
     ['household', id, 'settle-preview', person] as const,
+  settlementHistoryAll: (id: string | undefined) => ['household', id, 'settlements'] as const,
+  settlementHistory: (id: string | undefined, person: string | undefined) =>
+    ['household', id, 'settlements', person] as const,
   nudgesAll: (id: string | undefined) => ['household', id, 'nudges'] as const,
   nudges: (id: string | undefined, tone: NudgeTone) =>
     ['household', id, 'nudges', tone] as const,
@@ -102,6 +106,7 @@ export function invalidateHousehold(qc: QueryClient, householdId: string | undef
   qc.invalidateQueries({ queryKey: queryKeys.recurringList(householdId) })
   qc.invalidateQueries({ queryKey: queryKeys.nudgesAll(householdId) })
   qc.invalidateQueries({ queryKey: queryKeys.settlePreviewAll(householdId) })
+  qc.invalidateQueries({ queryKey: queryKeys.settlementHistoryAll(householdId) })
 }
 
 function buildQuery(params: Record<string, string | number | undefined>): string {
@@ -251,6 +256,22 @@ export function useSettlePreview(id: string | undefined, person: string | undefi
     queryFn: () =>
       apiGet<SettlePreviewDto>(
         `/households/${id}/settle-preview${buildQuery({ person })}`,
+      ),
+    enabled: !!id && !!person,
+  })
+}
+
+/**
+ * Read-only pairwise settlement history (docs/specs/settlement-history.md). Keyed by
+ * household + person, enabled only when a person is selected (mirrors useSettlePreview).
+ * Invalidated by invalidateHousehold, so recording a settlement refreshes the list.
+ */
+export function useSettlementHistory(id: string | undefined, person: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.settlementHistory(id, person),
+    queryFn: () =>
+      apiGet<SettlementHistoryItemDto[]>(
+        `/households/${id}/settlements${buildQuery({ person })}`,
       ),
     enabled: !!id && !!person,
   })
