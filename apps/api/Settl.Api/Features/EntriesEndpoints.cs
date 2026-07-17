@@ -287,6 +287,14 @@ public static class EntriesEndpoints
             frozen = ShareFreezer.Freeze(mode, data.OrderedMemberIds, amountMinor, formula);
         }
 
+        // A shared expense must actually be shared: in a multi-member household at least
+        // one member other than the payer must carry a positive share. Otherwise the entry
+        // is balance-neutral noise that reads as "ingen andel" for everyone else. Solo
+        // (single-member) households are exempt so a lone user can still log own expenses.
+        if (data.OrderedMemberIds.Count > 1 &&
+            !frozen.Any(s => s.MemberId != paidByMemberId.Value && s.ShareMinor > 0))
+            throw new SplitValidationException("Lägg till någon att dela med");
+
         var expenseTitle = string.IsNullOrWhiteSpace(title) ? "Utan titel" : title!.Trim();
         var entry = new Entry
         {

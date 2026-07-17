@@ -20,7 +20,7 @@ const statusText: Record<ViewerStatusKind, (amount: string) => string> = {
   youOwe: (a) => `du är skyldig ${a}`,
   youAreOwed: (a) => `du ska få ${a}`,
   partiallySettled: () => 'din del reglerad',
-  notYourShare: () => 'inte din del',
+  notYourShare: () => 'ingen andel',
 }
 
 const statusClass: Record<ViewerStatusKind, string> = {
