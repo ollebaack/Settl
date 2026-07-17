@@ -19,14 +19,16 @@ Synthesis of the design exports in `docs/design/` into one build spec for `apps/
 
 ## 1. Route table
 
-Four primary screens are TanStack file-based routes. The five overlays are the **same bottom-sheet pattern** (Drawer on mobile / Dialog on desktop) driven by URL **search params** on whatever route is active, so they are deep-linkable and the underlying screen stays mounted. Only one overlay open at a time.
+The core screens are TanStack file-based routes. The five overlays are the **same bottom-sheet pattern** (Drawer on mobile / Dialog on desktop) driven by URL **search params** on whatever route is active, so they are deep-linkable and the underlying screen stays mounted. Only one overlay open at a time. Screens added after this synthesis (`/profil`, `/kontakter`, `/statistik`) are specified in their own ADRs/addenda; the rows for the two that hold the member's number are included below for reference.
 
 | Route | Screen (sv / en) | Purpose | Defined by |
 |---|---|---|---|
-| `/` | **Hem** / Home | Net balance hero, per-person balances, upcoming (mobile), recent activity | Settl App (canonical); structure from Prototype "Home" |
+| `/` | **Hem** / Home | Multi-household overview: roll-up hero, per-book nets, add-number banner (ADR-0026) | ADR-0021 + multi-household-overview-addendum (supersedes the single-book "Home" below) |
 | `/ledger` | **Loggboken** / Ledger | Full chronological ledger, type filter, day groups | Settl App; Prototype "Ledger" |
 | `/recurring` | **På repeat** / Recurring | Recurring templates, monthly totals, cycle progress, pause/resume | Settl App; Prototype "Repeats" |
 | `/activity` | **Notiser** / Activity (Nudges) | Event-driven nudges (3 triggers) | Settl App; Prototype "Activity" |
+| `/profil` | **Profil** / Profile | Name, avatar emoji, nudge prefs, and the member's **single number** ("Ditt nummer" — powers Swish) | profile-addendum + **ADR-0026** |
+| `/kontakter` | **Kontakter** / Contacts | Saved contacts + blind SMS invites; **no own-number input** (moved to Profil, ADR-0026) | ADR-0019 + contacts-addendum |
 | `/?sheet=households` | **Dina hushåll** / Household switcher | Switch household (many-to-many) | overlay; Prototype `sheet.kind='hh'` |
 | `/?sheet=add` | **Ny post** / Add entry | Create expense / IOU / recurring | overlay; `sheet.kind='add'` |
 | `/?sheet=entry&id=…` | Entry detail | Inspect entry, per-person shares, settle/reopen | overlay; `sheet.kind='entry'` |
@@ -47,6 +49,8 @@ Shared row conventions used by Home "Senaste" and all Ledger rows (build once as
 - Whole row is a **button** → Card + Avatar, opens Entry detail.
 
 ### 2.1 Hem `/`
+
+> **Superseded:** the live `/` is the multi-household **Overview** (ADR-0021 + multi-household-overview-addendum), not the single-book home specced below. It also carries the dismissible **"Lägg till ditt nummer"** banner (ADR-0026) — shown when you're owed in ≥1 book and have no number saved; button → `/profil`, dismissal persisted in `localStorage` so it never nags. The single-book layout below is kept for the per-book dashboard heritage.
 
 **Components**
 - **Net hero** — `Card`; label uppercase, 38px mono amount, muted sub. Amount color: `--success` when owed to you, `destructive` when you owe, muted when square.
@@ -173,11 +177,11 @@ Shared row conventions used by Home "Senaste" and all Ledger rows (build once as
 
 ### 2.8 Gör upp (overlay `?sheet=settle&person=`)
 
-**Components** — title **"Gör upp med {namn}"**; net summary (label + mono 32px colored amount); contributing entry list (`Card` rows: title, date, **signed** amount — `+` positive / `−` U+2212 minus negative, colored); explainer; **"Markera allt som reglerat"** primary `Button`.
+**Components** — title **"Gör upp med {namn}"**; net summary (label + mono 32px colored amount); contributing entry list (`Card` rows: title, date, **signed** amount — `+` positive / `−` U+2212 minus negative, colored); explainer; **"Betala med Swish"** action when the API returns `swishPay` (debtor, SEK, creditor has a number) — a tap-through deep link on mobile, a QR of the same `uri` on desktop (swish-settlement-payments spec); **"add your number" nudge** shown to the creditor (`owesYou`) who has no number saved — an accent `Card` with a `Lägg till nummer` button → `/profil` (ADR-0026); **"Markera allt som reglerat"** primary `Button`.
 
-**Data** — `GET /households/{id}/settle-preview?person={memberId}` → `{ net, netLabel, entries[]{ id, title, date, signedAmount } }`. Confirm → `POST /households/{id}/settlements` with the pair → records **one first-class settlement event** closing all open pair debts; entries with no remaining open debt become settled (derived).
+**Data** — `GET /households/{id}/settle-preview?person={memberId}` → `{ net, netLabel, memberName, entries[]{ id, title, date, signedAmount }, swishPay?{ uri, amountMinor } }` (`swishPay` non-null only for the debtor, SEK, when the creditor saved a number — the URL is built server-side, ADR-0006). The creditor-side nudge is derived client-side from `netLabel === 'owesYou'` + the current member's empty number. Confirm → `POST /households/{id}/settlements` with the pair → records **one first-class settlement event** closing all open pair debts; entries with no remaining open debt become settled (derived).
 
-**Copy** — `Gör upp med {namn}`; net label `{namn} är skyldig dig` / `Du är skyldig {namn}` / `Allt är kvitt`; explainer `Betala som ni brukar — Swish, kontanter, banköverföring. Settl håller bara boken i ordning.` (note: **Swish**, not Venmo — SEK context); button `Markera allt som reglerat` ("mark everything as settled"); toast `Uppgjort med {namn} — rent bord` ("settled with {name} — clean slate").
+**Copy** — `Gör upp med {namn}`; net label `{namn} är skyldig dig` / `Du är skyldig {namn}` / `Allt är kvitt`; explainer has two variants — with `swishPay`: `Betala först — bocka sedan av. Settl bokför inget automatiskt.`; otherwise `Betala som ni brukar — Swish, kontanter, banköverföring. Settl håller bara boken i ordning.` (note: **Swish**, not Venmo — SEK context); Swish action `Betala med Swish` + desktop caption `Skanna med Swish-appen`; add-number nudge `Lägg till ditt nummer så kan {namn} Swisha dig med rätt belopp när ni gör upp.` + button `Lägg till nummer` (ADR-0026); primary button `Markera allt som reglerat` ("mark everything as settled"); toast `Uppgjort med {namn} — rent bord` ("settled with {name} — clean slate").
 
 **States** — Loading: skeleton. All square → `Allt är kvitt`, empty list, button hidden/disabled. Error: retry.
 
@@ -300,6 +304,8 @@ Custom (not shadcn primitives, build in `src/components/`): `AppShell` (sidebar 
 | din del | your share |
 | Senaste | Latest |
 | Visa alla | Show all |
+| Lägg till ditt nummer | Add your number (banner title, ADR-0026) |
+| Du har pengar att få. Med ditt nummer sparat kan andra Swisha dig direkt när ni gör upp. | Add-number banner body |
 
 ### Ledger
 | sv | en |
@@ -414,7 +420,12 @@ Custom (not shadcn primitives, build in `src/components/`): `AppShell` (sidebar 
 | {namn} är skyldig dig | {name} owes you |
 | Du är skyldig {namn} | You owe {name} |
 | Allt är kvitt | Everything's square |
-| Betala som ni brukar — Swish, kontanter, banköverföring. Settl håller bara boken i ordning. | Settle explainer (Swish) |
+| Betala som ni brukar — Swish, kontanter, banköverföring. Settl håller bara boken i ordning. | Settle explainer, no Swish link |
+| Betala först — bocka sedan av. Settl bokför inget automatiskt. | Settle explainer, with Swish link (ADR-0026) |
+| Betala med Swish | Pay with Swish (action) |
+| Skanna med Swish-appen | Scan with the Swish app (desktop QR caption) |
+| Lägg till ditt nummer så kan {namn} Swisha dig med rätt belopp när ni gör upp. | Add-your-number nudge (creditor, ADR-0026) |
+| Lägg till nummer | Add number (button) |
 | Markera allt som reglerat | Mark everything as settled |
 | Uppgjort med {namn} — rent bord | Settled with {name} — clean slate (toast) |
 
