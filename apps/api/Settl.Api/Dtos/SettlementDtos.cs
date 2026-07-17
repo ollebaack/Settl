@@ -6,11 +6,21 @@ public sealed record SettleEntryDto(
     DateOnly Date,
     long SignedAmountMinor);
 
+/// <summary>
+/// A ready-to-open Swish pre-fill link for the acting debtor to pay the creditor
+/// (swish-settlement-payments spec). Surfaced on <see cref="SettlePreviewDto.SwishPay"/> ONLY when
+/// the acting user owes (net &lt; 0), the household currency is SEK, and the creditor has saved a
+/// Swish number. Built server-side (ADR-0006); the amount is locked (no <c>edit</c> param). Settl
+/// never learns whether the payment happened — settling stays the separate manual action.
+/// </summary>
+public sealed record SwishPayDto(string Uri, long AmountMinor);
+
 public sealed record SettlePreviewDto(
     long NetMinor,
     string NetLabel,
     string MemberName,
-    IReadOnlyList<SettleEntryDto> Entries);
+    IReadOnlyList<SettleEntryDto> Entries,
+    SwishPayDto? SwishPay);
 
 public sealed record CreateSettlementRequest(Guid PersonMemberId);
 

@@ -14,15 +14,19 @@ public sealed record LoginRequest(string Email, string Password);
 /// (reminder-delivery spec, ADR-0024), on by default.</summary>
 public sealed record MeDto(
     Guid Id, string Name, string AvatarColor, string? AvatarEmoji, string? Email,
-    bool EmailConfirmed, string? Phone, bool PhoneVerified, string NudgeTone, bool NudgeEmailsEnabled);
+    bool EmailConfirmed, string? Phone, bool PhoneVerified, string NudgeTone, bool NudgeEmailsEnabled,
+    string? SwishNumber);
 
 /// <summary>Updates the acting member's own name + avatar emoji (ADR-0019), nudge tone
-/// (implementation-map §2.4) and nudge-email opt-in (reminder-delivery spec). <see cref="AvatarEmoji"/>
-/// null/empty resets the avatar to the letter initial; <see cref="NudgeTone"/> null leaves the current
-/// tone unchanged, otherwise it must be "gentle" or "direct"; <see cref="NudgeEmailsEnabled"/> null
-/// leaves the current opt-in unchanged. (PUT /me)</summary>
+/// (implementation-map §2.4), nudge-email opt-in (reminder-delivery spec) and Swish payee number
+/// (swish-settlement-payments spec). <see cref="AvatarEmoji"/> null/empty resets the avatar to the
+/// letter initial; <see cref="NudgeTone"/> null leaves the current tone unchanged, otherwise it must
+/// be "gentle" or "direct"; <see cref="NudgeEmailsEnabled"/> null leaves the current opt-in unchanged.
+/// <see cref="SwishNumber"/> is normalised to E.164 and stored UNVERIFIED (tech-debt/0010); unlike the
+/// nudge toggles, the profile form always submits it, so null/empty CLEARS it. (PUT /me)</summary>
 public sealed record UpdateMeRequest(
-    string Name, string? AvatarEmoji, string? NudgeTone = null, bool? NudgeEmailsEnabled = null);
+    string Name, string? AvatarEmoji, string? NudgeTone = null, bool? NudgeEmailsEnabled = null,
+    string? SwishNumber = null);
 
 /// <summary>Updates the acting member's own profile phone. <c>Phone</c> is normalised to E.164 and
 /// stored UNVERIFIED (ADR-0019); an empty/null value clears it. Email stays the sole identity.

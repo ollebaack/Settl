@@ -96,6 +96,25 @@ test('toggles the nudge-email preference off and persists it', async ({ page, re
   await expect(page.getByText('Du får inga påminnelser via e-post', { exact: false })).toBeVisible()
 })
 
+test('sets a Swish number and persists it normalised', async ({ page, request }) => {
+  await freshVerifiedAccount(page, request)
+
+  await page.goto('/profil')
+  await expect(page.getByText('Så här syns du i loggboken.')).toBeVisible()
+
+  // The optional Swish field sits behind the +46 chip (swish-settlement-payments spec).
+  const swish = page.locator('#profile-swish')
+  await expect(swish).toBeVisible()
+  await swish.fill('070-123 45 67')
+  await page.getByRole('button', { name: 'Spara' }).click()
+  await expect(page.getByText('Profilen sparad')).toBeVisible()
+
+  // Persisted server-side and normalised to E.164: a reload prefills the subscriber part
+  // (the +46 country code is shown by the chip, sliced off the stored +46701234567).
+  await page.reload()
+  await expect(page.locator('#profile-swish')).toHaveValue('701234567')
+})
+
 test('picker can reset with "use my letter instead"', async ({ page, request }) => {
   await freshVerifiedAccount(page, request)
 

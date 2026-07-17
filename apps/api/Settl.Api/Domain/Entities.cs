@@ -16,6 +16,14 @@ public class Member : IdentityUser<Guid>
     /// validated to a single emoji grapheme on write (it renders in other members' UIs).</summary>
     public string? AvatarEmoji { get; set; }
 
+    /// <summary>Optional Swish number this member wants settlement payments sent to
+    /// (swish-settlement-payments spec). Stored E.164 like the inherited
+    /// <see cref="IdentityUser{TKey}.PhoneNumber"/> but DELIBERATELY DISTINCT from it — a Swish
+    /// number isn't necessarily the account phone, and neither is derived from the other. Same
+    /// trust posture as the profile phone: unverified contact data (tech-debt/0010), never a
+    /// lookup key or auth factor. Null = opted out (no "Betala med Swish" action shown).</summary>
+    public string? SwishNumber { get; set; }
+
     /// <summary>The member's chosen nudge voice (implementation-map §2.4, ambiguity #18).
     /// Defaults to <see cref="Domain.NudgeTone.Direct"/> — the tone picked as the product default,
     /// now exposed as a per-user setting. Selects nudge copy only, never which nudges fire.</summary>

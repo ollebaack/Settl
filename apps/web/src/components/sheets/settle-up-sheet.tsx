@@ -6,9 +6,10 @@
  * useSettlePreview — the sheet never computes balances (ADR-0006).
  */
 import { useState } from 'react'
+import { QRCodeSVG } from 'qrcode.react'
 import { ChevronDownIcon } from 'lucide-react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { ResponsiveSheet } from '@/components/responsive-sheet'
@@ -16,6 +17,7 @@ import { EmptyState, ErrorState, LoadingState } from '@/components/screen-states
 import { cn } from '@/lib/utils'
 import { formatSignedKr, shortDate } from '@/lib/format'
 import { useActiveHousehold } from '@/lib/active-household'
+import { useIsWide } from '@/lib/use-media'
 import {
   useCreateSettlement,
   useSettlePreview,
@@ -23,7 +25,7 @@ import {
 } from '@/lib/queries'
 import type { MoneyIntent } from '@/components/money'
 import { Money } from '@/components/money'
-import type { SettlePreviewDto } from '@/lib/api'
+import type { SettlePreviewDto, SwishPayDto } from '@/lib/api'
 
 /** settle-preview netLabel is Labels.Relation: owesYou | youOwe | square. */
 function netCopy(label: string, name: string): string {
@@ -48,6 +50,39 @@ function signIntent(minor: number): MoneyIntent {
 /** Swedish count: "1 post" / "N poster". */
 function postCount(n: number): string {
   return `${n} ${n === 1 ? 'post' : 'poster'}`
+}
+
+/**
+ * "Betala med Swish" launcher (swish-settlement-payments spec). Present only when the API
+ * returns `swishPay` — i.e. the acting user is the debtor, the debt is SEK, and the creditor
+ * saved a Swish number. The URL (amount + locked message) is built server-side (ADR-0006); this
+ * only opens it. On mobile a tap-through deep link opens the Swish app; on desktop a QR carries
+ * the same link for scanning from a phone. No confirmation — settling stays the separate action.
+ */
+function SwishPayAction({ swishPay }: { swishPay: SwishPayDto }) {
+  const isWide = useIsWide()
+
+  if (isWide) {
+    return (
+      <div className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Betala med Swish
+        </p>
+        {/* QR needs fixed high-contrast colours to stay scannable in both themes, so it can't use
+            the themeable tokens the rest of the UI does — a white quiet-zone plate + black modules. */}
+        <div className="rounded-lg bg-white p-3">
+          <QRCodeSVG value={swishPay.uri} size={168} marginSize={2} bgColor="#ffffff" fgColor="#000000" />
+        </div>
+        <p className="text-xs text-muted-foreground">Skanna med Swish-appen för att betala</p>
+      </div>
+    )
+  }
+
+  return (
+    <a href={swishPay.uri} className={cn(buttonVariants(), 'w-full')} data-testid="swish-pay-link">
+      Betala med Swish
+    </a>
+  )
 }
 
 /**
@@ -213,6 +248,10 @@ function SettleUpBody({
         Betala som ni brukar — Swish, kontanter, banköverföring. Settl håller bara boken i
         ordning.
       </p>
+
+      {/* Direct Swish launcher when the API offers one (debtor, SEK, creditor has a number). Sits
+          next to "mark settled" so the two steps — pay, then settle — read as a pair. */}
+      {preview.swishPay && <SwishPayAction swishPay={preview.swishPay} />}
 
       {!isSquare && (
         <Button onClick={handleSettle} disabled={settlement.isPending} className="w-full">

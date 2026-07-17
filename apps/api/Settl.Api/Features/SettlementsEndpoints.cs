@@ -39,7 +39,21 @@ public static class SettlementsEndpoints
                     items.Add(new SettleEntryDto(e.Id, e.Title, e.Date, signed));
             }
 
-            return Results.Ok(new SettlePreviewDto(net, Labels.Relation(net), other.Name, items));
+            // Swish pre-fill link (swish-settlement-payments spec): a convenience launcher for the
+            // acting DEBTOR only. net < 0 means the acting user owes `other` (BalanceCalculator sign
+            // convention). Swish is SEK-only, and the creditor must have opted in with a Swish number.
+            // The URL is built server-side (ADR-0006); the amount is the absolute debt.
+            SwishPayDto? swishPay = null;
+            if (net < 0
+                && string.Equals(data.Household.Currency, "SEK", StringComparison.OrdinalIgnoreCase)
+                && !string.IsNullOrWhiteSpace(other.SwishNumber))
+            {
+                var amountMinor = -net;
+                var uri = SwishLink.Build(other.SwishNumber, amountMinor, data.Household.Name);
+                swishPay = new SwishPayDto(uri, amountMinor);
+            }
+
+            return Results.Ok(new SettlePreviewDto(net, Labels.Relation(net), other.Name, items, swishPay));
         }).WithName("GetSettlePreview")
             .Produces<SettlePreviewDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound);
