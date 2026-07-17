@@ -21,6 +21,7 @@ public static class NudgesEndpoints
 
             var entries = await Loaders.LoadEntries(db, id, ct);
             var closures = await Loaders.LoadClosures(db, id, ct);
+            var closureEvents = await Loaders.LoadClosureEvents(db, id, ct);
             var templates = await db.RecurringTemplates
                 .Where(t => t.HouseholdId == id && t.Active)
                 .Include(t => t.Shares)
@@ -54,7 +55,11 @@ public static class NudgesEndpoints
             var balances = data.OrderedMemberIds
                 .Where(m => m != me)
                 .Select(x => new NudgeCalculator.BalanceInput(
-                    x, Mapping.Name(data.MembersById, x), BalanceCalculator.NetWith(me.Value, x, entries, closures)))
+                    x,
+                    Mapping.Name(data.MembersById, x),
+                    BalanceCalculator.NetWith(me.Value, x, entries, closures),
+                    BalanceCalculator.MostRecentThresholdCrossing(
+                        me.Value, x, entries, closureEvents, NudgeCalculator.BalanceThresholdMinor)))
                 .ToList();
 
             var nudges = NudgeCalculator.Build(tone ?? "direct", today, recurrings, expenses, balances);

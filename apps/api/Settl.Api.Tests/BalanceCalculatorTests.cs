@@ -40,6 +40,23 @@ public class BalanceCalculatorTests
 
     private static readonly ClosureLookup None = Lookup();
 
+    // Fixed instants for timeline replay tests — deterministic, never DateTimeOffset.UtcNow.
+    private static readonly DateTimeOffset T0 = new(2026, 7, 1, 12, 0, 0, TimeSpan.Zero);
+    private static DateTimeOffset At(int days) => T0.AddDays(days);
+    private static DateOnly On(int days) => DateOnly.FromDateTime(At(days).UtcDateTime);
+
+    private static Entry ExpenseAt(DateTimeOffset createdAt, Guid paidBy, params (Guid member, long share)[] shares)
+    {
+        var e = Expense(paidBy, shares);
+        e.CreatedAt = createdAt;
+        return e;
+    }
+
+    private static PairClosure PairClose(Guid entryId, Guid debtor, Guid creditor, DateTimeOffset at) =>
+        new(entryId, debtor, creditor, at);
+
+    private static readonly PairClosure[] NoClosures = [];
+
     // ---- Debts: expense --------------------------------------------------
 
     [Fact]
@@ -213,6 +230,70 @@ public class BalanceCalculatorTests
 
         // A: +100 +50 -30 = +120 relative to B.
         Assert.Equal(120, BalanceCalculator.NetWith(A, B, entries, None));
+    }
+
+    // ---- MostRecentThresholdCrossing (ADR-0023) -------------------------
+
+    // B→A debt of `share`, i.e. from A's view A is owed `share` by B (net up).
+    private const long Threshold = 75_000; // 750 kr
+
+    [Fact]
+    public void Crossing_null_when_net_never_reaches_threshold()
+    {
+        var e = ExpenseAt(At(0), A, (A, 500), (B, 50_000)); // B→A 50 000 < 75 000
+        Assert.Null(BalanceCalculator.MostRecentThresholdCrossing(A, B, new[] { e }, NoClosures, Threshold));
+    }
+
+    [Fact]
+    public void Crossing_returns_date_when_net_reaches_threshold()
+    {
+        var e = ExpenseAt(At(0), A, (A, 500), (B, 80_000)); // B→A 80 000 ≥ 75 000
+        Assert.Equal(On(0), BalanceCalculator.MostRecentThresholdCrossing(A, B, new[] { e }, NoClosures, Threshold));
+    }
+
+    [Fact]
+    public void Crossing_fires_at_exact_threshold()
+    {
+        var e = ExpenseAt(At(3), A, (A, 500), (B, Threshold));
+        Assert.Equal(On(3), BalanceCalculator.MostRecentThresholdCrossing(A, B, new[] { e }, NoClosures, Threshold));
+    }
+
+    [Fact]
+    public void Crossing_uses_recorded_time_not_accounting_date()
+    {
+        // Backdated accounting Date is far in the past; CreatedAt is what the replay orders by.
+        var e = ExpenseAt(At(5), A, (A, 500), (B, 80_000));
+        e.Date = new DateOnly(2000, 1, 1);
+        Assert.Equal(On(5), BalanceCalculator.MostRecentThresholdCrossing(A, B, new[] { e }, NoClosures, Threshold));
+    }
+
+    [Fact]
+    public void Crossing_stays_at_first_transition_while_net_remains_above()
+    {
+        var e1 = ExpenseAt(At(0), A, (A, 500), (B, 80_000)); // crosses up at day 0
+        var e2 = ExpenseAt(At(2), A, (A, 500), (B, 20_000)); // net climbs further, still above — no new crossing
+        Assert.Equal(On(0), BalanceCalculator.MostRecentThresholdCrossing(A, B, new[] { e1, e2 }, NoClosures, Threshold));
+    }
+
+    [Fact]
+    public void Crossing_redetects_after_settling_below_then_climbing_back()
+    {
+        var e1 = ExpenseAt(At(0), A, (A, 500), (B, 80_000)); // crosses up at day 0
+        var e2 = ExpenseAt(At(4), A, (A, 500), (B, 90_000)); // crosses up again at day 4 (after e1 settled)
+        // Settle e1's B→A debt at day 2 → net drops below threshold between the two crossings.
+        var closures = new[] { PairClose(e1.Id, B, A, At(2)) };
+        Assert.Equal(On(4), BalanceCalculator.MostRecentThresholdCrossing(A, B, new[] { e1, e2 }, closures, Threshold));
+    }
+
+    [Fact]
+    public void Crossing_clamps_closure_recorded_before_its_entry()
+    {
+        // Debt created at day 5 but its closure is stamped day 0 (incoherent, as in the seed):
+        // clamping the closure to the entry's CreatedAt means the debt appears and closes at the
+        // same instant — net never stands above the threshold, so there is no crossing.
+        var e = ExpenseAt(At(5), A, (A, 500), (B, 80_000));
+        var closures = new[] { PairClose(e.Id, B, A, At(0)) };
+        Assert.Null(BalanceCalculator.MostRecentThresholdCrossing(A, B, new[] { e }, closures, Threshold));
     }
 
     // ---- StatusFor (§2.4) — all five kinds -------------------------------
