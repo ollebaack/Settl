@@ -27,23 +27,20 @@ test.describe('Loggbok (in the Hushållet page)', () => {
     await expect(feed.getByRole('heading', { level: 2 }).first()).toBeVisible()
   })
 
-  test('the "Repeat" filter shows recurring entries and hides one-off expenses', async ({
-    page,
-  }) => {
+  // Filter assertions key on "Begagnad soffa" — a one-off expense that never
+  // appears under the "Repeat" filter and is never echoed by the mobile "På gång"
+  // rail (which mirrors upcoming recurring titles in the main region on a
+  // date-relative window). Recurring titles are therefore not date-stable to
+  // assert on here.
+  test('the "Repeat" filter hides one-off expenses', async ({ page }) => {
     const feed = page.getByRole('main')
     await expect(feed.getByText('Begagnad soffa')).toBeVisible()
 
     await page.getByRole('button', { name: 'Repeat', exact: true }).click()
-
-    await expect(feed.getByText('Hyra')).toBeVisible()
     await expect(feed.getByText('Begagnad soffa')).toHaveCount(0)
   })
 
   test('the "Utgifter" filter keeps expenses in the log', async ({ page }) => {
-    // Note: the hide-behaviour is asserted in the "Repeat" test via an expense
-    // ("Begagnad soffa"). We don't assert a recurring title is hidden here,
-    // because the mobile "På gång" rail echoes upcoming recurring titles in the
-    // main region regardless of the active log filter.
     const feed = page.getByRole('main')
     await page.getByRole('button', { name: 'Utgifter', exact: true }).click()
     await expect(feed.getByText('Begagnad soffa')).toBeVisible()
