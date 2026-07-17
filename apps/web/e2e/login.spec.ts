@@ -1,5 +1,12 @@
 import { test, expect } from '@playwright/test'
-import { API, devVerificationUrlFor, relativePath, uniqueSuffix } from './helpers'
+import {
+  API,
+  createHousehold,
+  devVerificationUrlFor,
+  registerConfirmedUser,
+  relativePath,
+  uniqueSuffix,
+} from './helpers'
 
 // LOGIN, SIGNUP & EMAIL VERIFICATION (ADR-0011 + the email-verification decision made
 // alongside it). Uses a brand-new account per run so it never collides with seeded members
@@ -56,6 +63,53 @@ test('signs up, verifies email, logs out, and logs back in', async ({ page }) =>
   await page.getByLabel('Lösenord').fill(password)
   await page.getByRole('button', { name: 'Logga in' }).click()
   await expect(page).toHaveURL('http://localhost:5173/?sheet=newHousehold')
+})
+
+// REGRESSION: a returning user logging in through the form must land on a rendered
+// Home, not a skeleton that hangs until a manual reload. The app mounts
+// ActiveHouseholdProvider above the router, so GET /households used to fire and 401 on
+// the unauthenticated cold load; that errored query wedged Home after login — login's
+// cache invalidation refetched it but `isPending` never flipped back to true, so Home
+// either span on the skeleton forever or flashed the "no household" create sheet before
+// the data arrived. The fix gates the query on auth (see useHouseholds), so no fetch
+// happens until after login and it runs pending -> success cleanly.
+//
+// We provision the account + a household while authenticated, then clear the browser's
+// cookies so the app loads GENUINELY signed out — reproducing the pre-login state a
+// returning user (expired/cleared session) hits before logging back in.
+test('logging in via the form renders Home without a manual reload', async ({ page }) => {
+  const suffix = uniqueSuffix()
+  const email = `e2e-relogin-${suffix}@example.com`
+  const password = 'Password123!'
+  await registerConfirmedUser(page, { name: `E2E Återinlogg ${suffix}`, email, password })
+  const householdName = `E2E Hem ${suffix}`
+  await createHousehold(page.request, householdName)
+
+  // Drop the session so the next load is unauthenticated — this is where /households 401s.
+  await page.context().clearCookies()
+  await page.goto('/')
+  await expect(page).toHaveURL(/\/login$/)
+
+  // A returning user spends a moment on the login screen before submitting. That pause is
+  // what made the bug deterministic: the unauthenticated /households query has time to fully
+  // settle (exhaust retries) before login, so login's cache invalidation refetches an
+  // already-errored query whose `isPending` never flips back — Home then hung on the skeleton
+  // or flashed the "no household" create sheet. Log in too fast and the query is still
+  // in-flight and happens to recover, hiding the regression. The gate on auth removes the
+  // pre-login fetch entirely, so this timing no longer matters.
+  await page.waitForTimeout(2500)
+
+  await page.getByLabel('E-post').fill(email)
+  await page.getByLabel('Lösenord').fill(password)
+  await page.getByRole('button', { name: 'Logga in' }).click()
+
+  // The single-book overview must render straight away — no reload.
+  await expect(page.getByRole('heading', { name: 'Ditt hushåll', level: 1 })).toBeVisible()
+  await expect(
+    page.getByTestId('household-card').filter({ hasText: householdName }),
+  ).toBeVisible()
+  // The loading skeleton (aria-busy) must be gone, not stuck.
+  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0)
 })
 
 test('shows an inline error for the wrong password', async ({ page }) => {

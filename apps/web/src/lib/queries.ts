@@ -157,19 +157,38 @@ export function useHouseholdInvites(id: string | undefined) {
   })
 }
 
+/**
+ * Gated on auth (`enabled: !!me`): ActiveHouseholdProvider (main.tsx) mounts this
+ * app-wide, above the router, so without the gate it fires on the initial
+ * UNauthenticated load and 401s. That 401 wedged Home's skeleton after login — the
+ * query lingered in a fetching/error state that login's `invalidateQueries()`
+ * couldn't turn back into a clean `isPending`, so Home either span forever or
+ * flashed the "no household" create sheet before the data arrived. Staying disabled
+ * until `me` is present means the first real fetch runs post-login, `pending ->
+ * success`, so `isPending` honestly gates the skeleton. Login sets `me` directly
+ * (see useLogin), so the gate opens the moment auth succeeds. `retry: false` matches
+ * useMe: a 401 here is an auth state, not a flaky fetch.
+ */
 export function useHouseholds() {
+  const { data: me } = useMe()
   return useQuery({
     queryKey: queryKeys.households,
     queryFn: () => apiGet<HouseholdListItemDto[]>('/households'),
+    enabled: !!me,
+    retry: false,
   })
 }
 
-/** Active + archived households — for the switcher's "Arkiverade" section (ADR-0016). */
+/** Active + archived households — for the switcher's "Arkiverade" section (ADR-0016).
+ * Gated on auth for the same 401-on-unauthenticated-load reason as `useHouseholds`. */
 export function useHouseholdsWithArchived() {
+  const { data: me } = useMe()
   return useQuery({
     queryKey: queryKeys.householdsWithArchived,
     queryFn: () =>
       apiGet<HouseholdListItemDto[]>('/households?includeArchived=true'),
+    enabled: !!me,
+    retry: false,
   })
 }
 
