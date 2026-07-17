@@ -439,16 +439,16 @@ function EntryForm({
       )}
 
       {/* Amount */}
-      <div className="relative flex items-baseline">
+      <div className="flex items-baseline justify-center gap-1.5">
         <Input
           inputMode="decimal"
           placeholder="0,00"
           value={amountStr}
           onChange={(e) => setAmountStr(e.target.value)}
           aria-label="Belopp"
-          className="h-auto border-transparent bg-transparent px-0 pr-9 text-right font-mono text-[38px] leading-tight shadow-none focus-visible:ring-0"
+          className="h-auto w-auto min-w-0 border-transparent bg-transparent px-0 text-right font-mono text-[38px] leading-tight shadow-none field-sizing-content focus-visible:ring-0"
         />
-        <span className="pointer-events-none absolute right-0 bottom-1 font-mono text-lg text-muted-foreground">
+        <span className="pointer-events-none font-mono text-lg text-muted-foreground">
           kr
         </span>
       </div>
