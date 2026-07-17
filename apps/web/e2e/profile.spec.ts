@@ -69,8 +69,8 @@ test('sets an avatar emoji from the picker and persists it', async ({ page, requ
   await page.getByRole('button', { name: 'fox' }).click()
   await page.getByRole('button', { name: 'Använd 🦊' }).click()
 
-  await expect(page.getByText('Profilbild uppdaterad')).toBeVisible()
-  // Chips flip to the "emoji is set" pair, and the glyph is now on screen.
+  // Chips flip to the "emoji is set" pair, and the glyph is now on screen — the
+  // durable outcome of the save, unlike the "uppdaterad" toast which auto-dismisses.
   await expect(page.getByRole('button', { name: 'Byt emoji' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Ta bort' })).toBeVisible()
   // The glyph now renders in the avatar (decorative, so aria-hidden → assert attached).
@@ -93,9 +93,9 @@ test('resets the avatar back to the letter initial', async ({ page, request }) =
   await expect(page.getByRole('button', { name: 'Ta bort' })).toBeVisible()
 
   await page.getByRole('button', { name: 'Ta bort' }).click()
-  await expect(page.getByText('Profilbild uppdaterad')).toBeVisible()
 
-  // Back to the single "Välj profilbild" chip — the letter initial is the fallback again.
+  // Back to the single "Välj profilbild" chip — the letter initial is the fallback
+  // again. This durable state is the save's outcome; the toast auto-dismisses.
   await expect(page.getByRole('button', { name: 'Välj profilbild' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Byt emoji' })).toHaveCount(0)
 
@@ -117,6 +117,6 @@ test('picker can reset with "use my letter instead"', async ({ page, request }) 
   await expect(page.getByRole('heading', { name: 'Välj profilbild' })).toBeVisible()
   await page.getByRole('button', { name: 'Använd min bokstav istället' }).click()
 
-  await expect(page.getByText('Profilbild uppdaterad')).toBeVisible()
+  // The chip reverting to "Välj profilbild" is the durable outcome; the toast auto-dismisses.
   await expect(page.getByRole('button', { name: 'Välj profilbild' })).toBeVisible()
 })

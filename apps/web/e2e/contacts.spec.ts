@@ -46,7 +46,9 @@ test('add a contact by phone, accept the SMS invite, and see the connection', as
   await page.getByLabel('E-post').fill(`contact-${suffix}@example.com`)
   await page.getByLabel('Lösenord').fill('Password123!')
   await page.getByRole('button', { name: 'Skapa konto & fortsätt' }).click()
-  await expect(page).toHaveURL('/')
+  // Signed in and landed home (path only — a brand-new invitee has no household, so
+  // home immediately appends its onboarding query; pinning the full URL races that).
+  await expect(page).toHaveURL((url) => url.pathname === '/')
 
   // Now signed in as the invitee — Du appears in their contacts (connection-on-accept).
   await page.goto('/kontakter')
@@ -62,8 +64,15 @@ test('add a contact by phone, accept the SMS invite, and see the connection', as
   const myLocal = `73${String(Date.now()).slice(-7)}`
   await expect(page.getByText('Overifierat')).toBeVisible()
   await page.getByRole('textbox', { name: 'Ditt telefonnummer' }).fill(myLocal)
+  // Gate the reload on the save landing server-side. The "Nummer sparat" toast
+  // auto-dismisses within seconds and can't be reliably caught under CI load, and
+  // reloading before the PATCH resolves would drop the write. Persistence across
+  // the reload is the durable proof the number saved.
+  const saved = page.waitForResponse(
+    (r) => r.url().endsWith('/me') && r.request().method() === 'PATCH' && r.ok(),
+  )
   await page.getByRole('button', { name: 'Spara' }).click()
-  await expect(page.getByText('Nummer sparat')).toBeVisible()
+  await saved
   await page.reload()
   await expect(page.getByRole('textbox', { name: 'Ditt telefonnummer' })).toHaveValue(myLocal)
 })
