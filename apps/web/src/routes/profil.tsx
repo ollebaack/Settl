@@ -1,8 +1,9 @@
 /**
- * Profil `/profil` — change your name and pick an avatar emoji (profile-addendum §2.1,
- * frames 1–2; ADR-0019). Part of the app chrome (AppShell). Renders and calls only
- * (ADR-0006): the avatar is the email-derived `avatarColor` with an optional emoji over
- * it, letter initial as the fallback. Name + emoji persist via PUT /me.
+ * Profil `/profil` — change your name, pick an avatar emoji, and choose your nudge tone
+ * (profile-addendum §2.1, frames 1–2; ADR-0019; implementation-map §2.4, ambiguity #18).
+ * Part of the app chrome (AppShell). Renders and calls only (ADR-0006): the avatar is the
+ * email-derived `avatarColor` with an optional emoji over it, letter initial as the fallback.
+ * Name + emoji + tone persist via PUT /me.
  *
  * Scope note: the design's Konto card also shows a "Byt lösenord" row (§2.3). Password
  * change is out of this feature's scope (no endpoint yet), so that row is intentionally
@@ -17,10 +18,11 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { MemberAvatar } from '@/components/member-avatar'
 import { AvatarPickerSheet } from '@/components/sheets/avatar-picker-sheet'
 import { useLogout, useMe, useUpdateMe } from '@/lib/queries'
-import type { MeDto } from '@/lib/api'
+import type { MeDto, NudgeTone } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/profil')({
@@ -32,6 +34,13 @@ export const Route = createFileRoute('/profil')({
 })
 
 const UPLABEL = 'text-[11.5px] font-semibold uppercase tracking-[0.09em] text-muted-foreground'
+
+// The nudge tone only selects copy, never which nudges fire (implementation-map §2.4). The
+// label + one-liner describe each voice; the API is authoritative over the actual nudge text.
+const TONE_COPY: Record<NudgeTone, { label: string; hint: string }> = {
+  direct: { label: 'Rak', hint: 'Tydliga knuffar med belopp och en uppmaning att göra upp.' },
+  gentle: { label: 'Mjuk', hint: 'Vänliga påminnelser utan press.' },
+}
 
 function ProfilePage() {
   const { data: me } = useMe()
@@ -49,10 +58,12 @@ function ProfileForm({ me }: { me: MeDto }) {
   const [name, setName] = useState(me.name)
   const [nameError, setNameError] = useState('')
   const [sheetOpen, setSheetOpen] = useState(false)
+  // The API only ever returns 'gentle' | 'direct'; fall back to the default for safety.
+  const [tone, setTone] = useState<NudgeTone>((me.nudgeTone as NudgeTone) ?? 'direct')
 
   const emoji = me.avatarEmoji ?? null
 
-  /** Persist name + the given emoji. Returns true on success. */
+  /** Persist name + the given emoji + the current tone. Returns true on success. */
   async function save(nextEmoji: string | null, successMsg: string): Promise<boolean> {
     const trimmed = name.trim()
     if (!trimmed) {
@@ -61,7 +72,7 @@ function ProfileForm({ me }: { me: MeDto }) {
     }
     setNameError('')
     try {
-      await updateMe.mutateAsync({ name: trimmed, avatarEmoji: nextEmoji })
+      await updateMe.mutateAsync({ name: trimmed, avatarEmoji: nextEmoji, nudgeTone: tone })
       toast(successMsg)
       return true
     } catch (e) {
@@ -174,6 +185,23 @@ function ProfileForm({ me }: { me: MeDto }) {
             <span className="shrink-0 text-[11.5px] text-muted-foreground">Din inloggning</span>
           </div>
         </Card>
+      </div>
+
+      {/* Nudge tone */}
+      <div className="flex flex-col gap-1.5">
+        <p className={UPLABEL}>Knuffar</p>
+        <ToggleGroup
+          value={[tone]}
+          onValueChange={(v) => setTone((v[0] as NudgeTone | undefined) ?? tone)}
+          className="w-full rounded-xl bg-muted p-1"
+        >
+          {(['direct', 'gentle'] as const).map((t) => (
+            <ToggleGroupItem key={t} value={t} className="flex-1 rounded-lg text-sm">
+              {TONE_COPY[t].label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+        <p className="text-xs text-muted-foreground">{TONE_COPY[tone].hint}</p>
       </div>
 
       {/* Actions */}

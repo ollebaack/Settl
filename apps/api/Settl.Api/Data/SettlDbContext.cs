@@ -37,6 +37,9 @@ public class SettlDbContext(DbContextOptions<SettlDbContext> options) : Identity
             // Nullable emoji (ADR-0019); cap the column so a single grapheme's worth of
             // code units (incl. ZWJ sequences) fits but nothing larger can be stored.
             e.Property(x => x.AvatarEmoji).HasMaxLength(32);
+            // Stored as the enum name (like every other domain enum here); the default keeps
+            // existing rows on "Direct" — the product default this setting now exposes.
+            e.Property(x => x.NudgeTone).HasConversion<string>().IsRequired().HasDefaultValue(NudgeTone.Direct);
             e.Ignore(x => x.Initial);
         });
 

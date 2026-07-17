@@ -826,6 +826,7 @@ export interface components {
             emailConfirmed: boolean;
             phone: null | string;
             phoneVerified: boolean;
+            nudgeTone: string;
         };
         MemberDto: {
             /** Format: uuid */
@@ -1012,6 +1013,7 @@ export interface components {
         UpdateMeRequest: {
             name: string;
             avatarEmoji: null | string;
+            nudgeTone?: null | string;
         };
         UpdateProfileRequest: {
             phone: null | string;
@@ -1436,7 +1438,9 @@ export interface operations {
     };
     GetLatestDevInvite: {
         parameters: {
-            query?: never;
+            query?: {
+                email?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1490,7 +1494,9 @@ export interface operations {
     };
     GetLatestDevSmsInvite: {
         parameters: {
-            query?: never;
+            query?: {
+                phone?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;

@@ -96,6 +96,22 @@ public static class Contract
         _ => throw new SplitValidationException("Ogiltig inbjudningskanal")
     };
 
+    public static string NudgeTone(NudgeTone t) => t switch
+    {
+        Domain.NudgeTone.Gentle => "gentle",
+        Domain.NudgeTone.Direct => "direct",
+        _ => throw new ArgumentOutOfRangeException(nameof(t))
+    };
+
+    /// <summary>Parses the wire tone. Returns null (not throwing) for unknown values so the
+    /// caller can turn it into a 400 with its own message — same shape as the other parsers.</summary>
+    public static NudgeTone? TryParseNudgeTone(string? tone) => tone?.Trim().ToLowerInvariant() switch
+    {
+        "gentle" => Domain.NudgeTone.Gentle,
+        "direct" => Domain.NudgeTone.Direct,
+        _ => null
+    };
+
     public static string ViewerStatusKind(ViewerStatusKind k) => k switch
     {
         Domain.ViewerStatusKind.Settled => "settled",

@@ -125,6 +125,14 @@ export function useMe() {
   })
 }
 
+/** The acting member's chosen nudge tone, falling back to 'direct' (the product default,
+ * ambiguity #18) while /me is still loading or for members who never changed it. The API only
+ * ever returns 'gentle' | 'direct', so the narrowing cast is safe. */
+export function useNudgeTone(): NudgeTone {
+  const { data: me } = useMe()
+  return (me?.nudgeTone as NudgeTone | undefined) ?? 'direct'
+}
+
 export function useInvitePreview(token: string | undefined) {
   return useQuery({
     queryKey: queryKeys.invitePreview(token),
