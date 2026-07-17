@@ -100,6 +100,23 @@ stale is left behind.
     (`git status` shows nothing to commit), then tell the user the exact command to run
     from the main checkout: `git worktree remove .claude/worktrees/<name>` followed by
     `git worktree prune`. Don't attempt it from inside the worktree.
+  - **Session-lock caveat (observed on Windows):** even run from the main checkout, that
+    `git worktree remove` will *partially* fail while this session is still live — it
+    de-registers the worktree from `git worktree list` but then errors with
+    `failed to delete '...': Directory not empty`, because the session's working directory
+    is anchored inside the worktree (and the harness keeps resetting cwd back into it), so
+    the OS holds a lock on it (e.g. `node_modules`). The git-side cleanup succeeds; only the
+    physical folder is left behind, inert. Don't `rm -rf` it from inside the session — that
+    fights the same lock and can break the session mid-command. Instead tell the user the
+    folder remains only because the session is running in it, and hand off the final delete
+    to run **after this session ends**, from a terminal not sitting in that folder:
+    `rm -rf .claude/worktrees/<name>`.
+  - **When you need to ship a *further* change after the worktree is already de-registered:**
+    don't work in the orphaned folder — its `.git` link is dangling and git there resolves
+    to whatever branch the main checkout currently holds (possibly another session's). Add a
+    clean worktree off `origin/main` instead
+    (`git worktree add -b <branch> .claude/worktrees/<new> origin/main`, run from the main
+    checkout) and do the new work there.
 - **Local branch:** if the shipped branch still exists locally after the worktree is gone,
   delete it: `git branch -d <branch>` (use `-d`, not `-D`, so a not-fully-merged branch is
   a signal to stop, not force-delete).
