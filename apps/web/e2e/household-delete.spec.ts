@@ -35,10 +35,19 @@ test('owner permanently deletes an empty household', async ({ page }) => {
   await expect(page.getByRole('heading', { name: `Ta bort ${name}?` })).toBeVisible()
   await page.getByRole('button', { name: 'Ta bort permanent' }).click()
 
-  // The household is gone for good — absent from the owner's list. Poll this durable
-  // server post-condition rather than asserting the "togs bort" toast: the toast
-  // auto-dismisses within seconds and races the assertion window under CI load, and the
-  // sheet-close/redirect ride the same success callback, so they're no more reliable.
+  // The confirmation sheet closes and we land back home — the UI outcomes that used to
+  // hang behind an awaited refetch of the just-deleted household. They ride the mutation's
+  // success callback, which no longer waits on a 404-ing refetch, so a lingering sheet now
+  // means a real regression. The bug was a PERMANENT hang, so a generous timeout keeps this
+  // a reliable guard while tolerating a merely-slow close under parallel CI load (which is
+  // why #52 had dropped these). (Deleting your only household leaves you with none, so Home
+  // opens the create sheet — hence the optional `?sheet=…`; the point is we left /household
+  // for the root.) The transient "togs bort" toast is deliberately NOT asserted: sonner
+  // auto-dismisses it within seconds, racing any assertion window.
+  await expect(page.getByRole('heading', { name: `Ta bort ${name}?` })).toBeHidden({ timeout: 15_000 })
+  await expect(page).toHaveURL(/\/(\?.*)?$/, { timeout: 15_000 })
+
+  // …and the household is gone for good — poll this durable server post-condition.
   await expect
     .poll(async () => {
       const res = await page.request.get(`${API}/households`)
