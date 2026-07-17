@@ -167,9 +167,9 @@ export async function createHousehold(
 /**
  * Registers a brand-new account and confirms its email via the Development-only
  * dev side channel, leaving `page.request` signed in as that (now confirmed)
- * member — ready to create households and load the app past RequireAuth. Polls
- * the "latest verification" channel until it sees THIS user's link, so parallel
- * signups don't hand us someone else's token.
+ * member — ready to create households and load the app past RequireAuth. Reads THIS
+ * account's verification link scoped by email, so parallel signups never hand us
+ * someone else's token.
  */
 export async function registerConfirmedUser(
   page: Page,
@@ -179,7 +179,7 @@ export async function registerConfirmedUser(
   expect(res.ok(), `register ${user.email}: ${await safeText(res)}`).toBeTruthy()
   const id = ((await res.json()) as Member).id
 
-  const confirmUrl = await devVerificationUrlFor(page.request, id)
+  const confirmUrl = await latestDevVerificationUrl(page.request, user.email)
   const token = new URL(confirmUrl).searchParams.get('token')
   const confirm = await page.request.post(`${API}/auth/confirm-email`, {
     data: { userId: id, token },
@@ -228,42 +228,38 @@ export async function latestDevSmsInviteToken(
   throw new Error(`No SMS invite link surfaced${phoneE164 ? ` for ${phoneE164}` : ''}`)
 }
 
-/** Reads the most recent email-verification link via the Development-only dev side channel
- * (same reasoning as latestDevInviteToken — a real inbox is the only other way to get it). */
-export async function latestDevVerificationUrl(request: APIRequestContext): Promise<string> {
-  const res = await request.get(`${API}/dev/verifications/latest`)
-  expect(res.ok(), 'GET /dev/verifications/latest').toBeTruthy()
-  return ((await res.json()) as { confirmUrl: string }).confirmUrl
-}
-
 /**
- * Resolves THIS user's verification link, robust to parallel workers racing on the
- * single-slot dev channel. `/dev/verifications/latest` only ever holds the most recently
- * generated link, so a competing signup can evict ours before we read it — matching on
- * userId alone would then time out waiting for a link that's gone. So each round we
- * force-resend our own link (which re-publishes it into the slot) and read it straight
- * back, matching on userId in case a competitor still slipped in between. `authed` must be
- * a context signed in as `userId` (e.g. `page.request` right after signup).
+ * Reads THIS account's email-verification link via the Development-only dev side channel.
+ * Scope by `email` so parallel workers each read their own link instead of racing on the
+ * single most-recent slot (the dev store indexes by recipient, like invites); poll briefly
+ * since the send completes just after register/resend. Omit `email` for manual local dev.
  */
-export async function devVerificationUrlFor(
-  authed: APIRequestContext,
-  userId: string,
+export async function latestDevVerificationUrl(
+  request: APIRequestContext,
+  email?: string,
 ): Promise<string> {
-  for (let attempt = 0; attempt < 15; attempt++) {
-    const resent = await authed.post(`${API}/auth/resend-verification`)
-    expect(resent.ok(), `resend verification: ${await safeText(resent)}`).toBeTruthy()
-    const confirmUrl = await latestDevVerificationUrl(authed)
-    if (new URL(confirmUrl).searchParams.get('userId') === userId) return confirmUrl
+  const query = email ? `?email=${encodeURIComponent(email)}` : ''
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const res = await request.get(`${API}/dev/verifications/latest${query}`)
+    if (res.ok()) return ((await res.json()) as { confirmUrl: string }).confirmUrl
     await new Promise((resolve) => setTimeout(resolve, 100))
   }
-  throw new Error(`No verification link surfaced for user ${userId}`)
+  throw new Error(`No verification link surfaced${email ? ` for ${email}` : ''}`)
 }
 
-/** Reads the most recent password-reset link via the Development-only dev side channel. */
-export async function latestDevPasswordResetUrl(request: APIRequestContext): Promise<string> {
-  const res = await request.get(`${API}/dev/password-resets/latest`)
-  expect(res.ok(), 'GET /dev/password-resets/latest').toBeTruthy()
-  return ((await res.json()) as { resetUrl: string }).resetUrl
+/** Reads THIS account's password-reset link via the Development-only dev side channel. Scope
+ * by `email` to avoid the parallel-worker race on the single slot (same as verification). */
+export async function latestDevPasswordResetUrl(
+  request: APIRequestContext,
+  email?: string,
+): Promise<string> {
+  const query = email ? `?email=${encodeURIComponent(email)}` : ''
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const res = await request.get(`${API}/dev/password-resets/latest${query}`)
+    if (res.ok()) return ((await res.json()) as { resetUrl: string }).resetUrl
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
+  throw new Error(`No password-reset link surfaced${email ? ` for ${email}` : ''}`)
 }
 
 /** Converts an absolute dev-emailed link (Web:BaseUrl + path) into a same-origin relative

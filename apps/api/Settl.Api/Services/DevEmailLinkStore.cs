@@ -9,8 +9,8 @@ namespace Settl.Api.Services;
 /// (the GET /dev/... endpoints in each feature file, Development-only). Populated by
 /// <see cref="DevEmailSender"/>, so it stays empty whenever Resend is configured.
 ///
-/// Invite links are ALSO indexed by recipient (email / phone) so parallel Playwright workers
-/// can each read their OWN invite instead of racing on the single most-recent slot, where a
+/// Every link kind is ALSO indexed by recipient (email / phone) so parallel Playwright workers
+/// can each read their OWN link instead of racing on the single most-recent slot, where a
 /// competing signup evicts a spec's link before it reads it. The unkeyed <c>Last*</c> values
 /// still back the no-argument dev endpoints (local manual dev).
 /// </summary>
@@ -22,6 +22,8 @@ public sealed class DevEmailLinkStore
     private volatile string? _lastSmsInviteAcceptUrl;
 
     private readonly ConcurrentDictionary<string, string> _inviteByEmail = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, string> _verificationByEmail = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, string> _passwordResetByEmail = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, string> _smsInviteByPhone = new();
 
     // Nudge-digest sends, per recipient: the unsubscribe link and how many digests were sent.
@@ -36,8 +38,17 @@ public sealed class DevEmailLinkStore
         _inviteByEmail[email.Trim()] = url;
     }
 
-    public void RecordVerification(string url) => _lastVerificationUrl = url;
-    public void RecordPasswordReset(string url) => _lastPasswordResetUrl = url;
+    public void RecordVerification(string email, string url)
+    {
+        _lastVerificationUrl = url;
+        _verificationByEmail[email.Trim()] = url;
+    }
+
+    public void RecordPasswordReset(string email, string url)
+    {
+        _lastPasswordResetUrl = url;
+        _passwordResetByEmail[email.Trim()] = url;
+    }
 
     public void RecordSmsInvite(string phoneE164, string url)
     {
@@ -53,6 +64,14 @@ public sealed class DevEmailLinkStore
     /// <summary>The accept link for a specific invitee email, or null if none recorded.</summary>
     public string? InviteAcceptUrlFor(string email) =>
         _inviteByEmail.TryGetValue(email.Trim(), out var url) ? url : null;
+
+    /// <summary>The verification link for a specific account email, or null if none recorded.</summary>
+    public string? VerificationUrlFor(string email) =>
+        _verificationByEmail.TryGetValue(email.Trim(), out var url) ? url : null;
+
+    /// <summary>The password-reset link for a specific account email, or null if none recorded.</summary>
+    public string? PasswordResetUrlFor(string email) =>
+        _passwordResetByEmail.TryGetValue(email.Trim(), out var url) ? url : null;
 
     /// <summary>The accept link for a specific invitee phone (E.164), or null if none recorded.</summary>
     public string? SmsInviteAcceptUrlFor(string phoneE164) =>

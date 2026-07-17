@@ -1,23 +1,14 @@
 import { test, expect } from '@playwright/test'
-import { relativePath, uniqueSuffix } from './helpers'
+import { latestDevVerificationUrl, relativePath, uniqueSuffix } from './helpers'
 
 // Defaults to the standard e2e API; overridable so this spec can also run against an
 // isolated stack on another port when the default :5000 is occupied by another worktree.
 const API = process.env.E2E_API_URL ?? 'http://localhost:5000'
 
-async function latestVerificationUrl(request: import('@playwright/test').APIRequestContext): Promise<string> {
-  const res = await request.get(`${API}/dev/verifications/latest`)
-  expect(res.ok(), 'GET /dev/verifications/latest').toBeTruthy()
-  return ((await res.json()) as { confirmUrl: string }).confirmUrl
-}
-
 // PROFILE — avatar emoji personalization (ADR-0019, profile-addendum §2.1–2.2).
 // Each run creates its own freshly-verified account so setting/resetting the emoji never
 // races the shared e2e database or other specs. Registering via page.request signs the
 // account in on the page's own context, so subsequent page.goto navigations are authed.
-// Serial so the three accounts' verification links never bunch up on the shared dev
-// "latest verification" side channel.
-test.describe.configure({ mode: 'serial' })
 
 async function freshVerifiedAccount(page: import('@playwright/test').Page, request: import('@playwright/test').APIRequestContext) {
   const suffix = uniqueSuffix()
@@ -27,28 +18,10 @@ async function freshVerifiedAccount(page: import('@playwright/test').Page, reque
     data: { name, email, password: 'Password123!' },
   })
   expect(register.ok(), 'register').toBeTruthy()
-  const { id } = (await register.json()) as { id: string }
 
-  // The dev side channel only exposes the *latest* verification link, which a concurrent
-  // registration (e.g. the other project running the same test) can overwrite. If the latest
-  // link isn't this account's, regenerate our own via resend-verification (page.request is
-  // signed in as the just-registered user) until we capture it.
-  let confirmUrl = ''
-  await expect
-    .poll(
-      async () => {
-        const url = await latestVerificationUrl(request)
-        if (new URL(url).searchParams.get('userId') === id) {
-          confirmUrl = url
-          return true
-        }
-        await page.request.post(`${API}/auth/resend-verification`)
-        return false
-      },
-      { timeout: 15_000 },
-    )
-    .toBe(true)
-
+  // Follow this account's verification link, scoped by email so a concurrent registration
+  // (e.g. the other project running the same test) can't hand us someone else's token.
+  const confirmUrl = await latestDevVerificationUrl(request, email)
   await page.goto(relativePath(confirmUrl))
   await expect(page.getByText('E-post bekräftad')).toBeVisible()
   return { name }

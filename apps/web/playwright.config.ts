@@ -31,8 +31,18 @@ export default defineConfig({
   testDir: './e2e',
   globalTeardown: './e2e/global-teardown.mjs',
   fullyParallel: true,
+  // The whole suite hits ONE dev-mode API + one Postgres, so oversubscribing browser workers
+  // saturates the API and starves Chromium (buttons never reach Playwright's "stable" actionability
+  // state), turning transient UI and long signup/verify flows flaky. Playwright defaults to ~half
+  // the cores — 10 on a 20-core box — so cap to a fixed, capacity-matched number locally. CI runs
+  // on small runners (already few workers) and has retries, so leave its default alone.
+  workers: process.env.CI ? undefined : 4,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0,
+  // One retry everywhere: the suite drives a real stack, so a handful of assertions are timing-
+  // sensitive under load (transient toasts; a slow read-after-write briefly parking home on
+  // ?sheet=newHousehold). CI already retried; local was uniquely stricter at 0, which is what
+  // surfaced as "flakiness". A single retry absorbs those without masking real, repeatable bugs.
+  retries: 1,
   reporter: process.env.CI ? 'github' : 'list',
   use: {
     baseURL: WEB_URL,

@@ -213,18 +213,20 @@ public static class InvitesEndpoints
         }).WithName("GetLatestDevInvite")
             .AllowAnonymous();
 
-        app.MapGet("/dev/verifications/latest", (IHostEnvironment env, DevEmailLinkStore store) =>
+        app.MapGet("/dev/verifications/latest", (IHostEnvironment env, DevEmailLinkStore store, string? email) =>
         {
             if (!env.IsDevelopment()) return Results.NotFound();
-            var url = store.LastVerificationUrl;
+            // `email` scopes the lookup to one account so parallel e2e workers don't race on the
+            // single most-recent slot; omit it for manual local dev ("just give me the last one").
+            var url = email is not null ? store.VerificationUrlFor(email) : store.LastVerificationUrl;
             return url is null ? Results.NotFound() : Results.Ok(new { confirmUrl = url });
         }).WithName("GetLatestDevVerification")
             .AllowAnonymous();
 
-        app.MapGet("/dev/password-resets/latest", (IHostEnvironment env, DevEmailLinkStore store) =>
+        app.MapGet("/dev/password-resets/latest", (IHostEnvironment env, DevEmailLinkStore store, string? email) =>
         {
             if (!env.IsDevelopment()) return Results.NotFound();
-            var url = store.LastPasswordResetUrl;
+            var url = email is not null ? store.PasswordResetUrlFor(email) : store.LastPasswordResetUrl;
             return url is null ? Results.NotFound() : Results.Ok(new { resetUrl = url });
         }).WithName("GetLatestDevPasswordReset")
             .AllowAnonymous();
