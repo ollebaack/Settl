@@ -42,7 +42,7 @@ public static class SettlementsEndpoints
             // Swish pre-fill link (swish-settlement-payments spec): a convenience launcher for the
             // acting DEBTOR only. net < 0 means the acting user owes `other` (BalanceCalculator sign
             // convention). Swish is SEK-only, and the creditor must have saved a phone number
-            // (ADR-0026 — the member's single number doubles as the Swish payee). The URL is built
+            // (contacts-phone-sms spec — the member's single number doubles as the Swish payee). The URL is built
             // server-side (ADR-0006); the amount is the absolute debt.
             SwishPayDto? swishPay = null;
             if (net < 0

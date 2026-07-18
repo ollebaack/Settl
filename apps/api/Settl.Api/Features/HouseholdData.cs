@@ -38,7 +38,7 @@ public static class Loaders
             .ToListAsync(ct));
 
     /// <summary>Closures tagged with their settlement's timestamp, for balance-timeline replay
-    /// (ADR-0023, <see cref="BalanceCalculator.MostRecentThresholdCrossing"/>).</summary>
+    /// (reminder-delivery spec, <see cref="BalanceCalculator.MostRecentThresholdCrossing"/>).</summary>
     public static async Task<List<PairClosure>> LoadClosureEvents(SettlDbContext db, Guid householdId, CancellationToken ct) =>
         await db.SettlementClosures
             .Where(c => c.Settlement.HouseholdId == householdId)

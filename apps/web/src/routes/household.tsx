@@ -1,6 +1,6 @@
 /**
- * Hushåll `/household` — household management screen (ADR-0016 /
- * docs/specs/household-ownership.md, design frames 1 & 2). Shows the active household,
+ * Hushåll `/household` — household management screen
+ * (docs/specs/household-ownership.md, design frames 1 & 2). Shows the active household,
  * its members with an "Ägare" pill on the owner, and owner-vs-member actions (transfer +
  * archive for the owner; leave for members). Ownership/archival are DERIVED and enforced
  * server-side — this screen renders and calls (ADR-0006).

@@ -4,7 +4,7 @@ using Settl.Api.Data;
 namespace Settl.Api.Services;
 
 /// <summary>
-/// Discards the raw invitee phone number from SMS invites once they expire (ADR-0019 / GDPR).
+/// Discards the raw invitee phone number from SMS invites once they expire (contacts-phone-sms spec / GDPR).
 /// A typed number is transient third-party data: the persistent contact graph only holds
 /// relationships between consenting members, never a number that never accepted. The number is
 /// already scrubbed on accept (in <c>AcceptInvite</c>); this catches invites that expire

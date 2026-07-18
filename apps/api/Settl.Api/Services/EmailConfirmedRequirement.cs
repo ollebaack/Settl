@@ -7,7 +7,7 @@ namespace Settl.Api.Services;
 
 /// <summary>Gates the fallback authorization policy on <c>EmailConfirmed</c> — everything
 /// except AllowAnonymous/"AuthenticatedOnly" endpoints (Program.cs) needs a verified email,
-/// not just a session (the email-verification decision made alongside ADR-0011).</summary>
+/// not just a session (the email-verification decision made alongside ADR-0005).</summary>
 public sealed class EmailConfirmedRequirement : IAuthorizationRequirement;
 
 public sealed class EmailConfirmedHandler(UserManager<Member> users) : AuthorizationHandler<EmailConfirmedRequirement>

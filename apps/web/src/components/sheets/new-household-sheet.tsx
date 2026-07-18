@@ -1,6 +1,6 @@
 /**
  * Nytt hushåll — create a household with just a name. The acting user is its sole
- * initial member; everyone else joins via invite (ADR-0011, sent from household
+ * initial member; everyone else joins via invite (ADR-0005, sent from household
  * settings after creation), not typed in here.
  */
 import { useState } from 'react'
@@ -33,7 +33,7 @@ export function NewHouseholdSheet({ open, onClose }: { open: boolean; onClose: (
       const created = await createHousehold.mutateAsync({ name: trimmedName, currency: null })
       setHouseholdId(created.id)
       // Enter the fresh book. When it's the user's first household, `/` IS its
-      // dashboard (adaptive home, ADR-0019); with others already present, `/`
+      // dashboard (adaptive home, contacts-phone-sms spec); with others already present, `/`
       // would be the overview, so drop straight into the focused book route.
       if (households.length === 0) {
         navigate({ to: '/', search: {} })

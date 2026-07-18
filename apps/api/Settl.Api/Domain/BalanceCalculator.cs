@@ -5,7 +5,7 @@ public readonly record struct Debt(Guid Debtor, Guid Creditor, long AmountMinor)
 
 /// <summary>
 /// A settlement closure tagged with the timestamp of its parent settlement, for chronological
-/// balance-timeline replay (ADR-0023). Direction is stored as recorded.
+/// balance-timeline replay (reminder-delivery spec). Direction is stored as recorded.
 /// </summary>
 public readonly record struct PairClosure(
     Guid EntryId, Guid DebtorMemberId, Guid CreditorMemberId, DateTimeOffset SettledAt);
@@ -100,7 +100,7 @@ public static class BalanceCalculator
 
     /// <summary>
     /// Total of every open debt across a household's entries — the household-wide "still owed"
-    /// figure shown on the archive warning (ADR-0016). Not viewer-relative.
+    /// figure shown on the archive warning (household-ownership spec). Not viewer-relative.
     /// </summary>
     public static long HouseholdOpenTotalMinor(IEnumerable<Entry> householdEntries, ClosureLookup closures) =>
         householdEntries.Sum(e => OpenDebts(e, closures).Sum(d => d.AmountMinor));
@@ -111,7 +111,7 @@ public static class BalanceCalculator
     /// below the threshold to at/above it — replayed chronologically over entry
     /// <see cref="Entry.CreatedAt"/> (when a debt appears) and settlement <c>SettledAt</c> (when it
     /// is closed). Returns null if the pair's |net| has never reached the threshold. Backs the
-    /// crossing-not-standing balance nudge (ADR-0023) with no stored state.
+    /// crossing-not-standing balance nudge (reminder-delivery spec) with no stored state.
     ///
     /// Ordering is by when each action was RECORDED, not the accounting <see cref="Entry.Date"/>,
     /// so backdating an entry can neither fake nor hide a fresh crossing. A closure can never take

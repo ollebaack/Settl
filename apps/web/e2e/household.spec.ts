@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { getHouseholdId, loginAs, openHouseholdSwitcher, pinHousehold } from './helpers'
 
-// MULTI-HOUSEHOLD OVERVIEW drill-in + switch (ADR-0019, §2.1). "Du" belongs to
+// MULTI-HOUSEHOLD OVERVIEW drill-in + switch (contacts-phone-sms spec, §2.1). "Du" belongs to
 // both seeded books, so `/` is the overview. Tapping a book enters its focused
 // dashboard; the retained in-context switcher still swaps books; the "Hem" tab
 // returns to the overview.

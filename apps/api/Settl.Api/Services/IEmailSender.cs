@@ -2,19 +2,19 @@ using System.Net.Http.Json;
 
 namespace Settl.Api.Services;
 
-/// <summary>Sends transactional email (ADR-0011: invites, verification, password reset).</summary>
+/// <summary>Sends transactional email (ADR-0005: invites, verification, password reset).</summary>
 public interface IEmailSender
 {
     Task SendInviteEmailAsync(string toEmail, string householdName, string inviterName, string acceptUrl, CancellationToken ct = default);
 
-    /// <summary>Contact-only invite (ADR-0019): no household to join, just an invitation to
+    /// <summary>Contact-only invite (contacts-phone-sms spec): no household to join, just an invitation to
     /// connect on Settl. Used when the email channel is picked from the contacts tab.</summary>
     Task SendContactInviteEmailAsync(string toEmail, string inviterName, string acceptUrl, CancellationToken ct = default);
 
     Task SendVerificationEmailAsync(string toEmail, string confirmUrl, CancellationToken ct = default);
     Task SendPasswordResetEmailAsync(string toEmail, string resetUrl, CancellationToken ct = default);
 
-    /// <summary>The daily nudge digest (reminder-delivery spec, ADR-0024). <paramref name="lines"/>
+    /// <summary>The daily nudge digest (reminder-delivery spec). <paramref name="lines"/>
     /// is the member's un-sent nudges, tone already baked into the copy; <paramref name="unsubscribeUrl"/>
     /// is the tokenised one-click opt-out reachable without login.</summary>
     Task SendNudgeDigestEmailAsync(
@@ -29,7 +29,7 @@ public sealed record NudgeDigestLine(string Title, string Body, string When);
 /// <summary>
 /// Sends via Resend's HTTP API directly (one JSON POST) — no Resend SDK package, since
 /// hand-rolling this single call avoids a second new dependency for the same vendor
-/// decision ADR-0011 already made.
+/// decision ADR-0005 already made.
 /// </summary>
 public sealed class ResendEmailSender(HttpClient http, IConfiguration config, ILogger<ResendEmailSender> logger) : IEmailSender
 {

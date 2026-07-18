@@ -257,7 +257,7 @@ public static class RecurringEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
-        // Delete-if-clean, else deactivate (ADR-0018). A template that has posted zero entries
+        // Delete-if-clean, else deactivate (ledger-editing spec). A template that has posted zero entries
         // can be hard-deleted (its RecurringShares cascade). Once it has posted history the debts
         // those cycles created are real, so deletion is refused with 409 — the caller pauses
         // (PATCH { active:false }) instead, or deletes the individual posted entries in the ledger.

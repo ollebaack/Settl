@@ -9,7 +9,7 @@ using Settl.Api.Tests.Infrastructure;
 namespace Settl.Api.Tests;
 
 /// <summary>
-/// WebApplicationFactory integration tests for household invites (ADR-0011). The raw
+/// WebApplicationFactory integration tests for household invites (ADR-0005). The raw
 /// accept token is never persisted (only its hash is) or returned by any endpoint's JSON —
 /// same as a real inbox, the only way to get it is the emailed link. GET /dev/invites/latest
 /// is Development-only and the test host runs "Testing", so these tests instead read the

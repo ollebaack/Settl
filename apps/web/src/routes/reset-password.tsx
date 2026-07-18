@@ -2,7 +2,7 @@
  * Återställ lösenord (/reset-password?userId=…&token=…) — the link landing page from the
  * "Glömt?" flow (docs/design/auth-onboarding-addendum.md §2.1). Needs its own route/form
  * (not covered by the addendum) because the addendum's sent-state assumed a passwordless
- * magic-link sign-in, which ADR-0011 deferred — resetting still means choosing a new
+ * magic-link sign-in, which ADR-0005 deferred — resetting still means choosing a new
  * password, so this borrows the invite-accept screen's password-field pattern instead.
  */
 import { useState } from 'react'

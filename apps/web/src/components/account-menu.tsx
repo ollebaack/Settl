@@ -1,5 +1,5 @@
 /**
- * Shows who's logged in and lets them log out (ADR-0011 — replaces the dev-only
+ * Shows who's logged in and lets them log out (ADR-0005 — replaces the dev-only
  * user switcher this app used before real auth).
  */
 import { useNavigate } from '@tanstack/react-router'
@@ -73,7 +73,7 @@ export function AccountMenu({ className }: { className?: string }) {
             <Settings2Icon />
             Hantera hushåll
           </DropdownMenuItem>
-          {/* iOS Safari only — Add to Home Screen guidance (ADR-0027). */}
+          {/* iOS Safari only — Add to Home Screen guidance (installable-pwa spec). */}
           {canGuideInstall() && (
             <DropdownMenuItem onClick={openInstallSheet}>
               <SmartphoneIcon />

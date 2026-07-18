@@ -6,7 +6,7 @@ import { tanstackRouter } from '@tanstack/router-plugin/vite'
 
 // Build id baked into the bundle and emitted as version.json, so the running app
 // can detect a newer deploy and offer a refresh — the no-service-worker update
-// path (ADR-0027). CI may pin it (e.g. the git sha) via BUILD_ID.
+// path (installable-pwa spec). CI may pin it (e.g. the git sha) via BUILD_ID.
 const buildId = process.env.BUILD_ID ?? Date.now().toString(36)
 
 // Emits /version.json alongside the build for the in-app update watcher to poll.

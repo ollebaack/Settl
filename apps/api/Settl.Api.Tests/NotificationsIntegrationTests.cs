@@ -9,7 +9,7 @@ using Settl.Api.Tests.Infrastructure;
 namespace Settl.Api.Tests;
 
 /// <summary>
-/// WebApplicationFactory tests for trust notifications (trust-notifications-v1, ADR-0028):
+/// WebApplicationFactory tests for trust notifications (trust-notifications-v1 spec):
 /// mutations emit LedgerEvents, the read projection returns only events concerning the caller
 /// (never their own), and the seen-cursor clears unread. Canonical Lönnvägen seed: Du, Sam,
 /// Priya are members; Mamma belongs only to Familjen.

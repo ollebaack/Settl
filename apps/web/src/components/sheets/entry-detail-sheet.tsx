@@ -63,7 +63,7 @@ function buildShareRows(entry: EntryDto): ShareRowData[] {
   }))
 }
 
-/** Tap-to-change category affordance for expense entries only (ADR-0012). */
+/** Tap-to-change category affordance for expense entries only (entry-categories spec). */
 function CategoryPicker({ entry }: { entry: EntryDto }) {
   const update = useUpdateEntry(entry.householdId)
   const category = entry.category as EntryCategory

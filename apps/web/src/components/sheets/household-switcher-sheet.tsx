@@ -62,7 +62,7 @@ export function HouseholdSwitcherSheet({
   const select = (h: HouseholdListItemDto) => {
     setHouseholdId(h.id)
     // Enter the chosen book with a clean overlay/search state. With 2+ books `/`
-    // is the overview (ADR-0019), so drill into the focused book route; with a
+    // is the overview (contacts-phone-sms spec), so drill into the focused book route; with a
     // single book `/` already IS its dashboard.
     if (households.length > 1) {
       navigate({ to: '/hushall/$id', params: { id: h.id }, search: {} })
@@ -145,7 +145,7 @@ export function HouseholdSwitcherSheet({
 }
 
 /**
- * "Arkiverade" — soft-archived households (ADR-0016, design frame 7). Shown greyed and
+ * "Arkiverade" — soft-archived households (household-ownership spec, design frame 7). Shown greyed and
  * non-switchable; only the owner sees the "Återställ" button.
  */
 function ArchivedSection({ households }: { households: HouseholdListItemDto[] }) {
@@ -205,7 +205,7 @@ function ArchivedRow({ household: h }: { household: HouseholdListItemDto }) {
   )
 }
 
-/** Invite someone to the active household (ADR-0011: any member can invite). */
+/** Invite someone to the active household (ADR-0005: any member can invite). */
 function InviteSection({
   householdId,
   householdName,
@@ -269,7 +269,7 @@ function InviteSection({
 }
 
 /**
- * Screen 4 (ADR-0019): reuse a saved contact instead of re-typing. Lists the acting user's
+ * Screen 4 (contacts-phone-sms spec): reuse a saved contact instead of re-typing. Lists the acting user's
  * contacts with their status for this household and lets them invite an "invitable" one with a
  * tap. "member"/"pending" rows are shown but not actionable. The wishlist payoff.
  */

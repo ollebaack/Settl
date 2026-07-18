@@ -13,7 +13,7 @@ public static class DigestSchedule
     public const int SendHourLocal = 8;
 
     /// <summary>Europe/Stockholm, resolved by IANA id with a Windows-id fallback so the same code
-    /// works under Linux (containers, ADR-0009) and Windows dev. DST is handled by TimeZoneInfo.</summary>
+    /// works under Linux (containers, ADR-0014) and Windows dev. DST is handled by TimeZoneInfo.</summary>
     public static readonly TimeZoneInfo StockholmZone = ResolveStockholm();
 
     /// <summary>The Stockholm-local calendar date at <paramref name="utcNow"/> — the granularity of

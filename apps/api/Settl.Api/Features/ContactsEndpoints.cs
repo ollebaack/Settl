@@ -7,7 +7,7 @@ using Settl.Api.Services;
 namespace Settl.Api.Features;
 
 /// <summary>
-/// Contacts &amp; blind invites (ADR-0019). Typing a phone number sends a tokenized SMS invite
+/// Contacts &amp; blind invites (contacts-phone-sms spec). Typing a phone number sends a tokenized SMS invite
 /// and reveals NOTHING about whether that number is on Settl — there is deliberately no
 /// lookup/registration-status endpoint (no enumeration oracle). A contact edge only ever
 /// materialises when an invite is accepted (see <see cref="InvitesEndpoints"/>), so this file
@@ -16,7 +16,7 @@ namespace Settl.Api.Features;
 public static class ContactsEndpoints
 {
     /// <summary>Rate-limit policy for the invite-send path. SMS costs money and SMS pumping is a
-    /// fraud vector, so throttling ships WITH the channel (ADR-0019; tech-debt/0006 is the
+    /// fraud vector, so throttling ships WITH the channel (contacts-phone-sms spec; tech-debt/0006 is the
     /// free-email precedent that did not need it). Configured in Program.cs.</summary>
     public const string InviteRateLimitPolicy = "contact-invites";
 

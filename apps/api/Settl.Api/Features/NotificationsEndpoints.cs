@@ -9,7 +9,7 @@ using Settl.Api.Services;
 namespace Settl.Api.Features;
 
 /// <summary>
-/// Trust notifications (trust-notifications-v1, ADR-0028): the in-app stream of "someone
+/// Trust notifications (trust-notifications-v1): the in-app stream of "someone
 /// changed something that affects your money". Projected on read from the append-only
 /// <see cref="LedgerEvent"/> log — nothing is stored per recipient. Unread state is the
 /// caller's <see cref="Member.NotificationsSeenAt"/> cursor.

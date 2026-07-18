@@ -6,7 +6,7 @@ using Settl.Api.Tests.Infrastructure;
 
 namespace Settl.Api.Tests;
 
-/// <summary>The GDPR scrub (ADR-0019): a typed invitee number is discarded once the invite
+/// <summary>The GDPR scrub (contacts-phone-sms spec): a typed invitee number is discarded once the invite
 /// expires unaccepted, so the persistent data only ever holds consented relationships.</summary>
 public class ExpiredInviteScrubberTests
 {

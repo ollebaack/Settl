@@ -12,7 +12,7 @@ public static class NudgeCalculator
     /// <summary>A nudge paired with its stable delivery identity (reminder-delivery spec). The
     /// <see cref="Key"/> is derived entirely from the nudge's own subject fields, so the digest
     /// can de-duplicate sends against the emitted-nudge log with no shared crossing state
-    /// (ADR-0023). The HTTP read path drops the key and returns just <see cref="Nudge"/>.</summary>
+    /// (reminder-delivery spec). The HTTP read path drops the key and returns just <see cref="Nudge"/>.</summary>
     public sealed record EmittableNudge(string Key, NudgeDto Nudge);
 
     public const int RecurringDueDays = 5;
@@ -20,7 +20,7 @@ public static class NudgeCalculator
     public const long BigExpenseThresholdMinor = 150_000; // 1500 kr
     public const long BalanceThresholdMinor = 75_000;     // 750 kr
 
-    /// <summary>Days a threshold crossing stays fresh enough to nudge (ADR-0023). Mirrors the
+    /// <summary>Days a threshold crossing stays fresh enough to nudge (reminder-delivery spec). Mirrors the
     /// big-expense window so both event nudges age out consistently.</summary>
     public const int BalanceCrossingWindowDays = BigExpenseWindowDays;
 
@@ -31,7 +31,7 @@ public static class NudgeCalculator
         Guid PayerId, string PayerName, long YourShareMinor, bool PayerIsMe, bool Settled);
 
     /// <summary><paramref name="CrossedOn"/> = date the pair's |net| most recently crossed up
-    /// through the threshold (ADR-0023), or null if it never has. Null suppresses the nudge even
+    /// through the threshold (reminder-delivery spec), or null if it never has. Null suppresses the nudge even
     /// when <paramref name="NetMinor"/> is currently over — a standing balance with no fresh
     /// crossing is not news.</summary>
     public sealed record BalanceInput(Guid MemberId, string Name, long NetMinor, DateOnly? CrossedOn);
@@ -107,7 +107,7 @@ public static class NudgeCalculator
         }
 
         // 3. Balance — fire ONCE when |net with X| crosses 750 kr, not continuously while above
-        //    (ADR-0023): currently over the threshold AND the crossing is within the window.
+        //    (reminder-delivery spec): currently over the threshold AND the crossing is within the window.
         foreach (var b in balances)
         {
             if (Math.Abs(b.NetMinor) < BalanceThresholdMinor) continue;

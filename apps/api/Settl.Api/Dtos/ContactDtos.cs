@@ -1,7 +1,7 @@
 namespace Settl.Api.Dtos;
 
 /// <summary>
-/// Sends a blind invite (ADR-0019). <c>Channel</c> is "sms" or "email"; supply <c>Phone</c>
+/// Sends a blind invite (contacts-phone-sms spec). <c>Channel</c> is "sms" or "email"; supply <c>Phone</c>
 /// for SMS (E.164, normalised server-side) or <c>Email</c> for email. <c>HouseholdId</c> is
 /// optional — set it to also add the invitee to a household on accept (the "invite to
 /// household from contacts" flow), or leave it null for a contact-only invite. Typing a
@@ -29,5 +29,5 @@ public sealed record InvitableContactDto(Guid MemberId, string Name, string Avat
 
 /// <summary>Invites an existing saved contact (by member id) to a household — the wishlist
 /// "reuse a saved contact" flow. The server reads the contact's email itself, so the client
-/// never sees another member's address. Joining still requires the contact to accept (ADR-0011).</summary>
+/// never sees another member's address. Joining still requires the contact to accept (ADR-0005).</summary>
 public sealed record InviteContactRequest(Guid ContactMemberId);

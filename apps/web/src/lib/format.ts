@@ -28,7 +28,7 @@ export function formatKr(minor: number | string): string {
 
 /**
  * Currency suffix for a household's ISO code. The multi-household overview shows
- * each book's net in its OWN currency (ADR-0019 §2.2), so money there can't use
+ * each book's net in its OWN currency (contacts-phone-sms spec §2.2), so money there can't use
  * the SEK-only `formatKr`. Unknown codes fall back to the raw code so nothing is
  * silently mislabelled.
  */

@@ -5,7 +5,7 @@ using Settl.Api.Services;
 namespace Settl.Api.Features;
 
 /// <summary>
-/// The login-free nudge-email unsubscribe reached from a digest (reminder-delivery spec, ADR-0024).
+/// The login-free nudge-email unsubscribe reached from a digest (reminder-delivery spec).
 /// The link carries a Data-Protection-sealed member token (<see cref="NudgeUnsubscribeTokens"/>), so
 /// no session is needed to turn emails OFF. Two steps by design: the email link is a GET that shows
 /// a one-button confirmation page, and the button POSTs the actual change — so an email client

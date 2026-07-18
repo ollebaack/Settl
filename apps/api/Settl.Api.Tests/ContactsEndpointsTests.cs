@@ -10,7 +10,7 @@ using Settl.Api.Tests.Infrastructure;
 namespace Settl.Api.Tests;
 
 /// <summary>
-/// WebApplicationFactory integration tests for contacts &amp; blind SMS invites (ADR-0019).
+/// WebApplicationFactory integration tests for contacts &amp; blind SMS invites (contacts-phone-sms spec).
 /// Typing a number never reveals whether it's on Settl (no lookup endpoint exists to test);
 /// a contact edge only appears once an invite is accepted (connection-on-accept). SMS delivery
 /// is the logging <c>DevSmsSender</c> — the test reads the accept link back from the same
@@ -101,7 +101,7 @@ public class ContactsEndpointsTests
         // Contact-only invite: no household was joined, so no shared book yet.
         Assert.Equal(0, duContacts!.Single(c => c.MemberId == me!.Id).SharedHouseholdCount);
 
-        // The raw number is scrubbed off the invite once accepted (ADR-0019 / GDPR).
+        // The raw number is scrubbed off the invite once accepted (contacts-phone-sms spec / GDPR).
         var invite = await factory.WithDb(db => db.Invites.SingleAsync(i => i.AcceptedAt != null));
         Assert.Null(invite.PhoneNumber);
     }
@@ -220,7 +220,7 @@ public class ContactsEndpointsTests
         await factory.SeedCanonicalAsync();
         var du = factory.ClientAs(SeedIds.Du);
 
-        // The member's single number (ADR-0026) is written through PUT /me alongside name/avatar.
+        // The member's single number (contacts-phone-sms spec) is written through PUT /me alongside name/avatar.
         var set = await du.PutAsJsonAsync("/me", new UpdateMeRequest("Du", null, Phone: "073-555 12 34"), Web);
         Assert.Equal(HttpStatusCode.OK, set.StatusCode);
         var me = await set.Content.ReadFromJsonAsync<MeDto>(Web);

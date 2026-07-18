@@ -1,5 +1,5 @@
 /**
- * Update watcher (ADR-0027). With no service worker, a warm (never-closed)
+ * Update watcher (installable-pwa spec). With no service worker, a warm (never-closed)
  * home-screen session keeps running the old client bundle until the page
  * reloads — and standalone mode hides the browser's reload button. This polls
  * the deployed build id and offers a one-tap refresh when it moves on. Data

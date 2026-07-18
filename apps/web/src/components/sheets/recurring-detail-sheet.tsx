@@ -3,7 +3,7 @@
  * Rendered by SheetRouter when `sheet==='recurring'`. Shows the template's next
  * auto-post, how it splits (frozen shares), previous posted periods, a pause/resume
  * toggle, and a ⋯ menu (Redigera / Ta bort). Delete-if-clean, else deactivate
- * (ADR-0018): a template with posted history can only be paused. All state (shares,
+ * (ledger-editing spec): a template with posted history can only be paused. All state (shares,
  * posted entries, active) comes from the API (ADR-0006).
  */
 import { useState } from 'react'

@@ -1,6 +1,6 @@
 /**
- * Logga in (/login) — ADR-0011. Visuals/copy from the "Settl Sign In" design
- * export; contract (query-token invites, email+password only) is ADR-0011's,
+ * Logga in (/login) — ADR-0005. Visuals/copy from the "Settl Sign In" design
+ * export; contract (query-token invites, email+password only) is ADR-0005's,
  * not the export's proposed magic-link/share-link model (deferred). The
  * "Glömt?" forgot-password flow (docs/design/auth-onboarding-addendum.md
  * §2.1) IS built as spec'd: an inline card-content swap to a "sent" state,

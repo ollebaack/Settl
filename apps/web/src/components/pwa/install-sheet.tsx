@@ -1,5 +1,5 @@
 /**
- * iOS "Add to Home Screen" guidance (ADR-0027). iOS has no install prompt API,
+ * iOS "Add to Home Screen" guidance (installable-pwa spec). iOS has no install prompt API,
  * and the Share → Add to Home Screen step is hidden, so we spell it out. Shown
  * only where it can work (Safari on iOS, not already installed): auto-opens once
  * per device, and is reachable any time from the account menu via

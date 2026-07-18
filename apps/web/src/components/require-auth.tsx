@@ -1,5 +1,5 @@
 /** Wraps a route's page component; redirects to /login when unauthenticated, or to
- * /verify-email when signed in but not yet email-confirmed (ADR-0011). */
+ * /verify-email when signed in but not yet email-confirmed (ADR-0005). */
 import { Navigate } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { LoadingState } from '@/components/screen-states'

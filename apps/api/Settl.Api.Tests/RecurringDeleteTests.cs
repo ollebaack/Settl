@@ -9,7 +9,7 @@ namespace Settl.Api.Tests;
 
 /// <summary>
 /// WebApplicationFactory integration tests for DELETE /recurring/{id} — the delete-if-clean,
-/// else-deactivate rule from ADR-0018. A template with zero posted entries hard-deletes (204);
+/// else-deactivate rule from the ledger-editing spec. A template with zero posted entries hard-deletes (204);
 /// one with posted history is refused (409) so the real debts its cycles created are preserved.
 /// </summary>
 public class RecurringDeleteTests

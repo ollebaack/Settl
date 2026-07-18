@@ -7,7 +7,7 @@ using Settl.Api.Features;
 namespace Settl.Api.Services;
 
 /// <summary>
-/// The daily nudge-digest pass (reminder-delivery spec, ADR-0024). For each opted-in member it
+/// The daily nudge-digest pass (reminder-delivery spec). For each opted-in member it
 /// recomputes their current nudges across every household they belong to (reusing
 /// <see cref="NudgeComputation"/> so the digest and the in-app feed never diverge), diffs them
 /// against the emitted-nudge log, and — if anything is un-sent — emails ONE digest and records the

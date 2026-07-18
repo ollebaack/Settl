@@ -1,12 +1,12 @@
 /**
- * Kontakter (/kontakter) — ADR-0019, contacts-addendum screens 1 & 6.
+ * Kontakter (/kontakter) — contacts-phone-sms spec, contacts-addendum screens 1 & 6.
  *
  * A saved contact is the Member↔Member edge that only exists once an invite is accepted
  * (connection-on-accept). Outstanding invites the user sent sit under "Väntar på svar" as the
  * raw number/email, not a person. "+ Lägg till kontakt" sends a BLIND invite (AddContactSheet) —
  * there is deliberately no user search anywhere.
  *
- * The member's own number no longer lives here: it moved to a single field on /profil (ADR-0026),
+ * The member's own number no longer lives here: it moved to a single field on /profil (contacts-phone-sms spec),
  * where it also powers "Betala med Swish". Email stays the login.
  */
 import { useState } from 'react'

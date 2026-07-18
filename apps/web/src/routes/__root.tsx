@@ -14,7 +14,7 @@ export const Route = createRootRoute({
   component: RootLayout,
 })
 
-// Auth pages (ADR-0011) render without the app chrome — there's no household nav
+// Auth pages (ADR-0005) render without the app chrome — there's no household nav
 // to show before/without a logged-in user.
 const AUTH_ROUTES = [
   '/login',
@@ -48,7 +48,7 @@ function RootLayout() {
       </AppShell>
       <SheetRouter />
       <Toaster />
-      {/* Manifest-only PWA (ADR-0027): iOS install guidance + no-service-worker update watcher. */}
+      {/* Manifest-only PWA (installable-pwa spec): iOS install guidance + no-service-worker update watcher. */}
       <InstallSheet />
       <VersionWatcher />
     </>

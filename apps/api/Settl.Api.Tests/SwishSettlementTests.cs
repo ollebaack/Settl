@@ -35,7 +35,7 @@ public class SwishSettlementTests
         var client = factory.ClientAs(SeedIds.Du);
 
         // Typed behind the UI's +46 chip as a Swedish national number. This single number
-        // (ADR-0026) is what powers the Swish payee.
+        // (contacts-phone-sms spec) is what powers the Swish payee.
         var res = await client.PutAsJsonAsync("/me",
             new UpdateMeRequest("Du", null, Phone: "070-123 45 67"), Web);
         Assert.Equal(HttpStatusCode.OK, res.StatusCode);

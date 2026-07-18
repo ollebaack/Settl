@@ -1,5 +1,5 @@
 /**
- * Bekräfta e-post (/verify-email) — email-verification decision made alongside ADR-0011.
+ * Bekräfta e-post (/verify-email) — email-verification decision made alongside ADR-0005.
  * Shown to a signed-in-but-unconfirmed member (RequireAuth routes them here instead of
  * into the app) so they can resend the confirmation link or log out to try another account.
  */

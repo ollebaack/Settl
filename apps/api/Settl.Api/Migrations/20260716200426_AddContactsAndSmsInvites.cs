@@ -32,7 +32,7 @@ namespace Settl.Api.Migrations
                 table: "Invites",
                 type: "text",
                 nullable: false,
-                // Every invite that predates ADR-0019 was email-channel.
+                // Every invite that predates the contacts-phone-sms spec was email-channel.
                 defaultValue: "Email");
 
             migrationBuilder.AddColumn<string>(

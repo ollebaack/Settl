@@ -5,7 +5,7 @@ import { latestDevVerificationUrl, relativePath, uniqueSuffix } from './helpers'
 // isolated stack on another port when the default :5000 is occupied by another worktree.
 const API = process.env.E2E_API_URL ?? 'http://localhost:5000'
 
-// PROFILE — avatar emoji personalization (ADR-0019, profile-addendum §2.1–2.2).
+// PROFILE — avatar emoji personalization (contacts-phone-sms spec, profile-addendum §2.1–2.2).
 // Each run creates its own freshly-verified account so setting/resetting the emoji never
 // races the shared e2e database or other specs. Registering via page.request signs the
 // account in on the page's own context, so subsequent page.goto navigations are authed.
@@ -104,7 +104,7 @@ test('sets the phone number and persists it normalised', async ({ page, request 
   await page.goto('/profil')
   await expect(page.getByText('Så här syns du i loggboken.')).toBeVisible()
 
-  // The single optional number sits behind the +46 chip (ADR-0026) — it also powers Swish.
+  // The single optional number sits behind the +46 chip (contacts-phone-sms spec) — it also powers Swish.
   const phone = page.locator('#profile-phone')
   await expect(phone).toBeVisible()
   await phone.fill('070-123 45 67')

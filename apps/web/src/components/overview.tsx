@@ -1,5 +1,5 @@
 /**
- * Multi-household overview (ADR-0019 + docs/design/multi-household-overview-addendum.md,
+ * Multi-household overview (contacts-phone-sms spec + docs/design/multi-household-overview-addendum.md,
  * frames 1–2). Rendered at `/` only when the user has ≥2 ACTIVE households — the
  * single-household majority never sees it. Lists every active book as a card
  * with its server-derived net (HouseholdListItemDto), a roll-up hero, the
@@ -52,14 +52,14 @@ export function Overview({ households }: { households: HouseholdListItemDto[] })
   const { setHouseholdId } = useActiveHousehold()
   const { openSheet } = useSheet()
 
-  // Client detects >1 distinct currency across active books (ADR-0019 §2.2).
+  // Client detects >1 distinct currency across active books (contacts-phone-sms spec §2.2).
   const distinctCurrencies = new Set(households.map((h) => h.currency))
   const singleCurrency = distinctCurrencies.size === 1
-  // With one book the overview is thinner (ADR-0021): the hero is scoped to it
+  // With one book the overview is thinner (adaptive-home spec): the hero is scoped to it
   // and its card is an "Öppna" affordance rather than repeating the net.
   const single = households.length === 1
 
-  // Tapping a book sets it active and lands on the Hushållet tab (ADR-0021).
+  // Tapping a book sets it active and lands on the Hushållet tab (adaptive-home spec).
   const enter = (h: HouseholdListItemDto) => {
     setHouseholdId(h.id)
     navigate({ to: '/hushallet' })
@@ -117,7 +117,7 @@ export function Overview({ households }: { households: HouseholdListItemDto[] })
   )
 }
 
-// --- "Add your number" reminder (ADR-0026) ----------------------------------
+// --- "Add your number" reminder (contacts-phone-sms spec) --------------------
 
 const ADD_NUMBER_BANNER_KEY = 'settl:add-number-banner-dismissed'
 
@@ -125,7 +125,7 @@ const ADD_NUMBER_BANNER_KEY = 'settl:add-number-banner-dismissed'
  * Gentle, dismissible nudge to save a number so people can Swish you back. Shown only when it is
  * actually useful — you're owed money in at least one book AND have no number saved yet. Adding one
  * (or dismissing) removes it; dismissal persists so it never nags. The single number lives on
- * /profil (ADR-0026), where it powers "Betala med Swish".
+ * /profil (contacts-phone-sms spec), where it powers "Betala med Swish".
  */
 function AddNumberBanner({ owedSomewhere }: { owedSomewhere: boolean }) {
   const navigate = useNavigate()
@@ -235,7 +235,7 @@ function SingleCurrencyHero({
   )
 }
 
-/** Mixed-currency hero: descriptive roll-up, never a sum (ADR-0019 §2.2). */
+/** Mixed-currency hero: descriptive roll-up, never a sum (contacts-phone-sms spec §2.2). */
 function MixedCurrencyHero({ households }: { households: HouseholdListItemDto[] }) {
   const owedCount = households.filter((h) => h.netLabel === 'owed').length
   const oweCount = households.filter((h) => h.netLabel === 'owe').length
@@ -299,7 +299,7 @@ function HouseholdCard({
       </div>
       {single ? (
         // The hero already carries this book's net, so the card is just an
-        // "enter" affordance (ADR-0021 / addendum §2.1).
+        // "enter" affordance (adaptive-home spec / addendum §2.1).
         <span className="shrink-0 rounded-full bg-primary px-3 py-1.5 text-[13px] font-semibold text-primary-foreground">
           Öppna
         </span>
@@ -320,12 +320,12 @@ function HouseholdCard({
   )
 }
 
-// --- "Add a friend" affordance (ADR-0019 §2.4) ------------------------------
+// --- "Add a friend" affordance (contacts-phone-sms spec §2.4) ----------------
 
 /**
  * Loose affordance + copy only. The contacts model (add-by-number = blind SMS
  * invite, contacts reusable across households) is a SEPARATE workstream
- * (docs/specs/contacts-phone-sms.md, ADR-0019) — this carries just the
+ * (docs/specs/contacts-phone-sms.md) — this carries just the
  * entry point and copy, no contact data or endpoints.
  */
 function FriendsAffordance({ onOpen }: { onOpen: () => void }) {
@@ -373,11 +373,11 @@ function FriendsAffordance({ onOpen }: { onOpen: () => void }) {
   )
 }
 
-// --- Archived section (ADR-0016) --------------------------------------------
+// --- Archived section (household-ownership spec) -----------------------------
 
 /**
  * Archived households render as dimmed rows with an owner-only `Återställ` chip
- * (design §2.5). Uses the include-archived list (ADR-0016); the section is
+ * (design §2.5). Uses the include-archived list (household-ownership spec); the section is
  * hidden when the user has no archived books.
  */
 function ArchivedSection() {

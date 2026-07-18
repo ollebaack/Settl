@@ -3,14 +3,15 @@ using System.Net.Sockets;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-// ADR-0010: Postgres replaces SQLite in both dev and prod, ahead of ADR-0004's original
-// trigger. AddPostgres is container-backed (Aspire.Hosting.PostgreSQL), so Docker
+// ADR-0010: Postgres replaces SQLite in both dev and prod, ahead of the original
+// SQLite-first plan's trigger for switching (that plan is now folded into ADR-0010).
+// AddPostgres is container-backed (Aspire.Hosting.PostgreSQL), so Docker
 // Desktop/Podman is now a required local-dev dependency — this revises ADR-0008's
 // "no Docker needed" consequence.
 var postgres = builder.AddPostgres("postgres");
 var settlDb = postgres.AddDatabase("Settl");
 
-// ADR-0011: Resend sends invite email. Read via configuration (user-secrets or an
+// ADR-0005: Resend sends invite email. Read via configuration (user-secrets or an
 // env var on the AppHost — e.g. `dotnet user-secrets set Resend:ApiKey ... --project
 // apps/api/Settl.AppHost` — never appsettings*.json) rather than an Aspire AddParameter:
 // a required parameter prompts/blocks `dotnet run` when unset, and this key is meant to
@@ -36,7 +37,7 @@ if (!string.IsNullOrWhiteSpace(resendFromAddress))
 
 if (builder.ExecutionContext.IsPublishMode)
 {
-    // ADR-0009: Docker Compose on a self-hosted VPS, generated via `aspire publish`.
+    // ADR-0014: Docker Compose on a self-hosted VPS, generated via `aspire publish`.
     // ADR-0010 adds Postgres as a second, self-hosted container in the same stack
     // (no managed Postgres service). The Vite dev-server resource below is dev-only
     // (Aspire's JS hosting is never a production web server, per ADR-0008) and must not
@@ -48,7 +49,7 @@ if (builder.ExecutionContext.IsPublishMode)
         .WithDashboard(false);
 
     // Postgres data lives on a mounted volume, never baked into the image; migrations
-    // run at container startup (Program.cs), not at build/release time (ADR-0009).
+    // run at container startup (Program.cs), not at build/release time (ADR-0014).
     postgres.WithComputeEnvironment(dockerEnv)
         .WithDataVolume("settl-postgres-data");
 
@@ -82,7 +83,7 @@ else
     // (verified: DCP throws "needs to specify a port ... since it isn't using a proxy").
     // Pinning a constant would just move the cross-worktree collision, so grab a fresh free
     // ephemeral port per run instead: different every launch, so parallel worktrees never
-    // clash (ADR-0025). AddViteApp passes this to Vite via the PORT env var.
+    // clash (ADR-0008). AddViteApp passes this to Vite via the PORT env var.
     var webListener = new TcpListener(IPAddress.Loopback, 0);
     webListener.Start();
     var webPort = ((IPEndPoint)webListener.LocalEndpoint).Port;
@@ -91,7 +92,7 @@ else
     // The browser SPA can only read VITE_-prefixed env vars (Aspire's service-discovery
     // vars are server-side only), so the web can't learn the API's port from WithReference
     // alone — it would fall back to api.ts's hardcoded http://localhost:5000 default. Inject
-    // the API's *resolved* origin explicitly (ADR-0025): this is what makes a dynamic API
+    // the API's *resolved* origin explicitly (ADR-0008): this is what makes a dynamic API
     // port work end-to-end, including under `aspire run --isolated`, where the API port is
     // randomized per worktree so multiple agents' stacks coexist without collisions.
     builder.AddViteApp("web", "../../web")

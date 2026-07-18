@@ -8,7 +8,7 @@ using Settl.Api.Tests.Infrastructure;
 namespace Settl.Api.Tests;
 
 /// <summary>WebApplicationFactory integration tests for GET/PUT /me — the profile endpoint
-/// that carries the avatar emoji (ADR-0019). The emoji is untrusted text rendered in other
+/// that carries the avatar emoji (contacts-phone-sms spec). The emoji is untrusted text rendered in other
 /// members' UIs, so validation is the API's job (ADR-0006), not the client picker's.</summary>
 public class MeEndpointTests
 {

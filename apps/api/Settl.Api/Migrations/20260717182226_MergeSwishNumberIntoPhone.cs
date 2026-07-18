@@ -10,7 +10,7 @@ namespace Settl.Api.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // ADR-0026: collapse the two numbers into the single inherited PhoneNumber. Where a
+            // contacts-phone-sms spec: collapse the two numbers into the single inherited PhoneNumber. Where a
             // member saved a Swish number it WINS — it drives a live payment feature, so a
             // wrong number would send money to a stranger. Members with only a profile phone keep
             // it. Both columns are already normalised E.164, so the copy is verbatim.

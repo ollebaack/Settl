@@ -1,5 +1,5 @@
 /**
- * Generates the PWA raster icons from the brand mark (ADR-0027), using the
+ * Generates the PWA raster icons from the brand mark (installable-pwa spec), using the
  * Playwright chromium already installed for e2e — no extra dependency. This is
  * a one-off asset step, NOT part of the build: run it only when the mark or the
  * icon set changes, then commit the PNGs in public/.

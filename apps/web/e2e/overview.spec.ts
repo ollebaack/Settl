@@ -8,7 +8,7 @@ import {
   uniqueSuffix,
 } from './helpers'
 
-// MULTI-HOUSEHOLD OVERVIEW as always-home (ADR-0021). `/` is always the overview,
+// MULTI-HOUSEHOLD OVERVIEW as always-home (adaptive-home spec). `/` is always the overview,
 // regardless of household count: one book → a thinner single-book overview; 2+ →
 // the roll-up. "Du" belongs to two seeded books.
 
@@ -27,7 +27,7 @@ test('single active household → the single-book overview (not a collapse)', as
 
   await page.goto('/')
 
-  // ADR-0021: still the overview, singular — title "Ditt hushåll", the book as a
+  // adaptive-home spec: still the overview, singular — title "Ditt hushåll", the book as a
   // card with an "Öppna" affordance, and a hero scoped to that book.
   await expect(page.getByRole('heading', { name: 'Ditt hushåll', level: 1 })).toBeVisible()
   const card = page.getByTestId('household-card').filter({ hasText: name })
@@ -84,7 +84,7 @@ test('mixed currencies → descriptive roll-up, never a sum', async ({ page }) =
     password: 'Password123!',
   })
   // Two books spanning two currencies → the client must switch to the
-  // descriptive hero and never sum across currencies (ADR-0019 §2.2).
+  // descriptive hero and never sum across currencies (contacts-phone-sms spec §2.2).
   await createHousehold(page.request, `E2E Hemma ${suffix}`, 'SEK')
   await createHousehold(page.request, `E2E Resa ${suffix}`, 'EUR')
 

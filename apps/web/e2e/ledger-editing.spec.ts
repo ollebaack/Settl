@@ -9,7 +9,7 @@ import {
   uniqueSuffix,
 } from './helpers'
 
-// LEDGER EDITING (ADR-0018 + ledger-editing addendum): the "Allt på en" split preset,
+// LEDGER EDITING (ledger-editing spec + addendum): the "Allt på en" split preset,
 // entry edit via the ⋯ menu, the deferred delete + Ångra undo toast, and recurring
 // delete-if-clean / pause-when-history. Each test creates its own uniquely-titled data
 // (or only reads shared seed data) so it stays isolated across parallel workers.

@@ -1,6 +1,6 @@
 /**
  * Typed fetch layer over the generated OpenAPI contract (@settl/api-client).
- * Every request carries the ASP.NET Identity auth cookie (ADR-0011); the API
+ * Every request carries the ASP.NET Identity auth cookie (ADR-0005); the API
  * resolves the acting member from it, never from anything the client sends.
  * Non-2xx responses are parsed as ProblemDetails and thrown as an Error carrying
  * the Swedish `detail` message so screens can surface it.

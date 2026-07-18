@@ -3,7 +3,7 @@
  *
  * Deliberately a fixed, hand-picked list with keyword search rather than a full emoji
  * dataset/library (e.g. frimousse / emoji-picker-element): the root rule is "no new
- * dependencies without stating why" and ADR-0019 offers the choice explicitly. A shipped
+ * dependencies without stating why" and the contacts-phone-sms spec offers the choice explicitly. A shipped
  * dataset adds ~tens-to-hundreds of KB and a transitive dep for what is a cosmetic,
  * trusted-household feature — the API is the authority that validates the stored value
  * either way (single grapheme, ADR-0006/0019), so an exhaustive client list buys nothing.

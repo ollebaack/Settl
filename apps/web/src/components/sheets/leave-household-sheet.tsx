@@ -1,5 +1,5 @@
 /**
- * Lämna hushåll (ADR-0016 / docs/specs/household-ownership.md, design frames 3 & 6).
+ * Lämna hushåll (docs/specs/household-ownership.md, design frames 3 & 6).
  * A non-owner leaves; a sole owner's "leave" archives instead (RemovalPreviewDto.soleMember
  * → LeaveResultDto.archived). Open debts warn but never block. Debt figures and guard flags
  * are DERIVED server-side via useRemovalPreview — the sheet renders and calls (ADR-0006).
