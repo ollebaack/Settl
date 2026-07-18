@@ -177,9 +177,11 @@ public static class HouseholdsEndpoints
             var entries = await Loaders.LoadEntries(db, id, ct);
 
             // On the default window (no explicit `from`), don't render a flat empty runway
-            // for young households: clip the start forward to the first attributable payment's
-            // month. Established households (>12 months of history) stay pinned to the trailing
-            // 12-month cap since the first payment predates it.
+            // for young households: clip the start forward to just before the first attributable
+            // payment's month. We keep one zero-filled lead-in month so the series rises from 0
+            // rather than starting mid-air — and a one-month-old household renders a visible line
+            // instead of a lone (dot-less) point. Clamped to the trailing 12-month floor, so
+            // established households whose first payment predates it stay pinned to that cap.
             if (from is null)
             {
                 DateOnly? firstPaid = entries
@@ -188,7 +190,10 @@ public static class HouseholdsEndpoints
                     .DefaultIfEmpty(null)
                     .Min();
                 if (firstPaid is { } fp && FirstOfMonth(fp) > rangeFrom)
-                    rangeFrom = FirstOfMonth(fp);
+                {
+                    var leadIn = FirstOfMonth(fp).AddMonths(-1);
+                    rangeFrom = leadIn > rangeFrom ? leadIn : rangeFrom;
+                }
             }
 
             // Sum by (payer, month) over both Expense and RecurringPost — recurring posts

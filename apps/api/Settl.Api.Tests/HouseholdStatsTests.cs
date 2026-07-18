@@ -104,14 +104,15 @@ public class HouseholdStatsTests
     }
 
     [Fact]
-    public async Task Contributions_default_range_clips_the_empty_runway_to_the_first_entry()
+    public async Task Contributions_default_range_clips_to_one_zero_lead_in_before_the_first_entry()
     {
         using var factory = new SettlApiFactory();
         var s = new TestScenario();
         var anna = s.AddMember("Anna");
         // A young household: its first-ever entry is ~2 months back, and there is nothing
-        // older than the trailing-12 cap. The default window should start at that first
-        // entry's month, not paint an empty 12-month runway before it.
+        // older than the trailing-12 cap. The default window should clip the empty 12-month
+        // runway but keep exactly one zero-filled lead-in month before the first entry, so
+        // the series rises from 0 rather than starting mid-air.
         s.AddEqualExpense("Gammalt", 3_000, anna, dateOffset: -40);   // first entry
         s.AddEqualExpense("Mat", 10_000, anna, dateOffset: -1);       // current month
         await factory.SeedAsync(s);
@@ -122,10 +123,16 @@ public class HouseholdStatsTests
 
         Assert.NotNull(stats);
 
-        // Window starts at the first entry's month (≤ 3 buckets for a ~40-day span), not 12.
+        // Window starts one month before the first entry (≤ 4 buckets for a ~40-day span), not 12.
         Assert.True(stats!.Buckets.Count < 12, "empty leading months must be clipped");
         var firstMonth = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(-40);
-        Assert.Equal($"{firstMonth.Year:D4}-{firstMonth.Month:D2}", stats.Buckets[0].Month);
+        var leadIn = new DateOnly(firstMonth.Year, firstMonth.Month, 1).AddMonths(-1);
+        Assert.Equal($"{leadIn.Year:D4}-{leadIn.Month:D2}", stats.Buckets[0].Month);
+
+        // The lead-in month is zero-filled — nothing was paid before the household started.
+        Assert.Equal(0, stats.Buckets[0].PerMember.Single(p => p.MemberId == anna).PaidMinor);
+        // And the first entry's own month is the very next bucket.
+        Assert.Equal($"{firstMonth.Year:D4}-{firstMonth.Month:D2}", stats.Buckets[1].Month);
 
         // Nothing is dropped: both of Anna's payments are still summed across the clipped window.
         var annaTotal = stats.Buckets.Sum(b => b.PerMember.Single(p => p.MemberId == anna).PaidMinor);

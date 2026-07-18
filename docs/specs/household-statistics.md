@@ -31,9 +31,12 @@ out of scope. This spec adds the first read-only, per-person, time-bucketed view
   multi-book aggregation — user↔household is many-to-many, but this view never merges
   books.
 - **Trailing 12 months, monthly buckets.** Endpoint accepts `from`/`to`; the page
-  defaults to the last 12 whole months, **clipped at the front to the household's first
-  entry** so young households don't render a flat empty runway (established households
-  with older history stay pinned to the 12-month cap). No user-facing range picker in v1.
+  defaults to the last 12 whole months, **clipped at the front to one zero-filled month
+  before the household's first entry** so young households don't render a flat empty
+  runway, while the series still rises from 0 rather than starting mid-air (and a
+  one-month-old household renders a visible line, not a lone dot-less point). Established
+  households with older history stay pinned to the 12-month cap. No user-facing range
+  picker in v1.
 - **Household totals framed per person** — i.e. the *payer* dimension, in minor units.
   **Not** the viewer's personal share; this is "who fronted what," not "my spending."
 - **Read-only.** No drill-down, no export, no filtering by category/member in v1.
@@ -54,9 +57,9 @@ New read endpoint:
   → `ContributionStatsDto`.
   - `from`/`to` are `DateOnly` (inclusive `from`, exclusive `to` recommended); when
     omitted the API defaults to the trailing 12 whole months ending at the current
-    month, with the start clipped forward to the first attributable payment's month
-    (no leading empty months for young households). An explicit `from` disables the
-    clip. Bucketing is monthly, server-side.
+    month, with the start clipped forward to one month before the first attributable
+    payment (a single zero-filled lead-in month, no longer empty runway, for young
+    households). An explicit `from` disables the clip. Bucketing is monthly, server-side.
   - Auth/membership check mirrors the other `households/{id}/*` endpoints (caller must
     be a member).
   - Shape (illustrative — finalize in implementation):
