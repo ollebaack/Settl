@@ -197,7 +197,7 @@ export function useHouseholds() {
   })
 }
 
-/** Active + archived households — for the switcher's "Arkiverade" section (ADR-0016).
+/** Active + archived households — for the switcher's "Arkiverade" section (household-ownership spec).
  * Gated on auth for the same 401-on-unauthenticated-load reason as `useHouseholds`. */
 export function useHouseholdsWithArchived() {
   const { data: me } = useMe()
@@ -396,7 +396,7 @@ export function useLogout() {
 }
 
 /**
- * Update the acting member's own profile (name + avatar emoji, ADR-0019). The response is
+ * Update the acting member's own profile (name + avatar emoji, contacts-phone-sms spec). The response is
  * the fresh MeDto, set directly into the `me` cache so every avatar (header, ledger, …)
  * reflects the change immediately, then broadly invalidated since member avatars ride along
  * on household-scoped reads (summary/entries/recurring) too.
@@ -444,7 +444,7 @@ export function useSendInvite(householdId: string | undefined) {
   })
 }
 
-// --- Contacts (ADR-0019) ----------------------------------------------------
+// --- Contacts (contacts-phone-sms spec) -------------------------------------
 
 /** Accepted contacts — the Member↔Member edges (connection-on-accept). */
 export function useContacts() {
@@ -473,7 +473,7 @@ export function useInvitableContacts(householdId: string | undefined) {
 
 /**
  * Send a blind invite (SMS or email). Typing a number reveals nothing about whether it's on
- * Settl — the response is always the same "sent" shape (ADR-0019). Refreshes the pending list
+ * Settl — the response is always the same "sent" shape (contacts-phone-sms spec). Refreshes the pending list
  * and, when a household was attached, that household's invitable-contacts view.
  */
 export function useSendContactInvite() {
@@ -568,7 +568,7 @@ function forgetHousehold(qc: QueryClient) {
   invalidateHouseholdLists(qc)
 }
 
-/** Owner hands ownership to another current member (ADR-0016). */
+/** Owner hands ownership to another current member (household-ownership spec). */
 export function useTransferOwnership(householdId: string | undefined) {
   const qc = useQueryClient()
   return useMutation({
@@ -611,7 +611,7 @@ export function useRestoreHousehold(householdId: string | undefined) {
   })
 }
 
-/** Permanently delete an empty household (owner-only, no ledger activity). ADR-0022. */
+/** Permanently delete an empty household (owner-only, no ledger activity). household-ownership spec. */
 export function useDeleteHousehold(householdId: string | undefined) {
   const qc = useQueryClient()
   return useMutation({
@@ -708,7 +708,7 @@ export function useUpdateRecurring(householdId?: string) {
 }
 
 /**
- * Hard-delete a recurring template (ADR-0018 delete-if-clean). The API 409s when the
+ * Hard-delete a recurring template (ledger-editing spec delete-if-clean). The API 409s when the
  * template has posted history; the caller surfaces that and falls back to pausing.
  */
 export function useDeleteRecurring(householdId?: string) {

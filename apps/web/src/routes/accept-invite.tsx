@@ -1,5 +1,5 @@
 /**
- * Acceptera inbjudan (/accept-invite?token=…) — ADR-0011 (email) + ADR-0019 (SMS/contact).
+ * Acceptera inbjudan (/accept-invite?token=…) — ADR-0005 (email) + contacts-phone-sms spec (SMS/contact).
  *
  * The invite may be household-scoped or contact-only (no household to join, just a contact
  * edge), and delivered by email or SMS. Email invites bind to a known address; SMS invites

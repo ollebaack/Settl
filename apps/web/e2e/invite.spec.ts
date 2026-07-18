@@ -10,7 +10,7 @@ import {
   uniqueSuffix,
 } from './helpers'
 
-// INVITES (ADR-0011). Sends an invite from the household switcher's invite
+// INVITES (ADR-0005). Sends an invite from the household switcher's invite
 // section, accepts it as a brand-new account, and confirms both accounts share
 // the household. Runs in a throwaway household so it never disturbs the seeded
 // books other specs assert against.
@@ -22,7 +22,7 @@ test('invite a new email, accept it, and see the shared household', async ({ pag
   const household = await createHousehold(page.request, householdName)
   await pinHousehold(page, household.id)
   // "Du" has several books, so `/` is the overview — open the fresh book's
-  // focused dashboard directly (ADR-0019).
+  // focused dashboard directly (contacts-phone-sms spec).
   await page.goto(`/hushall/${household.id}`)
   await expect(page.getByText(`öppna poster i ${householdName}`)).toBeVisible()
 
@@ -46,7 +46,7 @@ test('invite a new email, accept it, and see the shared household', async ({ pag
 
   await expect(page).toHaveURL('/')
   // The invitee has exactly one book, so `/` is the single-household overview
-  // (ADR-0021) — the shared household shows up as its card.
+  // (adaptive-home spec) — the shared household shows up as its card.
   await expect(page.getByRole('heading', { name: 'Ditt hushåll', level: 1 })).toBeVisible()
   await expect(
     page.getByTestId('household-card').filter({ hasText: householdName }),

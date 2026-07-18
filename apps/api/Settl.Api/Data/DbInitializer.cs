@@ -11,7 +11,7 @@ namespace Settl.Api.Data;
 /// three nudge types (recurring due ≤5 days, ≥1500 kr expense, a pair net ≥750 kr).
 /// Every seeded member can log in locally with their <c>@settl.dev</c> email and
 /// <see cref="SeedIds.DevPassword"/> — this is what backs local dev/e2e login now that
-/// there's no dev user-switcher header (tech-debt/0003, ADR-0011).
+/// there's no dev user-switcher header (tech-debt/0003, ADR-0005).
 /// </summary>
 public static class DbInitializer
 {
@@ -53,7 +53,7 @@ public static class DbInitializer
         var h2Order = new[] { Du, Mamma, Pappa };
 
         // Owner = first member in each order (Du owns both), matching the earliest-JoinedAt
-        // backfill rule (ADR-0016).
+        // backfill rule (household-ownership spec).
         db.Households.AddRange(
             new Household { Id = Lonnvagen, Name = "Lönnvägen 3", Currency = "SEK", CreatedAt = now, OwnerMemberId = h1Order[0] },
             new Household { Id = Familjen, Name = "Familjen", Currency = "SEK", CreatedAt = now, OwnerMemberId = h2Order[0] });

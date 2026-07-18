@@ -1,5 +1,5 @@
 /**
- * Entry category display metadata (ADR-0012 / docs/specs/entry-categories.md).
+ * Entry category display metadata (docs/specs/entry-categories.md).
  * Icons mirror the design addendum's keyword→icon map; labels are Swedish,
  * matching the rest of the app.
  */

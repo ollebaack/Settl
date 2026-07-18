@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Settl.Api.Domain;
 
-/// <summary>A person. Also the ASP.NET Identity user (ADR-0011) — login credentials
+/// <summary>A person. Also the ASP.NET Identity user (ADR-0005) — login credentials
 /// (Email, PasswordHash, ...) come from <see cref="IdentityUser{TKey}"/>.</summary>
 public class Member : IdentityUser<Guid>
 {
@@ -12,13 +12,13 @@ public class Member : IdentityUser<Guid>
     public string AvatarColor { get; set; } = "";
 
     /// <summary>Optional emoji shown on <see cref="AvatarColor"/> in place of the letter
-    /// <see cref="Initial"/> (ADR-0019). Null = fall back to the initial. Untrusted text:
+    /// <see cref="Initial"/> (contacts-phone-sms spec). Null = fall back to the initial. Untrusted text:
     /// validated to a single emoji grapheme on write (it renders in other members' UIs).</summary>
     public string? AvatarEmoji { get; set; }
 
     // The member's single phone number is the inherited <see cref="IdentityUser{TKey}.PhoneNumber"/>
     // (E.164, nullable, unverified — tech-debt/0010). One number now serves both the "Betala med
-    // Swish" payee (null = no action shown) and the deferred contacts/SMS feature; ADR-0026 merged
+    // Swish" payee (null = no action shown) and the deferred contacts/SMS feature; the contacts-phone-sms spec merged
     // the former custom SwishNumber column into PhoneNumber (PhoneNumberConfirmed stays ready for OTP).
 
     /// <summary>The member's chosen nudge voice (implementation-map §2.4, ambiguity #18).
@@ -26,12 +26,12 @@ public class Member : IdentityUser<Guid>
     /// now exposed as a per-user setting. Selects nudge copy only, never which nudges fire.</summary>
     public NudgeTone NudgeTone { get; set; } = NudgeTone.Direct;
 
-    /// <summary>Whether this member receives the daily nudge-digest email (reminder-delivery spec,
-    /// ADR-0024). Off by default — an explicit opt-in the member turns on with the profile switch;
+    /// <summary>Whether this member receives the daily nudge-digest email (reminder-delivery
+    /// spec). Off by default — an explicit opt-in the member turns on with the profile switch;
     /// the one-click email unsubscribe also forces it off. In-app nudges are unaffected.</summary>
     public bool NudgeEmailsEnabled { get; set; }
 
-    /// <summary>Read cursor for trust notifications (trust-notifications-v1, ADR-0028). A
+    /// <summary>Read cursor for trust notifications (trust-notifications-v1 spec). A
     /// <see cref="LedgerEvent"/> concerning this member is UNREAD when its
     /// <see cref="LedgerEvent.OccurredAt"/> is after this timestamp. Null = never opened the
     /// notifications screen (everything concerning them is unread). Advanced by POST
@@ -51,12 +51,12 @@ public class Household
     public string Currency { get; set; } = "SEK";
     public DateTimeOffset CreatedAt { get; set; }
 
-    /// <summary>The single owner (ADR-0016). Always one of this household's current members —
+    /// <summary>The single owner (household-ownership spec). Always one of this household's current members —
     /// backfilled to the earliest-<see cref="HouseholdMembership.JoinedAt"/> member for rows
     /// created before ownership was recorded.</summary>
     public Guid OwnerMemberId { get; set; }
 
-    /// <summary>Soft-archive marker (ADR-0016). Null = active; set = archived (hidden but
+    /// <summary>Soft-archive marker (household-ownership spec). Null = active; set = archived (hidden but
     /// fully retained and restorable by the owner). Never hard-deleted.</summary>
     public DateTimeOffset? ArchivedAt { get; set; }
 
@@ -180,7 +180,7 @@ public class SettlementClosure
 }
 
 /// <summary>
-/// An invite (ADR-0011 email, ADR-0019 SMS). No Member/HouseholdMembership row exists for
+/// An invite (ADR-0005 email, contacts-phone-sms spec SMS). No Member/HouseholdMembership row exists for
 /// the invitee until <see cref="AcceptedAt"/> is set — activation happens entirely through
 /// the emailed/texted link. Only <see cref="TokenHash"/> is persisted; the raw token lives
 /// in the link and is never stored.
@@ -194,7 +194,7 @@ public class Invite
 {
     public Guid Id { get; set; }
 
-    /// <summary>Null for a contact-only invite (ADR-0019) — no household is joined on accept.</summary>
+    /// <summary>Null for a contact-only invite (contacts-phone-sms spec) — no household is joined on accept.</summary>
     public Guid? HouseholdId { get; set; }
     public Household? Household { get; set; }
 
@@ -203,7 +203,7 @@ public class Invite
     /// <summary>Normalized (lowercase, trimmed) invitee email. Null for SMS invites.</summary>
     public string? Email { get; set; }
 
-    /// <summary>E.164 invitee phone for SMS invites (ADR-0019). This raw typed number is
+    /// <summary>E.164 invitee phone for SMS invites (contacts-phone-sms spec). This raw typed number is
     /// transient third-party data: it is scrubbed on accept and once the invite expires, so
     /// the persistent graph only ever holds relationships between consenting members.</summary>
     public string? PhoneNumber { get; set; }
@@ -218,7 +218,7 @@ public class Invite
 }
 
 /// <summary>
-/// A directed contact edge between two members (ADR-0019). Created only when an invite is
+/// A directed contact edge between two members (contacts-phone-sms spec). Created only when an invite is
 /// accepted — connection-on-accept — so the graph never holds scraped or unconsented numbers.
 /// Edges are created in both directions on accept, and are reusable across households to
 /// pre-fill future invites (the wishlist payoff). There is deliberately no friend-request,
@@ -239,11 +239,11 @@ public class Contact
 
 /// <summary>
 /// One row per nudge already emailed to a member — the persisted, de-duplicated delivery record
-/// the reminder-delivery spec (ADR-0024) introduces to pay down tech-debt/0002. It is a
+/// the reminder-delivery spec introduces to pay down tech-debt/0002. It is a
 /// delivery-dedup log, NOT a mirror of nudge state: <see cref="NudgeKey"/> is a stable identity
 /// derived entirely from the nudge's own fields (<see cref="NudgeCalculator.EmittableNudge.Key"/>),
 /// so the daily digest can ask "have we already emailed this?" without coordinating with the
-/// derive-on-read crossing logic (ADR-0023). A standing condition keeps one key and is emailed
+/// derive-on-read crossing logic (reminder-delivery spec). A standing condition keeps one key and is emailed
 /// once; a fresh crossing / new cycle yields a new key and re-fires.
 /// </summary>
 public class EmittedNudge

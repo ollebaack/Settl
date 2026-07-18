@@ -6,7 +6,7 @@ namespace Settl.Api.Data;
 
 /// <summary>
 /// <see cref="IdentityUserContext{TUser,TKey}"/> (not the role-aware
-/// <c>IdentityDbContext</c>) — ADR-0011 explicitly has no role concept.
+/// <c>IdentityDbContext</c>) — ADR-0005 explicitly has no role concept.
 /// </summary>
 public class SettlDbContext(DbContextOptions<SettlDbContext> options) : IdentityUserContext<Member, Guid>(options)
 {
@@ -36,7 +36,7 @@ public class SettlDbContext(DbContextOptions<SettlDbContext> options) : Identity
             e.ToTable("Members");
             e.Property(x => x.Name).IsRequired();
             e.Property(x => x.AvatarColor).IsRequired();
-            // Nullable emoji (ADR-0019); cap the column so a single grapheme's worth of
+            // Nullable emoji (contacts-phone-sms spec); cap the column so a single grapheme's worth of
             // code units (incl. ZWJ sequences) fits but nothing larger can be stored.
             e.Property(x => x.AvatarEmoji).HasMaxLength(32);
             // Stored as the enum name (like every other domain enum here); the default keeps
@@ -45,7 +45,7 @@ public class SettlDbContext(DbContextOptions<SettlDbContext> options) : Identity
             // Nudge-digest emails default OFF — an explicit opt-in via the profile switch
             // (reminder-delivery spec). New rows fall to disabled via this default.
             e.Property(x => x.NudgeEmailsEnabled).IsRequired().HasDefaultValue(false);
-            // Trust-notification read cursor (ADR-0028) — nullable; null means "never opened".
+            // Trust-notification read cursor (trust-notifications-v1 spec) — nullable; null means "never opened".
             e.Property(x => x.NotificationsSeenAt);
             e.Ignore(x => x.Initial);
         });
@@ -55,7 +55,7 @@ public class SettlDbContext(DbContextOptions<SettlDbContext> options) : Identity
             e.HasKey(x => x.Id);
             e.Property(x => x.Name).IsRequired();
             e.Property(x => x.Currency).IsRequired().HasDefaultValue("SEK");
-            // Owner (ADR-0016): a plain member reference, not a navigation — the owner is
+            // Owner (household-ownership spec): a plain member reference, not a navigation — the owner is
             // always covered by a HouseholdMembership row, so no extra FK is needed.
             e.Property(x => x.OwnerMemberId).IsRequired();
         });
@@ -139,11 +139,11 @@ public class SettlDbContext(DbContextOptions<SettlDbContext> options) : Identity
         b.Entity<Invite>(e =>
         {
             e.HasKey(x => x.Id);
-            // Email is null for SMS invites; PhoneNumber is null for email invites (ADR-0019).
+            // Email is null for SMS invites; PhoneNumber is null for email invites (contacts-phone-sms spec).
             e.Property(x => x.Channel).HasConversion<string>().IsRequired();
             e.Property(x => x.TokenHash).IsRequired();
             // HouseholdId is nullable (contact-only invites have none). Cascade so that
-            // hard-deleting an empty household revokes its pending invites too (ADR-0022);
+            // hard-deleting an empty household revokes its pending invites too (household-ownership spec);
             // contact-only invites have no household and are unaffected.
             e.HasOne(x => x.Household).WithMany()
                 .HasForeignKey(x => x.HouseholdId).OnDelete(DeleteBehavior.Cascade);
@@ -181,7 +181,7 @@ public class SettlDbContext(DbContextOptions<SettlDbContext> options) : Identity
             e.Property(x => x.PayloadJson).IsRequired();
             // Cascade with the household so archival/hard-delete of an empty household clears its
             // audit trail too. There is deliberately NO relationship to Entry/RecurringTemplate:
-            // those may be hard-deleted, and the event must survive that (ADR-0028).
+            // those may be hard-deleted, and the event must survive that (trust-notifications-v1 spec).
             e.HasOne(x => x.Household).WithMany()
                 .HasForeignKey(x => x.HouseholdId).OnDelete(DeleteBehavior.Cascade);
             // The read projection loads a household's events newest-first.

@@ -1,5 +1,5 @@
 /**
- * Shared centered layout for auth pages (ADR-0011; visuals from the
+ * Shared centered layout for auth pages (ADR-0005; visuals from the
  * "Settl Sign In" design export — logo block + tagline, one card, footer line).
  */
 import type { ReactNode } from 'react'

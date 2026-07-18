@@ -1,6 +1,6 @@
 /**
  * Profil `/profil` — change your name, pick an avatar emoji, and opt into e-post reminders
- * (profile-addendum §2.1, frames 1–2; ADR-0019; implementation-map §2.4, ambiguity #18).
+ * (profile-addendum §2.1, frames 1–2; contacts-phone-sms spec; implementation-map §2.4, ambiguity #18).
  * Part of the app chrome (AppShell). Renders and calls only (ADR-0006): the avatar is the
  * email-derived `avatarColor` with an optional emoji over it, letter initial as the fallback.
  * Name + emoji + email opt-in persist via PUT /me. Nudge tone is fixed to the direct voice.
@@ -51,7 +51,7 @@ function ProfileForm({ me }: { me: MeDto }) {
   const [name, setName] = useState(me.name)
   const [nameError, setNameError] = useState('')
   const [sheetOpen, setSheetOpen] = useState(false)
-  // The member's single optional number (ADR-0026) — powers "Betala med Swish" today. Prefill from
+  // The member's single optional number (contacts-phone-sms spec) — powers "Betala med Swish" today. Prefill from
   // the stored E.164, showing the Swedish subscriber part after the +46 chip.
   const [phone, setPhone] = useState(
     me.phone?.startsWith('+46') ? me.phone.slice(3) : (me.phone ?? ''),
@@ -180,7 +180,7 @@ function ProfileForm({ me }: { me: MeDto }) {
         )}
       </div>
 
-      {/* The member's single number (ADR-0026) — optional, unverified contact data (tech-debt/0010).
+      {/* The member's single number (contacts-phone-sms spec) — optional, unverified contact data (tech-debt/0010).
           Powers the debtor's "Betala med Swish" action on the settle-up sheet today. The +46 chip is
           cosmetic; the API validates. When empty, the field gets a gentle accent + Swish nudge so it
           reads as an invitation, not just another blank input. */}

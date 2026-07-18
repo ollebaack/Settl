@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Settl.Api.Services;
 
 /// <summary>
-/// Normalises a typed phone number to E.164 (ADR-0019). The API is authoritative for
+/// Normalises a typed phone number to E.164 (contacts-phone-sms spec). The API is authoritative for
 /// validation (ADR-0006); the UI's +46 prefix and spacing are cosmetic. A profile phone or
 /// SMS-invite number is stored ONLY in E.164 so it is comparable and never ambiguous — but it
 /// is still unverified contact data, never a lookup key or auth factor (tech-debt/0010).

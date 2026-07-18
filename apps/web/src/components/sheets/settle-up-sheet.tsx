@@ -177,7 +177,7 @@ function SettlementHistory({
 /**
  * Nudge shown to the CREDITOR (owesYou) when they haven't saved a number yet: without one, the
  * debtor gets no "Betala med Swish" button (the API only builds the link from the creditor's
- * number). One tap to Profile, where the single number lives (ADR-0026). Closes the sheet so the
+ * number). One tap to Profile, where the single number lives (contacts-phone-sms spec). Closes the sheet so the
  * user lands on the field. Never shown once a number is saved.
  */
 function AddNumberNudge({ personName, onClose }: { personName: string; onClose: () => void }) {

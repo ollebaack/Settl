@@ -2,7 +2,7 @@ using Settl.Api.Services;
 
 namespace Settl.Api.Tests;
 
-/// <summary>Phone normalisation to E.164 (ADR-0019). The API is authoritative for validation
+/// <summary>Phone normalisation to E.164 (contacts-phone-sms spec). The API is authoritative for validation
 /// (ADR-0006), so this covers the shapes the UI's +46 chip can produce plus junk input.</summary>
 public class PhoneHelpersTests
 {

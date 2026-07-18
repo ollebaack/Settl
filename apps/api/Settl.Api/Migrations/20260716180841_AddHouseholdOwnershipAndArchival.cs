@@ -19,7 +19,7 @@ namespace Settl.Api.Migrations
 
             // Add nullable first so existing rows aren't rejected, then backfill the owner to
             // each household's earliest-JoinedAt member (tie-break by MemberId — the same order
-            // MembershipOrder uses), then enforce NOT NULL. ADR-0016.
+            // MembershipOrder uses), then enforce NOT NULL. See the household-ownership spec.
             migrationBuilder.AddColumn<Guid>(
                 name: "OwnerMemberId",
                 table: "Households",

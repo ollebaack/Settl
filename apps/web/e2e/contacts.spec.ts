@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test'
 import { API, latestDevSmsInviteToken, loginAs, uniqueSuffix } from './helpers'
 
-// CONTACTS & BLIND SMS INVITES (ADR-0019). Adds a contact by phone number from /kontakter —
+// CONTACTS & BLIND SMS INVITES (contacts-phone-sms spec). Adds a contact by phone number from /kontakter —
 // which sends a blind SMS invite that reveals nothing about registration — then accepts it as a
 // brand-new account and confirms the reciprocal contact edge. Uses unique data (phone, email,
 // name) so it never collides with the shared seeded e2e database. The member's own number now
-// lives on /profil (ADR-0026) and is covered by profile.spec.ts.
+// lives on /profil (contacts-phone-sms spec) and is covered by profile.spec.ts.
 test('add a contact by phone, accept the SMS invite, and see the connection', async ({ page }) => {
   await loginAs(page, 'Du')
 

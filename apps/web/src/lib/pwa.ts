@@ -1,5 +1,5 @@
 /**
- * PWA helpers (ADR-0027). Settl ships as a manifest-only installable web app —
+ * PWA helpers (installable-pwa spec). Settl ships as a manifest-only installable web app —
  * no service worker. iOS has no `beforeinstallprompt`, so installing there is a
  * manual Share → Add to Home Screen; these helpers decide when to guide the user
  * and expose the running build id for the update watcher.

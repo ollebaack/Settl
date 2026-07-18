@@ -1,5 +1,5 @@
 /**
- * Överför ägarskap (ADR-0016 / docs/specs/household-ownership.md, design frame 4).
+ * Överför ägarskap (docs/specs/household-ownership.md, design frame 4).
  * The owner picks another current member to become the new owner; the previous owner
  * becomes an ordinary member. Owner-only, never automatic (ADR-0006 guard is server-side).
  */

@@ -1,5 +1,5 @@
 /**
- * Client-side deferred delete with an "Ångra" (undo) window (ADR-0018 §2.3 +
+ * Client-side deferred delete with an "Ångra" (undo) window (ledger-editing spec §2.3 +
  * tech-debt 0010). Confirming a delete optimistically drops the entry from the
  * ledger list and shows a ~5 s Sonner toast; the real DELETE fires only after the
  * window elapses. Ångra cancels the pending call so nothing ever hit the server.

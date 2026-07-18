@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { API, createExpense, getHouseholdId, loginAs, pinHousehold, uniqueSuffix } from './helpers'
 
-// Trust notifications (trust-notifications-v1, ADR-0028): when ANOTHER member changes
+// Trust notifications (trust-notifications-v1 spec): when ANOTHER member changes
 // something that affects your money, it shows up on the Notiser screen under "Ändringar som
 // rör dig" — so you can't be quietly cheated. Each test acts as Sam (the mutator), then logs
 // in as Du (a fellow party) to read the notification. Own-actions never notify the actor, so

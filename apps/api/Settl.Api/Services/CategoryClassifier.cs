@@ -6,7 +6,7 @@ namespace Settl.Api.Services;
 /// Keyword → category inference from an entry title (Swedish keywords, first match wins —
 /// order matters, e.g. <c>Cleaning</c> before <c>Groceries</c> so "Städmaterial" doesn't
 /// match groceries). Mirrors the design addendum's client-side prototype, now the single
-/// server-side source (ADR-0012).
+/// server-side source (entry-categories spec).
 /// </summary>
 public static class CategoryClassifier
 {

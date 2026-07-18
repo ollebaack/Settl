@@ -9,7 +9,7 @@ namespace Settl.Api.Services;
 public static class AccountHelpers
 {
     /// <summary>The member's own self-view. <c>PhoneNumberConfirmed</c> is always false today
-    /// (no OTP — tech-debt/0010), so the phone is display/contact data only (ADR-0019).</summary>
+    /// (no OTP — tech-debt/0010), so the phone is display/contact data only (contacts-phone-sms spec).</summary>
     public static MeDto ToMeDto(this Member m) =>
         new(m.Id, m.Name, m.AvatarColor, m.AvatarEmoji, m.Email, m.EmailConfirmed, m.PhoneNumber,
             m.PhoneNumberConfirmed, Contract.NudgeTone(m.NudgeTone), m.NudgeEmailsEnabled);
@@ -29,7 +29,7 @@ public static class AccountHelpers
     }
 
     /// <summary>
-    /// Validates/normalizes a user-supplied avatar emoji (ADR-0019). Returns <c>true</c> with
+    /// Validates/normalizes a user-supplied avatar emoji (contacts-phone-sms spec). Returns <c>true</c> with
     /// <paramref name="value"/> = the trimmed emoji to store, or <c>null</c> when the input is
     /// null/empty (reset to the letter initial). Returns <c>false</c> when the input is not a
     /// single emoji grapheme — the value is rendered in *other* members' UIs, so the API is

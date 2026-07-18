@@ -2,7 +2,7 @@
  * Ny post / Redigera post — create or edit an expense or a recurring template.
  * Implementation-map §2.6 + flow §4 + ledger-editing addendum §2.1–2.2. Split editor
  * (Lika / Allt på en / % / kr) where "Allt på en" puts the whole amount on one person
- * (ADR-0020 removed the separate IOU type), with LIVE, color-coded validation; the API is authoritative
+ * (the unified-add-entry spec removed the separate IOU type), with LIVE, color-coded validation; the API is authoritative
  * (ADR-0006) so client pre-checks raise the exact toast copy and API error details
  * are surfaced too. Edit mode reuses the same form, prefilled from the entry /
  * template (PUT /entries/{id} · PATCH /recurring/{id}).
@@ -133,7 +133,7 @@ const EMPTY_STATE: FormState = {
 }
 
 /** Split mode the API stored maps 1:1 to the editor modes (an "Allt på en" entry reads
- * back as an ordinary Amount split — ADR-0018 note 4 — so it prefills as `amount`). */
+ * back as an ordinary Amount split — ledger-editing spec note 4 — so it prefills as `amount`). */
 function splitModeFrom(mode: string): SplitMode {
   return mode === 'percent' ? 'percent' : mode === 'amount' ? 'amount' : 'equal'
 }
@@ -336,7 +336,7 @@ function EntryForm({
     if (splitMode === 'equal') return { mode: 'equal', values: null }
     if (splitMode === 'whole') {
       // Syntactic sugar over an Amount split: the chosen member owes the full amount, the
-      // rest owe 0 (ADR-0018 §2.1). One expense, one zero payer share — never also an IOU.
+      // rest owe 0 (ledger-editing spec §2.1). One expense, one zero payer share — never also an IOU.
       const values: Record<string, number> = {}
       for (const m of memberList) values[m.id] = m.id === wholeMember ? totalMinor : 0
       return { mode: 'amount', values }

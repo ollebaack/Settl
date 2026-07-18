@@ -234,7 +234,7 @@ public sealed class NudgeCalculatorTests
         Assert.Empty(BuildBal("direct", Bal(0)));
     }
 
-    // ------------------------------------------------ Balance crossing freshness (ADR-0023)
+    // ------------------------------------------------ Balance crossing freshness (reminder-delivery spec)
 
     [Fact]
     public void Balance_Fire_WhenCrossingExactlyAtWindowEdge()

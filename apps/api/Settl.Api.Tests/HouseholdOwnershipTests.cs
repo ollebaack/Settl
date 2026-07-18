@@ -8,8 +8,8 @@ using Settl.Api.Tests.Infrastructure;
 namespace Settl.Api.Tests;
 
 /// <summary>
-/// Integration tests for household ownership + archival (ADR-0016 /
-/// docs/specs/household-ownership.md). Canonical seed: Lönnvägen 3 (owner Du; members
+/// Integration tests for household ownership + archival
+/// (docs/specs/household-ownership.md). Canonical seed: Lönnvägen 3 (owner Du; members
 /// Du, Sam, Priya) and Familjen (owner Du; members Du, Mamma, Pappa).
 /// </summary>
 public class HouseholdOwnershipTests

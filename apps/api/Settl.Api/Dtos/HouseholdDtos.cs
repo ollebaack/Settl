@@ -13,7 +13,7 @@ public sealed record HouseholdListItemDto(
 
 /// <summary>
 /// Creates a household with the acting user as its sole initial member. Everyone else
-/// joins via invite (ADR-0011) — see <c>POST /households/{id}/invites</c>.
+/// joins via invite (ADR-0005) — see <c>POST /households/{id}/invites</c>.
 /// </summary>
 public sealed record CreateHouseholdRequest(
     string Name,
@@ -28,20 +28,20 @@ public sealed record HouseholdDto(
     bool IsOwner,
     DateTimeOffset? ArchivedAt);
 
-/// <summary>Reassigns ownership to another current member (owner-only). ADR-0016.</summary>
+/// <summary>Reassigns ownership to another current member (owner-only). See the household-ownership spec.</summary>
 public sealed record TransferOwnershipRequest(Guid NewOwnerMemberId);
 
 /// <summary>
 /// Result of leaving a household. <see cref="Archived"/> is true only for the sole-owner
 /// case, where leaving archives the household (and keeps the caller as owner) instead of
-/// removing a membership (ADR-0016) — the client uses it to move the household into
+/// removing a membership (household-ownership spec) — the client uses it to move the household into
 /// "Arkiverade" rather than dropping it from the list.
 /// </summary>
 public sealed record LeaveResultDto(bool Archived);
 
 /// <summary>
-/// Everything the leave/archive/delete confirmation sheets need, in one call (ADR-0016,
-/// ADR-0022). <see cref="ViewerOpenDebts"/> drives the per-person leave warning;
+/// Everything the leave/archive/delete confirmation sheets need, in one call
+/// (household-ownership spec). <see cref="ViewerOpenDebts"/> drives the per-person leave warning;
 /// <see cref="HouseholdOpenTotalMinor"/> drives the household-wide archive warning;
 /// <see cref="IsEmpty"/> tells the client whether the owner may hard-delete (no entries,
 /// recurring templates, or settlements). Debts warn but never block.

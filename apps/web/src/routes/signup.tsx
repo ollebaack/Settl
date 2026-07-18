@@ -1,5 +1,5 @@
 /**
- * Skapa konto (/signup) — ADR-0011. Open self-signup; joining a household still
+ * Skapa konto (/signup) — ADR-0005. Open self-signup; joining a household still
  * requires an invite (sent from household settings after login). Visuals/copy
  * from the "Settl Sign In" design export.
  */

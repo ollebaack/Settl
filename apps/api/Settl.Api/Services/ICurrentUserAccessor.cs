@@ -3,7 +3,7 @@ using System.Security.Claims;
 namespace Settl.Api.Services;
 
 /// <summary>
-/// Resolves the acting member from the authenticated principal (ADR-0011). This is the
+/// Resolves the acting member from the authenticated principal (ADR-0005). This is the
 /// ONLY place "who am I" is decided — every endpoint file calls this instead of reading
 /// auth state itself.
 /// </summary>

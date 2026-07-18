@@ -1,7 +1,7 @@
 namespace Settl.Api.Domain;
 
 /// <summary>The kind of state-changing action an <see cref="LedgerEvent"/> records — the v1
-/// trust triggers (trust-notifications-v1 spec, ADR-0028). Stored as the enum name.</summary>
+/// trust triggers (trust-notifications-v1 spec). Stored as the enum name.</summary>
 public enum LedgerEventType
 {
     /// <summary>An entry was hard-deleted.</summary>
@@ -19,7 +19,7 @@ public enum LedgerEventType
 
 /// <summary>
 /// An append-only record of one ledger-changing action, so an affected member can be told
-/// "someone changed this" and can never be quietly cheated (ADR-0028). It is immutable audit,
+/// "someone changed this" and can never be quietly cheated (trust-notifications-v1 spec). It is immutable audit,
 /// not a per-recipient notification: notifications are PROJECTED from it at read time and
 /// unread state is a per-member cursor (<see cref="Member.NotificationsSeenAt"/>).
 ///

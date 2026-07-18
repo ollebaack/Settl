@@ -1,7 +1,7 @@
 /**
  * A member avatar: shadcn Avatar wrapper showing the member's personalization on
  * their `avatarColor`. The colour is member DATA from the API (not a theme token),
- * so it is applied via inline style. When `avatarEmoji` is set (ADR-0019) it is
+ * so it is applied via inline style. When `avatarEmoji` is set (contacts-phone-sms spec) it is
  * rendered centered on the colour; otherwise the letter initial is shown, with the
  * readable ink derived from the colour's luminance so it is legible in both themes.
  */
@@ -52,7 +52,7 @@ export function MemberAvatar({
 }: {
   name: string
   avatarColor: string
-  /** Optional emoji shown in place of the letter initial (ADR-0019). Null/empty → initial. */
+  /** Optional emoji shown in place of the letter initial (contacts-phone-sms spec). Null/empty → initial. */
   avatarEmoji?: string | null
   size?: MemberAvatarSize
   /** Mark this as the acting user's own bubble: a thin accent ring so you can

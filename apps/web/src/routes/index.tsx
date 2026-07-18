@@ -1,5 +1,5 @@
 /**
- * Hem `/` — always the multi-household Overview (ADR-0021). It is the portfolio
+ * Hem `/` — always the multi-household Overview (adaptive-home spec). It is the portfolio
  * over the user's active books regardless of how many there are; a single book
  * is entered from here (or via the Hushållet tab). Zero households → first-run
  * create flow. All server state comes from the shared TanStack Query hooks
@@ -26,7 +26,7 @@ function HomePage() {
   const { sheet, openSheet } = useSheet()
 
   // GET /households returns the user's ACTIVE books — archived households
-  // (ADR-0016) are hidden, so the overview only ever counts active books.
+  // (household-ownership spec) are hidden, so the overview only ever counts active books.
   const activeHouseholds = households
   const hasNoHousehold = !householdsLoading && activeHouseholds.length === 0
 
@@ -48,6 +48,6 @@ function HomePage() {
     return <NoHouseholdState onCreate={() => openSheet('newHousehold')} className="mt-6" />
   }
 
-  // One or more active books → the overview (ADR-0021: no adaptive collapse).
+  // One or more active books → the overview (adaptive-home spec: no adaptive collapse).
   return <Overview households={activeHouseholds} />
 }

@@ -114,7 +114,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   )
 }
 
-/** The trust stream: changes other members made that affect your money (ADR-0028). Opening
+/** The trust stream: changes other members made that affect your money (trust-notifications-v1 spec). Opening
  *  the screen marks them seen, but dots stay for what was unread when this visit began. */
 function TrustNotifications({
   householdId,

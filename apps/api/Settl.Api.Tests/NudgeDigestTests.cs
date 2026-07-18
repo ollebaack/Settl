@@ -8,7 +8,7 @@ using Settl.Api.Tests.Infrastructure;
 namespace Settl.Api.Tests;
 
 /// <summary>
-/// Integration tests for the daily nudge-digest delivery (reminder-delivery spec, ADR-0024):
+/// Integration tests for the daily nudge-digest delivery (reminder-delivery spec):
 /// the emitted-nudge dedup, the once-a-day guard, and the login-free unsubscribe endpoint. Drives
 /// the real <see cref="NudgeDigestService"/> against an isolated DB, reading what would have been
 /// emailed from the dev email side channel (<see cref="DevEmailLinkStore"/>).

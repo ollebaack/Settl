@@ -164,8 +164,8 @@ public static class EntriesEndpoints
             if (entry is null) return Results.Problem("Posten hittades inte", statusCode: 404);
 
             // Any household member may delete any entry (not creator-only), but a
-            // non-member must never touch another household's ledger (ADR-0028 /
-            // trust-notifications-v1).
+            // non-member must never touch another household's ledger
+            // (trust-notifications-v1).
             var isMember = await db.HouseholdMemberships.AnyAsync(
                 m => m.HouseholdId == entry.HouseholdId && m.MemberId == me, ct);
             if (!isMember) return Results.Problem("Du är inte medlem i hushållet", statusCode: 403);

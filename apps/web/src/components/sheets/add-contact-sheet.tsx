@@ -1,5 +1,5 @@
 /**
- * Lägg till kontakt (ADR-0019, contacts-addendum screens 2–3). Sends a BLIND invite: typing a
+ * Lägg till kontakt (contacts-phone-sms spec, contacts-addendum screens 2–3). Sends a BLIND invite: typing a
  * number sends a tokenized SMS invite and reveals nothing about whether it's already on Settl
  * (no lookup / no enumeration oracle — see the privacy note). SMS is the default channel; email
  * is the alternative. On success the sheet shows the "sent" confirmation (screen 3).

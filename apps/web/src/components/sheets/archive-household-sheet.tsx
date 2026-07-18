@@ -1,5 +1,5 @@
 /**
- * Arkivera hushåll (ADR-0016 / docs/specs/household-ownership.md, design frame 5).
+ * Arkivera hushåll (docs/specs/household-ownership.md, design frame 5).
  * Owner-only soft archive: hides the household for everyone, keeps all data, restorable.
  * Shows how many members are affected and the household-wide open-debt total; debts warn
  * but never block. Figures are DERIVED server-side via useRemovalPreview (ADR-0006).

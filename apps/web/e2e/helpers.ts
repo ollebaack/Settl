@@ -5,7 +5,7 @@
  * creates its own uniquely-named data, or (b) round-trips a toggle back to its
  * original state.
  *
- * Auth is real (ADR-0011): `loginAs` logs a seeded member in via the actual
+ * Auth is real (ADR-0005): `loginAs` logs a seeded member in via the actual
  * cookie session, using `page.request` so the cookie lands in the page's own
  * browser context — subsequent `page.goto()` navigations and `page.request.*`
  * setup calls are then authenticated as that member. Test data is created via
@@ -104,7 +104,7 @@ export async function createExpense(
 }
 
 /**
- * One person owes the whole amount (the "Allt på en" split; ADR-0020 removed the
+ * One person owes the whole amount (the "Allt på en" split; the unified-add-entry spec removed the
  * separate IOU type). `owerMemberId` owes `payerMemberId` the full amount — the payer
  * fronted it and takes a zero share.
  */
@@ -210,7 +210,7 @@ export async function latestDevInviteToken(
   throw new Error(`No invite link surfaced${email ? ` for ${email}` : ''}`)
 }
 
-/** SMS equivalent of latestDevInviteToken (ADR-0019). Scope by `phone` (E.164) to avoid the
+/** SMS equivalent of latestDevInviteToken (contacts-phone-sms spec). Scope by `phone` (E.164) to avoid the
  * parallel-worker race; the raw token is never persisted any other way. */
 export async function latestDevSmsInviteToken(
   request: APIRequestContext,
@@ -326,7 +326,7 @@ export async function openHouseholdSwitcher(page: Page, currentName: string): Pr
     .first()
     .click()
   // Assert on the sheet's unique description — its "Dina hushåll" title now
-  // collides with the multi-household overview's own heading (ADR-0019).
+  // collides with the multi-household overview's own heading (contacts-phone-sms spec).
   await expect(page.getByText('En bok per hushåll — du kan vara med i flera.')).toBeVisible()
 }
 

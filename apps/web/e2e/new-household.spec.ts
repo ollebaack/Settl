@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 import { getHouseholdId, getMembers, loginAs, openHouseholdSwitcher, pinHousehold, uniqueSuffix } from './helpers'
 
 // NEW HOUSEHOLD (Nytt hushåll, §2.5b): create a household by name only — every
-// other member joins via invite (ADR-0011), not typed in here. The acting user
+// other member joins via invite (ADR-0005), not typed in here. The acting user
 // is its sole initial member and the app switches straight into the fresh,
 // empty book.
 test('creates a household and switches into it', async ({ page }) => {

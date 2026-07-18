@@ -7,7 +7,7 @@ import {
   uniqueSuffix,
 } from './helpers'
 
-// LOGIN, SIGNUP & EMAIL VERIFICATION (ADR-0011 + the email-verification decision made
+// LOGIN, SIGNUP & EMAIL VERIFICATION (ADR-0005 + the email-verification decision made
 // alongside it). Uses a brand-new account per run so it never collides with seeded members
 // or other specs. The account menu's accessible name is a stable aria-label (its visible
 // text is desktop-only, see components/account-menu.tsx), so the same selector works on

@@ -26,7 +26,7 @@ public static class HouseholdsEndpoints
             {
                 var data = await Loaders.LoadHousehold(db, hid, ct);
                 if (data is null) continue;
-                // Archived households are hidden from the normal list (ADR-0016) and only
+                // Archived households are hidden from the normal list (household-ownership spec) and only
                 // returned when the caller explicitly asks (the "Arkiverade" section).
                 if (data.Household.ArchivedAt is not null && includeArchived != true) continue;
 
@@ -66,7 +66,7 @@ public static class HouseholdsEndpoints
                 Name = req.Name.Trim(),
                 Currency = string.IsNullOrWhiteSpace(req.Currency) ? "SEK" : req.Currency!.Trim(),
                 CreatedAt = now,
-                OwnerMemberId = me.Value  // the creator owns the household (ADR-0016)
+                OwnerMemberId = me.Value  // the creator owns the household (household-ownership spec)
             };
             db.Households.Add(household);
             db.HouseholdMemberships.Add(new HouseholdMembership
@@ -233,7 +233,7 @@ public static class HouseholdsEndpoints
             .Produces<ContributionStatsDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
-        // ---- Ownership & archival (ADR-0016 / docs/specs/household-ownership.md) ----
+        // ---- Ownership & archival (docs/specs/household-ownership.md) ----
 
         // Debt figures + guard flags for the leave/archive confirmation sheets. Debts warn,
         // never block, so this is purely informational.
@@ -279,7 +279,7 @@ public static class HouseholdsEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         // Reassign ownership to another current member (owner-only). The previous owner
-        // becomes an ordinary member. Never automatic (ADR-0016).
+        // becomes an ordinary member. Never automatic (household-ownership spec).
         app.MapPost("/households/{id:guid}/transfer-ownership", async (
             Guid id, TransferOwnershipRequest req, ICurrentUserAccessor cu, SettlDbContext db, CancellationToken ct) =>
         {
@@ -346,7 +346,7 @@ public static class HouseholdsEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         // Soft-archive the whole household (owner-only). Hides it for everyone; retains all
-        // data; restorable by the owner (ADR-0016).
+        // data; restorable by the owner (household-ownership spec).
         app.MapPost("/households/{id:guid}/archive", async (
             Guid id, ICurrentUserAccessor cu, SettlDbContext db, CancellationToken ct) =>
         {
@@ -400,7 +400,7 @@ public static class HouseholdsEndpoints
 
         // Permanently delete an EMPTY household (owner-only). Unlike archive this is
         // terminal and cascades away memberships and pending invites — but only when the
-        // household has no ledger history to protect (ADR-0022, a carve-out to ADR-0016's
+        // household has no ledger history to protect (household-ownership spec, a carve-out to its
         // soft-only rule). Extra members don't block (the client warns first); pending
         // invites are cascade-revoked, not activity.
         app.MapDelete("/households/{id:guid}", async (
@@ -437,7 +437,7 @@ public static class HouseholdsEndpoints
     }
 
     // A household is "empty" (safe to hard-delete) only with no ledger history: no
-    // entries, no recurring templates, no settlements (ADR-0022). Pending invites and
+    // entries, no recurring templates, no settlements (household-ownership spec). Pending invites and
     // extra memberships are cascade-removed and don't count.
     private static async Task<bool> HasActivity(SettlDbContext db, Guid householdId, CancellationToken ct) =>
         await db.Entries.AnyAsync(e => e.HouseholdId == householdId, ct)

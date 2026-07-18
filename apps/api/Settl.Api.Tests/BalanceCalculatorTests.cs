@@ -232,7 +232,7 @@ public class BalanceCalculatorTests
         Assert.Equal(120, BalanceCalculator.NetWith(A, B, entries, None));
     }
 
-    // ---- MostRecentThresholdCrossing (ADR-0023) -------------------------
+    // ---- MostRecentThresholdCrossing (reminder-delivery spec) -------------------------
 
     // B→A debt of `share`, i.e. from A's view A is owed `share` by B (net up).
     private const long Threshold = 75_000; // 750 kr

@@ -10,7 +10,7 @@ namespace Settl.Api.Services;
 /// a template (Active=false) stops posting without deleting history; resuming continues from
 /// NextPostDate. Posting delegates to pure <see cref="RecurrenceCalculator"/>/<see cref="RecurringPoster"/>.
 ///
-/// Also owns the daily nudge-digest pass (reminder-delivery spec, ADR-0024): the spec mandates
+/// Also owns the daily nudge-digest pass (reminder-delivery spec): the spec mandates
 /// extending this existing worker rather than adding a second one. The hourly tick checks
 /// <see cref="DigestSchedule"/>; once per local day past the send hour it runs
 /// <see cref="NudgeDigestService"/>. The two jobs run independently so a failure in one never

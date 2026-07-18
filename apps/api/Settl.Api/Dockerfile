@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 #
-# Build context is the monorepo root (see ADR-0009): the web SPA is a pnpm workspace
+# Build context is the monorepo root (see ADR-0014): the web SPA is a pnpm workspace
 # member (packages/api-client is workspace:*), so it needs the root lockfile/workspace
 # file and packages/api-client alongside apps/web to install and build.
 #
@@ -21,7 +21,7 @@ COPY packages/api-client packages/api-client
 # Empty, not unset: apps/web/src/lib/api.ts falls back to http://localhost:5000 when
 # VITE_API_BASE_URL is undefined (dev convenience, talking to the API dev server on a
 # different port than Vite's). In this single-container build the SPA and API share an
-# origin (ADR-0009), so requests must stay relative — an explicit empty string, since ??
+# origin (ADR-0014), so requests must stay relative — an explicit empty string, since ??
 # only falls through on null/undefined, not "".
 ENV VITE_API_BASE_URL=""
 RUN pnpm --filter web build

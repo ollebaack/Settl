@@ -1,10 +1,10 @@
 /**
  * "Lägg till en vän" — the add-a-friend affordance from the overview
- * (ADR-0019 §2.4, design frame 4). AFFORDANCE + COPY ONLY.
+ * (contacts-phone-sms spec §2.4, design frame 4). AFFORDANCE + COPY ONLY.
  *
  * The contacts model — add-by-number as a blind SMS invite, no lookup oracle,
  * contacts reusable across households — is a separate workstream
- * (docs/specs/contacts-phone-sms.md, ADR-0019). This sheet deliberately
+ * (docs/specs/contacts-phone-sms.md). This sheet deliberately
  * wires NO contact endpoints, query, or `Dina kontakter` data: it presents the
  * entry point and copy so the surface exists, and defers the real send + contact
  * graph to that spec's implementation.

@@ -11,7 +11,7 @@ namespace Settl.Api.Features;
 
 public static class InvitesEndpoints
 {
-    /// <summary>Invite lifetime (ADR-0011) — reused by both the email and SMS/contact paths.</summary>
+    /// <summary>Invite lifetime (ADR-0005) — reused by both the email and SMS/contact paths.</summary>
     public static readonly TimeSpan InviteLifetime = TimeSpan.FromDays(7);
 
     public static IEndpointRouteBuilder MapInvitesEndpoints(this IEndpointRouteBuilder app)
@@ -85,7 +85,7 @@ public static class InvitesEndpoints
             // Ordered client-side: SQLite (used by tests) can't translate ORDER BY on
             // DateTimeOffset columns.
             // Only email-channel invites carry an address to show as a pending "email — waiting"
-            // row here; SMS/contact invites surface in the contacts tab instead (ADR-0019).
+            // row here; SMS/contact invites surface in the contacts tab instead (contacts-phone-sms spec).
             var pending = await db.Invites
                 .Where(i => i.HouseholdId == id && i.AcceptedAt == null && i.Email != null)
                 .ToListAsync(ct);
@@ -108,7 +108,7 @@ public static class InvitesEndpoints
                 : null;
 
             // SMS invites carry no email — the invitee supplies their own on accept — and we
-            // never reveal whether a number/email is already on Settl (ADR-0019: no oracle).
+            // never reveal whether a number/email is already on Settl (contacts-phone-sms spec: no oracle).
             var hasAccount = invite is { Channel: InviteChannel.Email, Email: not null }
                 && await users.FindByEmailAsync(invite.Email) is not null;
 
@@ -132,7 +132,7 @@ public static class InvitesEndpoints
             Member member;
             if (invite.Channel == InviteChannel.Email)
             {
-                // Email channel binds to the invited address (ADR-0011 unchanged).
+                // Email channel binds to the invited address (ADR-0005 unchanged).
                 var existing = await users.FindByEmailAsync(invite.Email!);
                 if (existing is null)
                 {
@@ -152,7 +152,7 @@ public static class InvitesEndpoints
             else
             {
                 // SMS channel carries no identity — the invitee brings their own email
-                // (ADR-0005/0011: email stays the sole identity). A logged-in user accepts as
+                // (ADR-0005: email stays the sole identity). A logged-in user accepts as
                 // themselves; otherwise they create an account, and we never confirm whether
                 // that email (or the invited number) was already registered.
                 if (actingMemberId is Guid me)
@@ -184,7 +184,7 @@ public static class InvitesEndpoints
                     { HouseholdId = householdId, MemberId = member.Id, JoinedAt = DateTimeOffset.UtcNow });
             }
 
-            // Connection-on-accept: the reciprocal contact edge proves consent (ADR-0019).
+            // Connection-on-accept: the reciprocal contact edge proves consent (contacts-phone-sms spec).
             await AddContactEdgesAsync(db, invite.InvitedByMemberId, member.Id, ct);
 
             invite.AcceptedAt = DateTimeOffset.UtcNow;
@@ -264,7 +264,7 @@ public static class InvitesEndpoints
         return member;
     }
 
-    /// <summary>Creates the reciprocal Member↔Member contact edges (ADR-0019), idempotently.
+    /// <summary>Creates the reciprocal Member↔Member contact edges (contacts-phone-sms spec), idempotently.
     /// No-op for a self-edge or when the edge already exists from an earlier accepted invite.</summary>
     private static async Task AddContactEdgesAsync(SettlDbContext db, Guid a, Guid b, CancellationToken ct)
     {

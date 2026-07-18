@@ -7,8 +7,8 @@ using Settl.Api.Features;
 namespace Settl.Api.Services;
 
 /// <summary>
-/// Records <see cref="LedgerEvent"/>s for the v1 trust triggers (trust-notifications-v1,
-/// ADR-0028). Each method builds the denormalized snapshot + affected-member set and ADDS the
+/// Records <see cref="LedgerEvent"/>s for the v1 trust triggers (trust-notifications-v1
+/// spec). Each method builds the denormalized snapshot + affected-member set and ADDS the
 /// event to the context — the caller's existing <c>SaveChangesAsync</c> commits it in the same
 /// transaction as the change, so a mutation and its audit row are atomic.
 /// </summary>

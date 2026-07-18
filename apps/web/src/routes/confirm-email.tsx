@@ -1,6 +1,6 @@
 /**
  * Bekräfta e-post callback (/confirm-email?userId=…&token=…) — the link landing page from
- * the verification email (email-verification decision made alongside ADR-0011). No design
+ * the verification email (email-verification decision made alongside ADR-0005). No design
  * export covers this screen; styled to match the other auth cards.
  */
 import { Link, createFileRoute } from '@tanstack/react-router'

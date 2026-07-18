@@ -54,10 +54,10 @@ builder.Services.AddHostedService<RecurringPostingService>();
 // stateless over the Data Protection key ring, so it's a singleton.
 builder.Services.AddScoped<NudgeDigestService>();
 builder.Services.AddSingleton<NudgeUnsubscribeTokens>();
-// Scrubs the raw phone number off SMS invites once they expire (ADR-0019 / GDPR).
+// Scrubs the raw phone number off SMS invites once they expire (contacts-phone-sms spec / GDPR).
 builder.Services.AddHostedService<ExpiredInviteScrubber>();
 
-// ADR-0011: cookie auth via ASP.NET Identity. Relaxed password policy — consumer app,
+// ADR-0005: cookie auth via ASP.NET Identity. Relaxed password policy — consumer app,
 // not enterprise. No lockout/2FA changes from Identity's defaults.
 builder.Services.AddIdentityCore<Member>(options =>
 {
@@ -121,7 +121,7 @@ builder.Services.AddAuthorization(options =>
         .Build();
 });
 
-// ADR-0011: Resend for real send; falls back to a logging sender whenever no key is
+// ADR-0005: Resend for real send; falls back to a logging sender whenever no key is
 // configured (always true in local dev — see tech-debt/README on dev-only stand-ins).
 builder.Services.AddSingleton<DevEmailLinkStore>();
 var resendApiKey = builder.Configuration["Resend:ApiKey"];
@@ -138,11 +138,11 @@ else
     builder.Services.AddScoped<IEmailSender, DevEmailSender>();
 }
 
-// ADR-0019 defers the SMS vendor (Sinch/Vonage/Twilio), so only the logging dev sender exists;
+// the contacts-phone-sms spec defers the SMS vendor (Sinch/Vonage/Twilio), so only the logging dev sender exists;
 // a real ISmsSender is registered here the same way ResendEmailSender is once picked.
 builder.Services.AddScoped<ISmsSender, DevSmsSender>();
 
-// Rate-limit the invite-send path. ADR-0019: SMS costs money and SMS pumping is a fraud vector,
+// Rate-limit the invite-send path. contacts-phone-sms spec: SMS costs money and SMS pumping is a fraud vector,
 // so throttling ships WITH the channel (unlike near-free email, tech-debt/0006). Partitioned by
 // the acting member (falling back to IP) so one abuser can't drain the SMS budget; a fixed window
 // keeps it simple and provider-portable. The default rejection status is 503 — override to 429.
@@ -174,7 +174,7 @@ builder.Services.AddCors(options =>
         if (builder.Environment.IsDevelopment())
         {
             // The web dev server runs on a random per-worktree port under `aspire run
-            // --isolated` (ADR-0025), and e2e can bind arbitrary ports too. Cookie auth uses
+            // --isolated` (ADR-0008), and e2e can bind arbitrary ports too. Cookie auth uses
             // AllowCredentials(), which forbids AllowAnyOrigin(), so instead of pinning one
             // port we reflect any loopback origin (localhost/127.0.0.1/::1). Development-only —
             // production keeps a strict single-origin allow-list below.
@@ -201,7 +201,7 @@ if (app.Environment.IsDevelopment())
     app.MapGet("/", () => Results.Redirect("/scalar/v1")).AllowAnonymous();
 }
 
-// Migrations run at container startup (ADR-0009) — not at build/release time, since a
+// Migrations run at container startup (ADR-0014) — not at build/release time, since a
 // release-phase step wouldn't have access to the mounted Postgres volume. Seeding stays
 // dev-only. The "Testing" environment (WebApplicationFactory-based integration tests,
 // see SettlApiFactory) builds its schema via EnsureCreated against an isolated in-memory
@@ -240,7 +240,7 @@ app.UseCors(WebCorsPolicy);
 
 app.UseAuthentication();
 app.UseAuthorization();
-// After auth so the invite rate-limit policy can partition by the acting member (ADR-0019).
+// After auth so the invite rate-limit policy can partition by the acting member (contacts-phone-sms spec).
 app.UseRateLimiter();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
