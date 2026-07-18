@@ -20,7 +20,7 @@ letter initial — there is no image field, no upload endpoint (`apps/api` has n
 `IFormFile` or multipart handling), and no app-level object storage (R2 is wired for
 Postgres backups only, [ADR-0015](../adr/0015-postgres-backups-to-cloudflare-r2.md)).
 Real photo uploads would require new infrastructure against a single-container VPS deploy
-with an ephemeral filesystem ([ADR-0009](../adr/0009-docker-compose-single-vps-deployment.md)):
+with an ephemeral filesystem ([ADR-0014](../adr/0014-deploy-via-dokploy.md)):
 storage or a DB blob, a resize/re-encode + EXIF-strip pipeline, a moderation stance, and
 backups. A household is 2–6 people who invite each other and already know each other by
 name.

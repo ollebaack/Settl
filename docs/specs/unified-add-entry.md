@@ -3,13 +3,38 @@
 > **Update (2026-07-16):** the design iteration went further than "merge" — `Lån` is
 > **removed as a feature** (redundant with `Allt`), so every created entry is an
 > `expense`. The model-side teardown (dropping the `iou` `EntryType` + `FromMemberId`/
-> `ToMemberId`) was grilled and recorded as **[ADR-0020](../adr/0020-remove-iou-entry-type.md)**,
-> which amends ADR-0007 and supersedes the "keep both models / intent decides / `Rent lån`
-> toggle" mechanism described in the sections below. The settled *UI* is in
+> `ToMemberId`) was grilled and recorded as **ADR-0020** (now the
+> [Decision record](#decision-record-adr-0020) below), which amends ADR-0007 and supersedes
+> the "keep both models / intent decides / `Rent lån` toggle" mechanism described in the
+> sections below. The settled *UI* is in
 > [add-entry-addendum.md](../design/add-entry-addendum.md); the sheet renders in
 > [Settl Add Entry.dc.html](../design/Settl%20Add%20Entry.dc.html). The sections below are
 > **retained for history** — read them as the superseded intermediate design, not the plan.
 
+## Decision record (ADR-0020)
+
+Grilled 2026-07-16 (was ADR-0020); **amends ADR-0007** and supersedes the "keep both
+models" intermediate design below.
+
+- **Remove `EntryType.Iou` and the `FromMemberId`/`ToMemberId` columns.** Every entry
+  becomes an `expense`; "one owes all" is the `Allt` amount-split preset (payer share = 0,
+  from ADR-0018). The `BalanceCalculator`/`NudgeCalculator` IOU branches and the `Lån`
+  ledger filter are deleted.
+- **`EntryType`/`SplitMode` persist as strings** (`HasConversion<string>`), so dropping the
+  `Iou` enum member needs no `Type` column renumber — the column simply never holds `'Iou'`
+  again.
+- **Seed-only data rewrite** with a **defensive backfill** in the column-dropping migration
+  (`UPDATE … WHERE "Type" = 'Iou'` + an `INSERT` of the debtor's full share) that converts
+  any stray IOU to its balance-equivalent amount-split before the columns drop — a guard,
+  not a full data-migration (payer = creditor, debtor share = full, `SplitMode.Amount`;
+  title/category/settlement closures preserved).
+
+The teardown is **irreversible** (a destructive column drop), safe only because no real
+`iou` rows are believed to exist — the inline backfill guard is the sole protection if one
+does. Directional debt with no purchase behind it (cash IOUs, opening balances) is no longer
+representable; judged to have no roadmap need since settlements are first-class (ADR-0007)
+and `Allt` covers one-owes-all. **Revisit** if a first-class "A owes B, no purchase" debt
+becomes a requirement — that reintroduces a directional-debt model and supersedes this.
 
 Collapse the `Ny post` sheet's three tabs (`Utgift / Lån / Återkommande`) down to
 **two** — `Utgift` (which now also covers loans) and `Återkommande`. A loan (`iou`) is
@@ -18,7 +43,7 @@ the existing `Allt` split preset. Both entry types stay in the model
 ([ADR-0007](../adr/0007-ledger-data-model.md)); which one an entry becomes is decided by
 **intent, not by the split math** (the balance math is already identical). Extends the
 add-entry screen in [implementation-map.md](../design/implementation-map.md) §2.6 and the
-`Allt` preset from [ADR-0018](../adr/0018-ledger-editing-affordances.md) §2.1. The
+`Allt` preset from [ADR-0018](ledger-editing.md) §2.1. The
 merged form's layout is designed in a follow-up `ui-design` pass; this spec fixes its
 shape and behaviour.
 

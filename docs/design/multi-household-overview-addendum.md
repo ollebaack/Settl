@@ -158,7 +158,7 @@ implementing PR.
    the descriptive roll-up (§2.2) is the only multi-currency hero.
 4. **Contacts dependency.** The add-friend affordance depends on the contacts-by-phone
    decision (blind SMS invites, contact graph),
-   [ADR-0019](../adr/0019-contacts-by-phone-and-sms-invites.md). This overview started as
+   [ADR-0019](../specs/contacts-phone-sms.md). This overview started as
    a parallel "ADR-0019" during the design build but is now the
    [adaptive-home & multi-household overview spec](../specs/adaptive-home-multi-household-overview.md)
    — a reversible IA choice, not an ADR — so contacts-by-phone is the sole ADR-0019.

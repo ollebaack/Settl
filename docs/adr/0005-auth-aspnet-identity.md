@@ -1,21 +1,51 @@
-# ADR-0005: Self-hosted auth with ASP.NET Identity
+# ADR-0005: Self-hosted auth — ASP.NET Identity, cookie sessions, invite-gated households, Resend email
 
 - **Status:** accepted
-- **Date:** 2026-07-12
+- **Date:** 2026-07-12 (session mechanism / invites / email provider added 2026-07-13, was ADR-0011)
 
 ## Context
 
 Settl needs accounts, household invites, and (later) token auth for a mobile app.
 Hosted auth (Clerk/Auth0) would be faster to good UX; self-hosting keeps zero vendors
-and uses existing .NET knowledge.
+and uses existing .NET knowledge. This ADR fixes the auth foundation. It also absorbs the
+follow-up grill (**ADR-0011**, 2026-07-13) that settled the session mechanism, invite
+flow, and email provider — details this ADR originally deferred — so that
+`ICurrentUserAccessor`'s dev-header stand-in (tech-debt/0003) can eventually be replaced
+with real auth.
 
 ## Decision
 
-We will use ASP.NET Identity, self-hosted, with a token flow the future Expo app can use.
+- **Self-hosted ASP.NET Identity**, with a token flow the future Expo app can use — no
+  hosted-auth vendor, no per-user pricing.
+- **Cookie authentication for the web SPA now**, adding a JWT bearer scheme alongside it
+  only when the Expo app is actually built — not before.
+- **Signup is open** (email + password creates a standalone account); **joining a
+  household is invite-only**. An invite creates a pending `Member`/`HouseholdMembership`
+  that activates when the invitee follows an emailed link and sets their own password —
+  no credentials are ever emailed.
+- **Any existing household member can send an invite**; `HouseholdMembership` stays the
+  plain many-to-many ADR-0007 fixed, with no role field.
+- **Resend** sends invite and password-reset email.
 
 ## Consequences
 
 We own password reset, invite links, and therefore **email delivery** — a real cost
-accepted knowingly (tracked in tech-debt). No vendor lock-in, no per-user pricing.
-Implementation details (cookie vs JWT, invite flow) deserve their own grill session
-before the auth feature is built; this ADR only fixes the "self-hosted Identity" choice.
+accepted knowingly, resolved by the Resend choice (this closes tech-debt/0001 even though
+sending code came later). Cookie auth needs CSRF middleware on state-changing endpoints,
+and it doesn't extend to a native client — when the Expo app ships, a second (JWT) auth
+scheme has to be built and maintained alongside this one, deferred complexity accepted
+knowingly rather than built speculatively today. Open signup means an unauthenticated
+registration endpoint exists (rate-limiting/spam is our problem), but nobody joins a
+household without an explicit invite, so the shared-ledger data stays gated. There's no
+role/owner concept on membership, so any member — including one invited five minutes ago
+— can invite further members; revisit if that needs gatekeeping later. Resend is a new
+vendor dependency, justified by deliverability (SPF/DKIM, bounce handling) we'd otherwise
+build by hand for near-zero volume; its free tier carries no meaningful cost today.
+tech-debt/0003 (dev user switcher) is unaffected until the feature is built:
+`ICurrentUserAccessor` still resolves from the `X-Settl-User` header until then.
+
+## Sources
+
+- ADR-0007: Ledger data model (Member/Household many-to-many, unchanged)
+- tech-debt/0001: No email delivery story (resolved by the Resend choice)
+- tech-debt/0003: Dev-only current-user switcher (paid down when this ADR is implemented)

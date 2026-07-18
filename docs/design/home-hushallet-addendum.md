@@ -2,7 +2,7 @@
 
 Extends `implementation-map.md` and the [multi-household overview addendum](multi-household-overview-addendum.md)
 with the screens in **`Settl Home + Hushallet.dc.html`** (new export, 2026-07-17) and
-realizes **[ADR-0021](../adr/0021-home-as-household-overview.md)**. Same conventions: UI
+realizes **[ADR-0021](../specs/adaptive-home-multi-household-overview.md#decision-record-adr-0021)**. Same conventions: UI
 structure from the DC export is authoritative; API fields below are **proposed
 contracts**. Business logic (net, netLabel, shares, settled state) is server-derived —
 the screens render and call, never compute (ADR-0006).

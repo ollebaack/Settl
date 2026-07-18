@@ -2,16 +2,14 @@
 
 Turn the app's derived nudges into real reminders that reach people outside the app, by
 email. This makes the product brief's headline differentiator ("smart, event-triggered
-reminders") actually deliver, without breaking its "never nagging" promise. Channel
-choice (email-first, defer push) rests on [ADR-0024](../adr/0024-email-first-nudge-delivery.md);
-email vendor is Resend
-([ADR-0011](../adr/0011-auth-invite-and-email-delivery.md)); nudge triggers are defined by
-ADR-0007 (with balance-crossing detection added by
-[ADR-0023](../adr/0023-balance-nudge-crossing-detection.md)) and live in
-`apps/api/Settl.Api/Domain/NudgeCalculator.cs`.
+reminders") actually deliver, without breaking its "never nagging" promise. The
+load-bearing decisions — channel (email-first, defer push) and balance-crossing detection —
+are in the [Decision record](#decision-record-adr-0023-adr-0024) below (ADR-0023, ADR-0024).
+Email vendor is Resend ([ADR-0005](../adr/0005-auth-aspnet-identity.md)); nudge triggers are
+defined by ADR-0007 and live in `apps/api/Settl.Api/Domain/NudgeCalculator.cs`.
 
-Provenance: decided via `/grill` on 2026-07-17. Companion ADR-0024 fixes the load-bearing
-channel decision; this spec owns the feature shape (scheduler, cadence, consent, and the
+Provenance: decided via `/grill` on 2026-07-17. The channel + crossing decisions are
+recorded below; this spec owns the feature shape (scheduler, cadence, consent, and the
 emitted-nudge log). This feature is the pay-down trigger for
 [tech-debt/0002](../tech-debt/0002-nudges-derived-not-persisted.md) — the persisted,
 de-duplicated notification records ADR-0023 deferred until out-of-app delivery existed.
@@ -38,7 +36,7 @@ is undelivered.
 - **Dedup (load-bearing):** a persistent condition (e.g. "you owe Sam > 750 kr") must be
   emailed **once**, not re-sent every day it stays true — otherwise the digest itself nags.
   Two mechanisms already make this tractable, both shipped in
-  [ADR-0023](../adr/0023-balance-nudge-crossing-detection.md): (1) the balance nudge now
+  ADR-0023 (see [Decision record](#decision-record-adr-0023-adr-0024)): (1) the balance nudge now
   only fires on a *fresh crossing* within a 7-day window, so a standing debt goes quiet on
   its own; (2) every nudge carries a **derivable identity** (see the sent-log below). So
   dedup is a plain "have we already emailed this identity?" check against the emitted-nudge
@@ -103,3 +101,30 @@ New persistence, provider-portable EF Core (ADR-0010), money/time rules unchange
   window — no shared state model — so the emitted-nudge log keys off each nudge's derivable
   identity (see Data model) with nothing to coordinate. Left here only as the reconciliation
   record.
+
+## Decision record (ADR-0023, ADR-0024)
+
+### Balance nudge fires on threshold crossing (ADR-0023, grilled 2026-07-17)
+
+Emit the balance nudge only when the pair's net **crosses** `750 kr`, detected by replaying
+the pair's net chronologically over `Entry.CreatedAt` / `Settlement.SettledAt` events (no
+accounting `Date`, so backdating can't spoof freshness). A nudge shows only if the most
+recent upward crossing (`|net|` `< 750` → `>= 750`) was within **7 days**. **No nudge is
+stored** — this upholds ADR-0007's "derived on read, no notification storage" rather than
+amending it. The crossing/timeline math lives in `BalanceCalculator` (unit-tested);
+`NudgeCalculator` stays pure and receives the precomputed crossing timestamp. Settling below
+then re-crossing, or a sign flip through zero, re-fires naturally. *Rejected:* a high-water-mark
+table per pair (forces write-on-read) and an emitted-nudge log (deferred to ADR-0024 /
+tech-debt/0002, justified only once real out-of-app delivery exists).
+
+### Email-first nudge delivery (ADR-0024, grilled 2026-07-17)
+
+Deliver nudges by **email via Resend** for v1; **defer both web push and native push**.
+Email is the only channel reaching every user — including iPhone owners in the EU, where iOS
+web push is unavailable under the DMA (iOS 17.4+) — with zero install friction, reusing the
+Resend integration already in place (ADR-0005). Native push depends on the long-term Expo app
+plus a paid Apple Developer account, so push is revisited when that app is built, not before.
+This feature takes on a scheduler and the persisted, de-duplicated **emitted-nudge log**
+ADR-0023 and tech-debt/0002 deferred — paying that debt down. Delivery deepens the
+single-vendor Resend dependency (free tier still fits). Revisit when the native app ships, or
+Resend volume stops fitting the free tier.

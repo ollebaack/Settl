@@ -8,7 +8,7 @@ in December — posts its cycles and then quietly finishes, showing up as **Avsl
 list. This builds on the existing background posting job
 ([RecurringPostingService.cs](../../apps/api/Settl.Api/Services/RecurringPostingService.cs))
 and the pause/keep-don't-delete stance of
-[ADR-0018](../adr/0018-ledger-editing-affordances.md).
+[ADR-0018](ledger-editing.md).
 
 Provenance: decided via `/grill` on 2026-07-17. **Not ADR-worthy** — the load-bearing
 modelling calls (inclusive boundary, "ended" derived from the cursor, count resolved to a
