@@ -1,7 +1,8 @@
 /**
  * Statistik — per-person "who paid how much, when" for the active household
  * (docs/specs/household-statistics.md). v1 is a single line chart of each
- * member's monthly contributions over the trailing 12 months. Aggregation is
+ * member's monthly contributions since the household's first entry, capped at
+ * the trailing 12 months (the server clips the leading empty runway). Aggregation is
  * server-side (ADR-0006); this screen only renders and calls. No design export
  * exists for this new screen — layout mirrors the other list screens (header +
  * card), using semantic tokens and each member's avatar colour as their series.
@@ -36,7 +37,7 @@ export const Route = createFileRoute('/statistik')({
 const EMPTY_COPY =
   'Inget att visa än. När någon lägger till utgifter dyker det upp här — vem som la ut vad, månad för månad.'
 const FOOTER_COPY =
-  'Visar vem som lagt ut hur mycket per månad, de senaste 12 månaderna. Bara vem som betalat — inte vem som är skyldig vad.'
+  'Visar vem som lagt ut hur mycket per månad, sedan hushållet kom igång — som mest de senaste 12 månaderna. Bara vem som betalat — inte vem som är skyldig vad.'
 
 function StatistikPage() {
   const { householdId, households, isLoading: householdsLoading } = useActiveHousehold()
