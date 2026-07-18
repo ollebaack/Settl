@@ -110,6 +110,14 @@ public static class EntriesEndpoints
             var data = await Loaders.LoadHousehold(db, entry.HouseholdId, ct);
             if (data is null) return Results.Problem("Hushållet hittades inte", statusCode: 404);
 
+            // Snapshot the money-critical fields BEFORE mutating, so the trust event can record
+            // the before/after diff (trust-notifications-v1).
+            var oldAmount = entry.AmountMinor;
+            var oldPayerId = entry.PaidByMemberId;
+            var oldSplitMode = entry.SplitMode;
+            var oldShareMinor = entry.Shares.ToDictionary(s => s.MemberId, s => s.ShareMinor);
+            var oldFormula = entry.Shares.ToDictionary(s => s.MemberId, s => s.FormulaValue);
+
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
             try
             {
@@ -128,6 +136,9 @@ public static class EntriesEndpoints
                 db.EntryShares.RemoveRange(entry.Shares);
                 entry.Shares = rebuilt.Shares;
 
+                LedgerEventLog.RecordEntryEdited(
+                    db, data, me.Value, entry, oldAmount, oldPayerId, oldSplitMode, oldShareMinor, oldFormula);
+
                 await db.SaveChangesAsync(ct);
 
                 var dto = await LoadEntryDto(db, id, me.Value, ct);
@@ -143,19 +154,34 @@ public static class EntriesEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict);
 
-        app.MapDelete("/entries/{id:guid}", async (Guid id, SettlDbContext db, CancellationToken ct) =>
+        app.MapDelete("/entries/{id:guid}", async (
+            Guid id, ICurrentUserAccessor cu, SettlDbContext db, CancellationToken ct) =>
         {
-            var entry = await db.Entries.FirstOrDefaultAsync(e => e.Id == id, ct);
+            var me = await cu.GetMemberIdAsync(ct);
+            if (me is null) return Results.Problem("Ingen användare", statusCode: 404);
+
+            var entry = await db.Entries.Include(e => e.Shares).FirstOrDefaultAsync(e => e.Id == id, ct);
             if (entry is null) return Results.Problem("Posten hittades inte", statusCode: 404);
+
+            // Any household member may delete any entry (not creator-only), but a
+            // non-member must never touch another household's ledger (ADR-0028 /
+            // trust-notifications-v1).
+            var isMember = await db.HouseholdMemberships.AnyAsync(
+                m => m.HouseholdId == entry.HouseholdId && m.MemberId == me, ct);
+            if (!isMember) return Results.Problem("Du är inte medlem i hushållet", statusCode: 403);
 
             if (await db.SettlementClosures.AnyAsync(c => c.EntryId == id, ct))
                 return Results.Problem("Posten är låst — öppna den igen innan du tar bort.", statusCode: 409);
+
+            var data = await Loaders.LoadHousehold(db, entry.HouseholdId, ct);
+            if (data is not null) LedgerEventLog.RecordEntryDeleted(db, data, me.Value, entry);
 
             db.Entries.Remove(entry);
             await db.SaveChangesAsync(ct);
             return Results.NoContent();
         }).WithName("DeleteEntry")
             .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict);
 
@@ -190,6 +216,10 @@ public static class EntriesEndpoints
                         CreditorMemberId = d.Creditor
                     });
                 db.Settlements.Add(settlement);
+
+                var data = await Loaders.LoadHousehold(db, entry.HouseholdId, ct);
+                if (data is not null) LedgerEventLog.RecordSettlementRecorded(db, data, me.Value, entry);
+
                 await db.SaveChangesAsync(ct);
             }
 

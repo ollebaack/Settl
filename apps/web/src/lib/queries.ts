@@ -42,6 +42,7 @@ import {
   type LoginRequest,
   type MeDto,
   type MemberDto,
+  type NotificationListDto,
   type NudgeDto,
   type NudgeTone,
   type PendingInviteDto,
@@ -89,6 +90,7 @@ export const queryKeys = {
   nudgesAll: (id: string | undefined) => ['household', id, 'nudges'] as const,
   nudges: (id: string | undefined, tone: NudgeTone) =>
     ['household', id, 'nudges', tone] as const,
+  notifications: (id: string | undefined) => ['household', id, 'notifications'] as const,
   contributionStats: (id: string | undefined) =>
     ['household', id, 'stats', 'contributions'] as const,
   householdInvites: (id: string | undefined) => ['household', id, 'invites'] as const,
@@ -107,6 +109,7 @@ export function invalidateHousehold(qc: QueryClient, householdId: string | undef
   qc.invalidateQueries({ queryKey: queryKeys.entriesAll(householdId) })
   qc.invalidateQueries({ queryKey: queryKeys.recurringList(householdId) })
   qc.invalidateQueries({ queryKey: queryKeys.nudgesAll(householdId) })
+  qc.invalidateQueries({ queryKey: queryKeys.notifications(householdId) })
   qc.invalidateQueries({ queryKey: queryKeys.settlePreviewAll(householdId) })
   qc.invalidateQueries({ queryKey: queryKeys.settlementHistoryAll(householdId) })
 }
@@ -315,8 +318,31 @@ export function useNudges(id: string | undefined, tone: NudgeTone = 'direct') {
   })
 }
 
+// Trust notifications: the stream of "someone changed something that affects your money"
+// (trust-notifications-v1). Server projects these from the ledger event log and flags each
+// unread against the member's cursor.
+export function useNotifications(id: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.notifications(id),
+    queryFn: () => apiGet<NotificationListDto>(`/households/${id}/notifications`),
+    enabled: !!id,
+  })
+}
+
 // Per-person "who paid how much, when" for the Statistik page. Server aggregates
 // by month (ADR-0006); v1 uses the endpoint's default trailing-12-month window.
+// Advance the caller's read cursor to now (opening the Notiser screen marks them seen).
+// Invalidates the list so each item's `isUnread` recomputes to false.
+export function useMarkNotificationsSeen(id: string | undefined) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => apiPost<void>(`/households/${id}/notifications/seen`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.notifications(id) })
+    },
+  })
+}
+
 export function useContributionStats(id: string | undefined) {
   return useQuery({
     queryKey: queryKeys.contributionStats(id),

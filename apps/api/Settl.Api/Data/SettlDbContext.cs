@@ -25,6 +25,7 @@ public class SettlDbContext(DbContextOptions<SettlDbContext> options) : Identity
     public DbSet<Invite> Invites => Set<Invite>();
     public DbSet<Contact> Contacts => Set<Contact>();
     public DbSet<EmittedNudge> EmittedNudges => Set<EmittedNudge>();
+    public DbSet<LedgerEvent> LedgerEvents => Set<LedgerEvent>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -44,6 +45,8 @@ public class SettlDbContext(DbContextOptions<SettlDbContext> options) : Identity
             // Nudge-digest emails default OFF — an explicit opt-in via the profile switch
             // (reminder-delivery spec). New rows fall to disabled via this default.
             e.Property(x => x.NudgeEmailsEnabled).IsRequired().HasDefaultValue(false);
+            // Trust-notification read cursor (ADR-0028) — nullable; null means "never opened".
+            e.Property(x => x.NotificationsSeenAt);
             e.Ignore(x => x.Initial);
         });
 
@@ -168,6 +171,22 @@ public class SettlDbContext(DbContextOptions<SettlDbContext> options) : Identity
             e.HasIndex(x => new { x.MemberId, x.NudgeKey })
                 .IsUnique()
                 .HasDatabaseName("IX_EmittedNudge_Member_NudgeKey");
+        });
+
+        b.Entity<LedgerEvent>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Type).HasConversion<string>().IsRequired();
+            e.Property(x => x.AffectedMemberIdsCsv).IsRequired();
+            e.Property(x => x.PayloadJson).IsRequired();
+            // Cascade with the household so archival/hard-delete of an empty household clears its
+            // audit trail too. There is deliberately NO relationship to Entry/RecurringTemplate:
+            // those may be hard-deleted, and the event must survive that (ADR-0028).
+            e.HasOne(x => x.Household).WithMany()
+                .HasForeignKey(x => x.HouseholdId).OnDelete(DeleteBehavior.Cascade);
+            // The read projection loads a household's events newest-first.
+            e.HasIndex(x => new { x.HouseholdId, x.OccurredAt })
+                .HasDatabaseName("IX_LedgerEvent_Household_OccurredAt");
         });
     }
 }

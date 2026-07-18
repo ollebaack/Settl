@@ -559,4 +559,44 @@ public class HouseholdsEntriesIntegrationTests
         var gone = await du.GetAsync($"/entries/{id}");
         Assert.Equal(HttpStatusCode.NotFound, gone.StatusCode);
     }
+
+    [Fact]
+    public async Task DeleteEntry_by_non_member_is_forbidden_and_leaves_the_entry_intact()
+    {
+        using var factory = await SeededAsync();
+        var du = factory.ClientAs(SeedIds.Du);
+
+        // Grab a real Lönnvägen entry id (Mamma belongs to Familjen, not Lönnvägen).
+        var entries = await du.GetFromJsonAsync<List<EntryDto>>(
+            $"/households/{SeedIds.Lonnvagen}/entries", Web);
+        var target = entries!.First(e => e.Type == "expense");
+
+        var mamma = factory.ClientAs(SeedIds.Mamma);
+        var del = await mamma.DeleteAsync($"/entries/{target.Id}");
+        Assert.Equal(HttpStatusCode.Forbidden, del.StatusCode);
+        Assert.Equal("Du är inte medlem i hushållet", await DetailAsync(del));
+
+        // The entry must still be there for the members who do belong.
+        var still = await du.GetAsync($"/entries/{target.Id}");
+        Assert.Equal(HttpStatusCode.OK, still.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteEntry_by_any_household_member_is_allowed_even_when_another_paid()
+    {
+        using var factory = await SeededAsync();
+        var du = factory.ClientAs(SeedIds.Du);
+
+        // Du logs an expense; Sam (a fellow member, not the "creator"/payer) may delete it.
+        var createReq = new CreateEntryRequest("expense", "Gemensam pizza", 9_000, null, SeedIds.Du, null);
+        var post = await du.PostAsJsonAsync($"/households/{SeedIds.Lonnvagen}/entries", createReq, Web);
+        var created = await post.Content.ReadFromJsonAsync<EntryDto>(Web);
+
+        var sam = factory.ClientAs(SeedIds.Sam);
+        var del = await sam.DeleteAsync($"/entries/{created!.Id}");
+        Assert.Equal(HttpStatusCode.NoContent, del.StatusCode);
+
+        var gone = await du.GetAsync($"/entries/{created.Id}");
+        Assert.Equal(HttpStatusCode.NotFound, gone.StatusCode);
+    }
 }
