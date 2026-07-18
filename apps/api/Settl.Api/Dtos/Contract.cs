@@ -112,6 +112,15 @@ public static class Contract
         _ => null
     };
 
+    public static string LedgerEventType(LedgerEventType t) => t switch
+    {
+        Domain.LedgerEventType.EntryDeleted => "entryDeleted",
+        Domain.LedgerEventType.EntryEdited => "entryEdited",
+        Domain.LedgerEventType.SettlementRecorded => "settlementRecorded",
+        Domain.LedgerEventType.RecurringChanged => "recurringChanged",
+        _ => throw new ArgumentOutOfRangeException(nameof(t))
+    };
+
     public static string ViewerStatusKind(ViewerStatusKind k) => k switch
     {
         Domain.ViewerStatusKind.Settled => "settled",

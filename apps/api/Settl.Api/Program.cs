@@ -256,6 +256,7 @@ app.MapEntriesEndpoints();
 app.MapRecurringEndpoints();
 app.MapSettlementsEndpoints();
 app.MapNudgesEndpoints();
+app.MapNotificationsEndpoints();
 app.MapUnsubscribeEndpoints();
 
 // SPA client-side routing fallback — must come after all API route mappings above. Anonymous

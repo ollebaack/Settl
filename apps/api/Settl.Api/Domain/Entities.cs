@@ -31,6 +31,13 @@ public class Member : IdentityUser<Guid>
     /// the one-click email unsubscribe also forces it off. In-app nudges are unaffected.</summary>
     public bool NudgeEmailsEnabled { get; set; }
 
+    /// <summary>Read cursor for trust notifications (trust-notifications-v1, ADR-0028). A
+    /// <see cref="LedgerEvent"/> concerning this member is UNREAD when its
+    /// <see cref="LedgerEvent.OccurredAt"/> is after this timestamp. Null = never opened the
+    /// notifications screen (everything concerning them is unread). Advanced by POST
+    /// <c>/households/{id}/notifications/seen</c>.</summary>
+    public DateTimeOffset? NotificationsSeenAt { get; set; }
+
     public ICollection<HouseholdMembership> Memberships { get; set; } = new List<HouseholdMembership>();
 
     /// <summary>Derived, not stored.</summary>

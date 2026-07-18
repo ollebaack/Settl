@@ -160,6 +160,12 @@ public static class RecurringEndpoints
             var data = await Loaders.LoadHousehold(db, template.HouseholdId, ct);
             if (data is null) return Results.Problem("Hushållet hittades inte", statusCode: 404);
 
+            // Snapshot the schedule/amount fields before mutating, for the trust event diff
+            // (trust-notifications-v1).
+            var oldAmount = template.AmountMinor;
+            var oldCadence = template.Cadence;
+            var oldNextPostDate = template.NextPostDate;
+
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
             try
             {
@@ -223,6 +229,19 @@ public static class RecurringEndpoints
                 if (!wasActive && template.Active)
                     template.NextPostDate = RecurrenceCalculator.FastForwardToOnOrAfter(
                         template.NextPostDate, template.Cadence, today);
+
+                var changes = new List<LedgerFieldChange>();
+                if (oldAmount != template.AmountMinor)
+                    changes.Add(new LedgerFieldChange("amount",
+                        oldAmount.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        template.AmountMinor.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+                if (oldCadence != template.Cadence)
+                    changes.Add(new LedgerFieldChange("cadence",
+                        Contract.Cadence(oldCadence), Contract.Cadence(template.Cadence)));
+                if (oldNextPostDate != template.NextPostDate)
+                    changes.Add(new LedgerFieldChange("date",
+                        oldNextPostDate.ToString("O"), template.NextPostDate.ToString("O")));
+                LedgerEventLog.RecordRecurringChanged(db, data, me.Value, template, changes);
 
                 await db.SaveChangesAsync(ct);
 
