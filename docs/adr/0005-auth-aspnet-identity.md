@@ -1,7 +1,7 @@
 # ADR-0005: Self-hosted auth — ASP.NET Identity, cookie sessions, invite-gated households, Resend email
 
 - **Status:** accepted
-- **Date:** 2026-07-12 (session mechanism / invites / email provider added 2026-07-13, was ADR-0011)
+- **Date:** 2026-07-12 (session mechanism / invites / email provider added 2026-07-13, was ADR-0011; native bearer scheme resolved 2026-07-18)
 
 ## Context
 
@@ -17,8 +17,13 @@ with real auth.
 
 - **Self-hosted ASP.NET Identity**, with a token flow the future Expo app can use — no
   hosted-auth vendor, no per-user pricing.
-- **Cookie authentication for the web SPA now**, adding a JWT bearer scheme alongside it
-  only when the Expo app is actually built — not before.
+- **Cookie authentication for the web SPA**; the **native client** (Expo, `docs/specs/mobile-app.md`)
+  uses **opaque bearer tokens** — the ASP.NET Core Identity `BearerToken` handler, the same
+  tokens `MapIdentityApi` issues — alongside the cookie scheme. Direct email/password login at
+  `POST /auth/token`; a short-lived access token plus a ~30-day sliding refresh, rotated on use
+  at `POST /auth/token/refresh`, stored in the iOS Keychain. Opaque (not a JWT) is fine — only
+  this API validates them; full OAuth2/OIDC + PKCE was rejected as overkill for one first-party
+  client whose direct-login flow has no auth code to protect. Resolved 2026-07-18.
 - **Signup is open** (email + password creates a standalone account); **joining a
   household is invite-only**. An invite creates a pending `Member`/`HouseholdMembership`
   that activates when the invitee follows an emailed link and sets their own password —
@@ -32,9 +37,10 @@ with real auth.
 We own password reset, invite links, and therefore **email delivery** — a real cost
 accepted knowingly, resolved by the Resend choice (this closes tech-debt/0001 even though
 sending code came later). Cookie auth needs CSRF middleware on state-changing endpoints,
-and it doesn't extend to a native client — when the Expo app ships, a second (JWT) auth
-scheme has to be built and maintained alongside this one, deferred complexity accepted
-knowingly rather than built speculatively today. Open signup means an unauthenticated
+and it doesn't extend to a native client — so the Expo app adds a second (bearer-token) auth
+scheme maintained alongside the cookie, now built (2026-07-18). Revocation rides Identity's
+security stamp, re-checked on refresh (logout / password-change invalidate all refresh tokens);
+per-token reuse-detection is deliberately not implemented (tech-debt/0012). Open signup means an unauthenticated
 registration endpoint exists (rate-limiting/spam is our problem), but nobody joins a
 household without an explicit invite, so the shared-ledger data stays gated. There's no
 role/owner concept on membership, so any member — including one invited five minutes ago
@@ -49,3 +55,5 @@ tech-debt/0003 (dev user switcher) is unaffected until the feature is built:
 - ADR-0007: Ledger data model (Member/Household many-to-many, unchanged)
 - tech-debt/0001: No email delivery story (resolved by the Resend choice)
 - tech-debt/0003: Dev-only current-user switcher (paid down when this ADR is implemented)
+- tech-debt/0012: Native refresh tokens have no reuse-detection (accepted with the bearer scheme)
+- docs/specs/mobile-app.md: the native client that consumes the bearer scheme (grill, 2026-07-18)

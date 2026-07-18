@@ -72,8 +72,21 @@ builder.Services.AddIdentityCore<Member>(options =>
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
-builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
-    .AddIdentityCookies();
+// ADR-0005: cookie auth for the web SPA, plus an opaque BearerToken scheme alongside it
+// for the native client (React Native has no cookie jar) — the same data-protection bearer
+// handler MapIdentityApi uses under the hood, wired here WITHOUT its endpoints since our
+// /auth/* flow is hand-rolled (Swedish ProblemDetails, Member.Name/AvatarColor, email-link
+// verification). Token issuance/refresh live in AuthEndpoints (/auth/token, /auth/token/refresh).
+var authBuilder = builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme);
+authBuilder.AddIdentityCookies();
+authBuilder.AddBearerToken(IdentityConstants.BearerScheme, options =>
+{
+    // Native session policy (ADR-0005): short-lived access token, ~30-day sliding refresh.
+    // Longer than the web's 14-day cookie — mobile users expect to stay signed in. There is
+    // no per-token reuse-detection; revocation rides the security stamp on refresh (tech-debt/0012).
+    options.BearerTokenExpiration = TimeSpan.FromHours(1);
+    options.RefreshTokenExpiration = TimeSpan.FromDays(30);
+});
 
 // Without this, the Data Protection key ring lives only in the running container's
 // memory: every redeploy recreates the container, rotates the keys, and silently
@@ -114,8 +127,15 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddScoped<IAuthorizationHandler, EmailConfirmedHandler>();
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("AuthenticatedOnly", p => p.RequireAuthenticatedUser());
+    // Accept either scheme: a request authenticates via the cookie (web) OR a bearer token
+    // (native, ADR-0005). Without AddAuthenticationSchemes the policies bind only the default
+    // (cookie) scheme and a valid Authorization: Bearer header would be ignored.
+    string[] schemes = [IdentityConstants.ApplicationScheme, IdentityConstants.BearerScheme];
+    options.AddPolicy("AuthenticatedOnly", p => p
+        .AddAuthenticationSchemes(schemes)
+        .RequireAuthenticatedUser());
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .AddAuthenticationSchemes(schemes)
         .RequireAuthenticatedUser()
         .AddRequirements(new EmailConfirmedRequirement())
         .Build();

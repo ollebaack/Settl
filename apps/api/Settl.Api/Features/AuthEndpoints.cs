@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authentication.BearerToken;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 using Settl.Api.Domain;
 using Settl.Api.Dtos;
 using Settl.Api.Services;
@@ -56,6 +58,56 @@ public static class AuthEndpoints
         }).WithName("Login")
             .AllowAnonymous()
             .Produces<MeDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
+
+        // Native login (ADR-0005): same credential check and Swedish copy as /auth/login, but
+        // issues the opaque BearerToken pair the native client stores in the iOS Keychain rather
+        // than a cookie. Setting SignInManager.AuthenticationScheme to the bearer scheme makes
+        // PasswordSignInAsync emit the AccessTokenResponse JSON via the BearerToken handler — the
+        // exact mechanism MapIdentityApi's /login uses — so the endpoint just returns Empty.
+        app.MapPost("/auth/token", async (
+            LoginRequest req, UserManager<Member> users, SignInManager<Member> signIn) =>
+        {
+            signIn.AuthenticationScheme = IdentityConstants.BearerScheme;
+
+            var member = await users.FindByEmailAsync(req.Email?.Trim() ?? "");
+            if (member is null)
+                return Results.Problem("Fel e-post eller lösenord", statusCode: 401);
+
+            var result = await signIn.PasswordSignInAsync(member, req.Password ?? "", isPersistent: false, lockoutOnFailure: true);
+            if (!result.Succeeded)
+                return Results.Problem("Fel e-post eller lösenord", statusCode: 401);
+
+            return Results.Empty;
+        }).WithName("IssueToken")
+            .AllowAnonymous()
+            .Produces<AccessTokenResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
+
+        // Native refresh (ADR-0005): exchange a refresh token for a fresh access+refresh pair.
+        // Rejects a malformed/expired token, or one whose owner's security stamp has moved —
+        // logout and password-change bump the stamp, which is how revocation works here. There is
+        // NO per-token reuse-detection: a replayed refresh token still works until it expires
+        // (tech-debt/0012). Returning SignIn on the bearer scheme rotates the pair.
+        app.MapPost("/auth/token/refresh", async (
+            RefreshTokenRequest req, SignInManager<Member> signIn,
+            IOptionsMonitor<BearerTokenOptions> bearerOptions) =>
+        {
+            var protector = bearerOptions.Get(IdentityConstants.BearerScheme).RefreshTokenProtector;
+            var ticket = protector.Unprotect(req.RefreshToken ?? "");
+
+            if (ticket?.Properties?.ExpiresUtc is not { } expiresUtc
+                || TimeProvider.System.GetUtcNow() >= expiresUtc
+                || await signIn.ValidateSecurityStampAsync(ticket.Principal) is not { } member)
+            {
+                return Results.Problem("Sessionen har gått ut", statusCode: 401);
+            }
+
+            var principal = await signIn.CreateUserPrincipalAsync(member);
+            return Results.SignIn(principal, authenticationScheme: IdentityConstants.BearerScheme);
+        }).WithName("RefreshToken")
+            .AllowAnonymous()
+            .Produces<AccessTokenResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status401Unauthorized);
 
         app.MapPost("/auth/logout", async (SignInManager<Member> signIn) =>

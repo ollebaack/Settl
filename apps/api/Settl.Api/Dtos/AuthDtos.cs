@@ -4,6 +4,10 @@ public sealed record RegisterRequest(string Name, string Email, string Password)
 
 public sealed record LoginRequest(string Email, string Password);
 
+/// <summary>Exchanges a refresh token for a fresh access+refresh pair on the native client
+/// (POST /auth/token/refresh, ADR-0005). The web SPA never uses this — it rides the cookie.</summary>
+public sealed record RefreshTokenRequest(string RefreshToken);
+
 /// <summary>The signed-in member's own view of themselves — distinct from <see cref="MemberDto"/>
 /// (used for household member lists) since <see cref="EmailConfirmed"/> and <see cref="Email"/>
 /// are session-relative, not something other members' rows need to carry. <c>Phone</c> is the
