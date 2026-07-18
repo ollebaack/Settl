@@ -4,10 +4,10 @@
  *
  * The contacts model — add-by-number as a blind SMS invite, no lookup oracle,
  * contacts reusable across households — is a separate workstream
- * (docs/adr/0019-contacts-by-phone-and-sms-invites.md). This sheet deliberately
+ * (docs/specs/contacts-phone-sms.md, ADR-0019). This sheet deliberately
  * wires NO contact endpoints, query, or `Dina kontakter` data: it presents the
  * entry point and copy so the surface exists, and defers the real send + contact
- * graph to that ADR's implementation.
+ * graph to that spec's implementation.
  */
 import { useState } from 'react'
 import { toast } from 'sonner'

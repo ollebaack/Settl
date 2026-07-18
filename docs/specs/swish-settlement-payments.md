@@ -44,7 +44,7 @@ to the wrong person. Nothing in `apps/web/src/components/sheets/settle-up-sheet.
 
 ## Data model
 
-> **Superseded by [ADR-0026](../adr/0026-single-member-phone-number.md) (2026-07-17):** the
+> **Superseded by ADR-0026 (2026-07-17), [Decision record](#decision-record-adr-0026) below:** the
 > separate `Member.SwishNumber` column was merged into the inherited `Member.PhoneNumber` — one
 > number now serves both the Swish payee and the deferred contacts/SMS feature. The original v1
 > shape is kept below for provenance; where it says `SwishNumber`, read `PhoneNumber`.
@@ -81,9 +81,9 @@ to the wrong person. Nothing in `apps/web/src/components/sheets/settle-up-sheet.
 
 - **Profile:** an optional number field on the profile edit surface (alongside display name /
   avatar), with the `+46` phone-input affordance. Cosmetic formatting only; the API validates
-  (ADR-0006). Per [ADR-0026](../adr/0026-single-member-phone-number.md) this is the member's single
-  "Ditt nummer" field (not a separate "Swish-nummer"); the Contacts screen no longer has its own
-  number input.
+  (ADR-0006). Per ADR-0026 (see [Decision record](#decision-record-adr-0026)) this is the
+  member's single "Ditt nummer" field (not a separate "Swish-nummer"); the Contacts screen no
+  longer has its own number input.
 - **Settle-up sheet** (`apps/web/src/components/sheets/settle-up-sheet.tsx`): when `swishPay` is
   present, render a **"Betala med Swish"** action near the net owed:
   - **On mobile**, a tap-through link to `swishPay.uri` — opens the Swish app pre-filled.
@@ -111,6 +111,21 @@ to the wrong person. Nothing in `apps/web/src/components/sheets/settle-up-sheet.
   ownership check; a typo pays the wrong person. Acceptable for a convenience launcher.
 - **Non-SEK settlement** — no rail; the action is simply hidden. No FX.
 - Exact Swedish copy for the button/field labels and the profile field help text — design to confirm.
+
+## Decision record (ADR-0026)
+
+Grilled 2026-07-17 (was ADR-0026); **amends ADR-0019** (drops its "profile phone distinct
+from Swish number" stance) and supersedes the "distinct from `PhoneNumber`" clause above.
+
+Store **one** member number in Identity's `PhoneNumber` and **drop `SwishNumber`**. The Swish
+pay link reads `PhoneNumber`; Profile exposes a single "Ditt nummer" field (helper text notes
+it powers Swish today); the Contacts phone input is removed. The migration copies
+`SwishNumber` → `PhoneNumber` wherever a Swish number is set (**Swish value wins**, since it
+drives a live payment feature), keeps `PhoneNumber` otherwise, then drops the column.
+`PhoneNumberConfirmed` stays authoritative for the deferred OTP (tech-debt/0010), so
+verification lands with no schema change. A private Swish number *can* differ from a contact
+mobile (multi-bank/multi-device), but that's an edge case for a household expense app — one
+number matches what users read as "my number."
 
 ## Sources
 

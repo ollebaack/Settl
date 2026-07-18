@@ -2,8 +2,9 @@
 
 Replaces the first-letter avatar on expense rows with a meaningful icon (groceries,
 restaurant, rent, …), backed by a stored `category` on `Entry` instead of runtime title
-matching. Visual reference: `docs/design/category-icons-addendum.md`. Data-model decision:
-[ADR-0012](../adr/0012-entry-categories.md).
+matching. Visual reference: `docs/design/category-icons-addendum.md`. The load-bearing
+data-model decision (ADR-0012, grilled 2026-07-13) is recorded under
+[Decision record](#decision-record-adr-0012) below.
 
 ## Problem
 
@@ -71,6 +72,24 @@ ordering caveat as the addendum).
   mutation pattern. Not shown for IOU/recurring (their glyph doesn't reflect category).
 - [add-entry-sheet.tsx](../../apps/web/src/components/sheets/add-entry-sheet.tsx): no
   changes — category is never chosen at creation time.
+
+## Decision record (ADR-0012)
+
+Grilled 2026-07-13 (was ADR-0012). Load-bearing decisions:
+
+- **Fixed `Category` enum on `Entry`** (12 keyword groups + `Other`), applying to all
+  entry types — not per-household custom categories.
+- **Server-assigned at creation from the title** via the keyword map (first match wins,
+  order matters); no picker, creation never blocked or prompted. Keyword logic lives once
+  server-side (ADR-0006), not duplicated per client.
+- **User can change it afterward** via `PUT /entries/{id}`, under the same edit-lock as
+  every field (ADR-0007: editable until a settlement touches the entry).
+- **Icon selection applies to `expense` rows only**; IOU (`⇄`) and recurring (`↻`) keep
+  their glyphs. Category on those types is stored for future reporting, unused today.
+
+Existing rows backfill to `Other` (no retroactive matching). Category stored-but-unrendered
+on IOU/recurring is dead weight until spend-by-category reporting ships — revisit if it
+never does.
 
 ## Out of scope / open questions
 

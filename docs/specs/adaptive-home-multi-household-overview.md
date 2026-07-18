@@ -1,13 +1,20 @@
 # Adaptive home & multi-household overview — spec
 
+> **Superseded by ADR-0021 (2026-07-16), [Decision record](#decision-record-adr-0021) below:**
+> the adaptive "1 household → dashboard, 2+ → overview" behavior described here was reversed —
+> **Home (`/`) is now always the Overview** for everyone, and the dashboard + Loggbok merged
+> into a single book tab. The multi-household overview design and rejected alternatives below
+> still stand; the *adaptive-on-count* mechanism does not. Read the body as the original design,
+> the Decision record as the current one.
+
 Make "Hem" (`/`) adapt to how many active households the user belongs to, and add a
 cross-household **overview** for people in two or more books. Most users belong to
 exactly one household and must not pay a tax (an extra tap, an empty one-card screen)
 for a feature that only benefits multi-household users. Visual reference:
 [multi-household-overview-addendum.md](../design/multi-household-overview-addendum.md)
 (and `docs/design/Settl Multi-Household Overview.dc.html`). Rests on
-[ADR-0016](../adr/0016-household-ownership-and-archival.md) (archival) and
-[ADR-0019](../adr/0019-contacts-by-phone-and-sms-invites.md) (the add-a-friend
+[ADR-0016](household-ownership.md) (archival) and
+[ADR-0019](contacts-phone-sms.md) (the add-a-friend
 affordance).
 
 Provenance: decided via `/grill` on 2026-07-16. No companion ADR — the choice is an
@@ -83,7 +90,7 @@ of those shapes change.
 
 - **The contacts model is NOT built from this spec.** Add-by-number = a blind SMS invite,
   the contact graph, and reusable-across-households contacts are decided in
-  [ADR-0019](../adr/0019-contacts-by-phone-and-sms-invites.md). This spec ships only the
+  [ADR-0019](contacts-phone-sms.md). This spec ships only the
   entry-point affordance on the overview.
 - **Drill-in routing** (dedicated route vs focused state) — decide in the implementing PR.
 - **Switcher-sheet overlap:** for multi-household users the overview and the switcher
@@ -97,3 +104,26 @@ of those shapes change.
 - **A separate 5th nav destination** ("Översikt"/"Hushåll") — creates two competing homes,
   buries the overview, ignores the wishlist's "borde ligga som hem?" instinct.
 - **A summed global net figure** — meaningless across currencies.
+
+## Decision record (ADR-0021)
+
+Grilled 2026-07-16 (was ADR-0021). Reverses the adaptive-home mechanism above.
+
+- **Home is always the Overview.** `/` renders the multi-household portfolio for everyone;
+  the adaptive "1 household → dashboard" branch is removed. Picking a book sets it active and
+  navigates to the book tab.
+- **A single book tab merges dashboard + Loggbok** into one scroll (net hero → per-person
+  balances → upcoming → filter pills → chronological log), replacing the separate Loggbok
+  tab; nav stays four tabs (Hem, Hushållet, På repeat, Aktivitet). One component powers both
+  this tab (active household) and the `/hushall/$id` drill-in from the Overview.
+- **"Gör upp" stays per-person, surfaced prominently** on each balance row; no
+  global/aggregate "settle everything" action (preserves pure-ledger settlement, ADR-0007,
+  with no new aggregate API surface).
+
+A single-household user's Hem is a one-card Overview (accepted — the book tab is one tap
+away). The standalone `/ledger` route is repurposed into the merged book view; deep links
+redirect. *Rejected:* keeping adaptive home (home means two things, hides the Overview);
+overview-with-single-household-auto-redirect (back button lands on an unchosen page); log as
+an in-page tab / no merge (didn't fit the one-scroll goal); a global aggregate settle button
+(new settlement semantics, not worth it now). Revisit if telemetry shows most users are
+single-household, or if "settle all" becomes a common ask.

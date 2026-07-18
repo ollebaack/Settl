@@ -2,8 +2,9 @@
 
 What we're building: a way to **own**, **leave**, and **remove** a household without
 destroying other people's financial history, and without letting anyone escape open
-debts by disappearing. Decision record (grill outcome + rejected alternatives):
-[ADR-0016](../adr/0016-household-ownership-and-archival.md). Visual reference:
+debts by disappearing. The load-bearing decisions and rejected alternatives (ADR-0016,
+grilled 2026-07-16; ADR-0022, grilled 2026-07-17) are recorded under
+[Decision record](#decision-record-adr-0016-adr-0022) below. Visual reference:
 [`docs/design/Settl Household Management.dc.html`](../design/Settl%20Household%20Management.dc.html)
 (mint theme, Swedish copy — **household = rounded square, person = circle**).
 
@@ -23,7 +24,7 @@ debt-tracking app removal must not become a loophole to walk away from what you 
 - A household with financial history is never hard-deleted — a misclick on a whole shared
   ledger must be recoverable (soft archive only).
 - An **empty** household (no ledger activity) can be **hard-deleted** by the owner, since
-  there is no history to protect — for cleaning up mistakes ([ADR-0022](../adr/0022-delete-empty-households.md)).
+  there is no history to protect — for cleaning up mistakes (ADR-0022, [decision record](#decision-record-adr-0016-adr-0022)).
 - Open debts are always surfaced as a warning, but never block leaving or archiving.
 
 ## The owner role
@@ -188,9 +189,45 @@ Per the design export:
 
 - **Hard delete of a non-empty household / GDPR purge / storage cleanup** — soft archival
   keeps all financial data indefinitely; only empty households can be hard-deleted
-  ([ADR-0022](../adr/0022-delete-empty-households.md)). Purging households that *have*
-  history remains a separate decision (ADR-0016 consequences).
+  (ADR-0022). Purging households that *have* history remains a separate decision (ADR-0016
+  consequences).
 - **Co-owners / multiple roles** — single owner only (rejected in ADR-0016).
 - **Blocking writes to an archived household** — archived households are hidden from the
   list and read-only in practice via the UI; server-side write-blocking on archived
   households is not part of this spec.
+
+## Decision record (ADR-0016, ADR-0022)
+
+### Ownership & archival (ADR-0016, grilled 2026-07-16)
+
+- **Single owner per household, not co-owners.** One `OwnerMemberId`; the creator owns new
+  households, existing ones backfill to the earliest-joined member.
+- **Soft archive, not hard delete.** "Remove" hides the household and retains all data; the
+  owner can restore indefinitely. No cascade delete, no automatic purge.
+- **Transfer before leave, never auto-transfer.** The owner must explicitly hand ownership
+  to a chosen member before leaving; ownership never moves on its own. A sole owner leaving
+  archives instead.
+- **Warn on open debts, never block.** Leave and archive show outstanding amounts and
+  require confirmation, but always proceed — debts don't trap members.
+
+*Rejected:* co-owners (any owner could destroy the household); auto-transfer to the oldest
+member (makes someone an owner without choosing); hard delete of history-bearing households
+(irreversible for shared financial data); block removal until debts net to zero (traps
+members when someone refuses to settle). We deliberately do **not** extend ADR-0007's
+entry-level hard-delete stance to whole households — a shared ledger is a bigger unit and a
+misclick must be recoverable.
+
+### Hard-delete of empty households (ADR-0022, grilled 2026-07-17; amends ADR-0016)
+
+The owner may **hard-delete a household only when it has no ledger activity** — no entries,
+recurring templates, or settlements. Deletion cascades away memberships and pending invites,
+is available directly on the active household (no archive-first step), and where other
+members remain it **warns but never blocks** (consistent with ADR-0016). The empty-check is
+re-evaluated inside the delete transaction, so concurrently-added activity returns 409 rather
+than being silently destroyed. This does **not** reopen hard-delete for history-bearing
+households — ADR-0016 still governs everything non-empty.
+
+*Rejected:* delete silently when others are members (a joined member losing a shared
+household with zero signal); block delete when others are members (traps trivially-empty
+households); archive-first before delete (unnecessary friction); pending invites blocking
+deletion (not financial data — cascade-revoked instead).

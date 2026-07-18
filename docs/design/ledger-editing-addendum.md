@@ -3,7 +3,7 @@
 Extends `implementation-map.md` §2.6–2.9 with the screens in
 **`Settl Ledger Editing.dc.html`** (new export, 2026-07-16). Covers product
 wishlist items 6–8, grilled into **ADR-0018**
-(`docs/adr/0018-ledger-editing-affordances.md`). Same conventions: UI structure
+(`docs/specs/ledger-editing.md`). Same conventions: UI structure
 from the DC export is authoritative; copy is Swedish, shared-notebook tone.
 
 **Unlike the auth addendum, the API mostly already exists** — edit (`PUT /entries/{id}`),

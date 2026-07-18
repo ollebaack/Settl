@@ -325,7 +325,7 @@ function HouseholdCard({
 /**
  * Loose affordance + copy only. The contacts model (add-by-number = blind SMS
  * invite, contacts reusable across households) is a SEPARATE workstream
- * (docs/adr/0019-contacts-by-phone-and-sms-invites.md) — this carries just the
+ * (docs/specs/contacts-phone-sms.md, ADR-0019) — this carries just the
  * entry point and copy, no contact data or endpoints.
  */
 function FriendsAffordance({ onOpen }: { onOpen: () => void }) {

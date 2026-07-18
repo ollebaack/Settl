@@ -2,13 +2,14 @@
 
 Notify a household member when **someone else** changes something that affects what they
 owe or are owed — so no one can be quietly cheated. Built on an append-only event log
-([ADR-0028](../adr/0028-event-log-for-change-history-and-notifications.md)); the in-app
-"Notiser" screen grows from a live-derived nudge list into a persistent stream of "this
-happened to your money". This spec is the feature shape; ADR-0028 is the load-bearing
-mechanism decision.
+(ADR-0028, [Decision record](#decision-record-adr-0028) below); the in-app "Notiser" screen
+grows from a live-derived nudge list into a persistent stream of "this happened to your
+money". This spec is the feature shape; the Decision record is the load-bearing mechanism
+decision.
 
-Provenance: decided via `/grill` on 2026-07-18. Companion ADR-0028 covers the event-log
-mechanism (hard to reverse); this spec covers scope, recipients, and surfaces.
+Provenance: decided via `/grill` on 2026-07-18 (was ADR-0028). The event-log mechanism
+(hard to reverse) is in the Decision record below; this spec covers scope, recipients, and
+surfaces.
 
 ## Problem
 
@@ -88,3 +89,27 @@ email/push delivery, and per-notice dismiss.
 - Retention/pruning of `LedgerEvents` and its privacy/GDPR surface.
 - Per-notice dismiss (the cursor model is all-or-nothing).
 - The remaining triggers listed under "not in v1".
+
+## Decision record (ADR-0028)
+
+Grilled 2026-07-18 (was ADR-0028).
+
+Introduce an **append-only event log**: one immutable row per state-changing domain action,
+carrying actor member id, event type, household id, a denormalized reference and a
+**structured before/after payload** of the changed fields, plus a UTC timestamp. In-app
+notifications are **projected** from this log — not stored per recipient — and unread state
+is a per-member "last seen" cursor. The log is written for mutations regardless of whether a
+notification is shown, so it doubles as an audit and a future restore source. It has **no
+foreign key** to the entities it references (a referenced entry may be hard-deleted); the
+denormalized snapshot must stand alone.
+
+Every mutating handler must emit an event in the same transaction as the change (a review
+checkpoint — forgetting one is a silent gap). *Rejected:* soft-delete + per-entity change
+columns (solves deletion only, captures edits poorly, scatters logic); extending derived
+nudges (can't detect deletes/edits at all). The structured payload costs a per-event-type
+schema but buys machine-readable diffs and a path to "restore deleted row." Actor tracking
+generalizes the existing `SettlementClosures.InitiatedByMemberId` precedent to all mutations;
+`Entry` still needs no `CreatedBy`. The log grows unbounded with denormalized financial
+detail — retention/pruning and its privacy surface are deferred. Projecting notifications
+keeps writes cheap but means per-notice dismiss isn't possible under the cursor model
+(accepted for v1).
