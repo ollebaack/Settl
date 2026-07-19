@@ -1,6 +1,7 @@
 # @settl/mobile
 
-Native iOS client (Expo / React Native, SDK 57). Spec: [`docs/specs/mobile-app.md`](../../docs/specs/mobile-app.md);
+Native iOS client (Expo / React Native, SDK 54 — temporarily downgraded from 57, see the spec's
+decision record). Spec: [`docs/specs/mobile-app.md`](../../docs/specs/mobile-app.md);
 agent rules: [`CLAUDE.md`](./CLAUDE.md).
 
 ## Local dev

@@ -59,6 +59,27 @@ starting with a **thin vertical slice** rather than full parity. UI is **NativeW
 primitives) on OS-feel surfaces. Builds and distribution go through **EAS Build** (cloud macOS) +
 TestFlight, since we develop on Windows and have no local Xcode.
 
+**Temporary downgrade to SDK 54 (2026-07-19):** the App Store's Expo Go build was stuck behind
+SDK 57 with no ETA, blocking iOS iteration on a real device without paying for Apple Developer
+Program enrollment. First tried SDK 56, still incompatible; checked the installed Expo Go app
+directly (Profile tab → Client version / Supported SDK), which reported **SDK 54** as the actual
+ceiling. Downgraded `apps/mobile` to SDK 54 (RN 0.81) to match. Revert to SDK 57
+(`npx expo install expo@57 --fix` in `apps/mobile`, `rm -rf node_modules pnpm-lock.yaml && pnpm
+install` at the repo root to force a full re-resolution — incremental `expo install`/`pnpm
+dedupe` left stale peer conflicts baked into the lockfile both times) once Expo Go on the App
+Store supports 57. Always check the phone's actual Expo Go "Supported SDK" value before assuming
+which version to target — Apple's approval lag varies per SDK, and the gap can be more than one
+version.
+
+Downgrading to SDK 54 also surfaced a real bug: `expo-image@3.0.11` and `expo-status-bar@3.0.9`
+(the versions SDK 54 pins) ship `main` pointing at raw `.ts` source instead of an `app.plugin.js`
+entry. Expo CLI's config-plugin resolver `require()`s every entry in `app.json`'s `plugins` array
+directly under plain Node, and Node 22's default type-stripping refuses to process `.ts` files
+under `node_modules`, crashing `expo config`/`expo-doctor`/the dev server outright instead of
+skipping the package gracefully. Neither package needs a plugin entry at this SDK (there's no
+`app.plugin.js` to run), so both were removed from `plugins` in `app.json`. Re-add them if
+reverting to SDK 57, where both ship real config plugins.
+
 Rejected alternatives:
 
 - **Capacitor (wrap the existing PWA)** — ships to the App Store fast reusing 100% of the web UI,
